@@ -46,6 +46,7 @@ export interface Limits {
   chunkSeconds?: number;
   stepSeconds?: number;
   maxOutputTokens?: number;
+  localModelQueueSeconds?: number;
   // Compress at this token count (default: at most 12,000, or 60 % of the window).
   compressAtTokens?: number;
 }
@@ -105,6 +106,8 @@ export const DEFAULTS = {
   maxTurns: 40,
   runBudgetSeconds: 1800,
   chatBudgetSeconds: 900,
+  localModelQueueSeconds: 600,
+  chatModelQueueSeconds: 180,
   firstChunkSeconds: 30,
   chunkSeconds: 30,
   stepSeconds: 60,
@@ -161,6 +164,17 @@ export function parseConfig(value: unknown): AgentRuntimeConfig {
   if (value.policy != null && value.policy !== 'helena' && value.policy !== 'allow') {
     fail('policy must be helena or allow');
   }
+  if (value.limits != null && !isObject(value.limits)) fail('limits must be an object');
+  const queueSeconds = (value.limits as Record<string, unknown> | undefined)
+    ?.localModelQueueSeconds;
+  if (
+    queueSeconds !== undefined &&
+    (typeof queueSeconds !== 'number' ||
+      !Number.isFinite(queueSeconds) ||
+      queueSeconds < 0 ||
+      queueSeconds > 86_400)
+  )
+    fail('localModelQueueSeconds must be between 0 and 86400');
   return value as unknown as AgentRuntimeConfig;
 }
 

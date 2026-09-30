@@ -176,7 +176,7 @@ export function centralEscalation(
       ? 'tests-failed'
       : failure === 'loop'
         ? 'loop'
-        : /budget|chunk|timeout/.test(failure)
+        : /budget|chunk|timeout|local-model-busy/.test(failure)
           ? 'timeout'
           : 'error';
   const decision = decideEscalation(rules, {

@@ -129,6 +129,7 @@ const HELENA_EVENTS = new Set([
   'model',
   'text',
   'thinking',
+  'status',
   'tool-call',
   'tool-result',
   'usage',

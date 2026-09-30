@@ -405,3 +405,41 @@ describe('the command that starts the helena runtime', () => {
     expect(commandFor(PRESETS.hermes, ['chat'], false)).toEqual(['hermes', ['chat']]);
   });
 });
+
+test('queue limit is carried from the agent snapshot to its native loop config', () => {
+  for (const localModelQueueSeconds of [0, 600]) {
+    const config = helenaAgentConfig(
+      { ...snapshot, helena: { ...snapshot.helena, localModelQueueSeconds } },
+      [],
+      { url: 'http://fixture.invalid' },
+    );
+    expect(config.limits?.localModelQueueSeconds).toBe(localModelQueueSeconds);
+  }
+});
+
+test('native queue status reaches the event stream without entering the answer', async () => {
+  const events: AgUiEvent[] = [];
+  const stream = new AnswerStream('helena-jsonl', 'thread', 'run', async (batch) => {
+    events.push(...batch);
+  });
+  stream.write(
+    lines({
+      type: 'status',
+      status: 'model-queued',
+      model: 'local/flash',
+      message: 'Wartet auf freien Modellplatz',
+      retryAfterMs: 1000,
+      remainingMs: 180000,
+    }),
+  );
+  await stream.flush();
+  expect(events.find((event) => event.type === 'REASONING_MESSAGE_CONTENT')).toMatchObject({
+    delta: 'Wartet auf freien Modellplatz\n',
+  });
+  expect(events.some((event) => event.type === 'TEXT_MESSAGE_CONTENT')).toBe(false);
+  stream.write(lines({ type: 'text', delta: 'Done' }));
+  await stream.finish('Done');
+  expect(events.filter((event) => event.type === 'TEXT_MESSAGE_CONTENT')).toEqual([
+    { type: 'TEXT_MESSAGE_CONTENT', messageId: 'msg-run', delta: 'Done' },
+  ]);
+});

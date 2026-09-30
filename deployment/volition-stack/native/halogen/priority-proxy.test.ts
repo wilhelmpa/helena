@@ -270,7 +270,9 @@ test('health stall pauses background, realtime falls back, recovery drains backl
   const url = `http://127.0.0.1:${proxy.ports[0]}/v1/chat/completions`;
   const fallback = await fetch(url, { method: 'POST', body: '{}',
     headers: { 'x-volition-halogen-priority': 'realtime' } });
-  expect(fallback.status).toBe(503);
+  expect(fallback.status).toBe(502);
+  expect(fallback.headers.get('retry-after')).toBeNull();
+  expect((await fallback.json()).error.code).toBe('backend_unavailable');
   expect(proxy.scheduler.status().fallbacks.realtime).toBe(1);
   const pending = fetch(url, { method: 'POST', body: '{}',
     headers: { 'x-volition-halogen-priority': 'background' } });
@@ -414,4 +416,50 @@ test('proxy reads the durable administrative pause and releases queued HTTP work
   const response = await waiting;
   expect(response.status).toBe(200);
   await response.text();
+});
+
+
+test('scheduler reports queue full, timeout, health failure and cancellation separately', async () => {
+  const scheduler = new PriorityScheduler({ ...DEFAULT_PRIORITY_CONFIG,
+    maxConcurrent: 2, maxInteractive: 1, maxQueuedInteractive: 1, interactiveQueueMs: 20 });
+  const held = await scheduler.acquire('interactive');
+  const pending = scheduler.acquireWithReason('interactive');
+  expect((await scheduler.acquireWithReason('interactive')).reason).toBe('busy');
+  expect((await pending).reason).toBe('busy');
+  const controller = new AbortController();
+  const canceled = scheduler.acquireWithReason('interactive', controller.signal);
+  controller.abort();
+  expect((await canceled).reason).toBe('aborted');
+  expect(scheduler.status().queued.interactive).toBe(0);
+  const unhealthy = scheduler.acquireWithReason('interactive');
+  scheduler.setHealthy(false);
+  scheduler.setHealthy(true);
+  expect((await unhealthy).reason).toBe('backend_unavailable');
+  held!();
+});
+
+test('proxy distinguishes a full queue from an unhealthy backend', async () => {
+  const backend = await fakeBackend();
+  const dir = await mkdtemp(join(tmpdir(), 'volition-priority-'));
+  const proxy = await startPriorityProxy({ hostPorts: [0, 0], backendPorts: [backend.port, backend.port],
+    socketDir: dir, readConfig: async () => ({ ...DEFAULT_PRIORITY_CONFIG,
+      maxInteractive: 1, maxQueuedInteractive: 1 }) });
+  cleanups.push(async () => { await proxy.close(); await rm(dir, { recursive: true, force: true }); });
+  const held = await proxy.scheduler.acquire('interactive');
+  const controller = new AbortController();
+  const queued = proxy.scheduler.acquire('interactive', controller.signal);
+  const url = `http://127.0.0.1:${proxy.ports[0]}/v1/chat/completions`;
+  const send = () => fetch(url, { method: 'POST', body: '{}',
+    headers: { 'x-volition-halogen-priority': 'interactive' } });
+  const full = await send();
+  expect(full.status).toBe(503);
+  expect(full.headers.get('retry-after')).toBe('1');
+  expect((await full.json()).error.code).toBe('engine_busy');
+  proxy.scheduler.setHealthy(false);
+  expect(await queued).toBeNull();
+  const down = await send();
+  expect(down.status).toBe(502);
+  expect(down.headers.get('retry-after')).toBeNull();
+  expect((await down.json()).error.code).toBe('backend_unavailable');
+  held!();
 });

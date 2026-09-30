@@ -25,13 +25,16 @@ function priority(value: string | string[] | undefined): RequestClass {
     value === 'voice-reply' ? value : 'normal';
 }
 
-function unavailable(response: ServerResponse, timeoutMs: number): void {
+function unavailable(response: ServerResponse, reason: 'busy' | 'backend_unavailable'): void {
   if (response.destroyed) return;
-  response.writeHead(503, {
+  response.writeHead(reason === 'busy' ? 503 : 502, {
     'content-type': 'application/json',
-    'retry-after': String(Math.max(1, Math.ceil(timeoutMs / 1000))),
+    ...(reason === 'busy' ? { 'retry-after': '1' } : {}),
   });
-  response.end(JSON.stringify({ error: { code: 'engine_busy', message: 'Halogen queue is full or timed out' } }));
+  response.end(JSON.stringify({ error: {
+    code: reason === 'busy' ? 'engine_busy' : 'backend_unavailable',
+    message: reason === 'busy' ? 'Halogen queue is full or timed out' : 'Halogen backend is unavailable',
+  } }));
 }
 
 export async function startPriorityProxy(options: ProxyOptions) {
@@ -111,12 +114,13 @@ export async function startPriorityProxy(options: ProxyOptions) {
       outgoing.on('close', () => {
         if (!outgoing.writableFinished) disconnected.abort();
       });
-      const release = scheduled ? await scheduler.acquire(kind, disconnected.signal) : () => {};
+      const admission = scheduled
+        ? await scheduler.acquireWithReason(kind, disconnected.signal)
+        : { release: () => {} };
+      const { release } = admission;
       if (!release) {
-        if (!disconnected.signal.aborted) unavailable(outgoing,
-          kind === 'realtime' ? scheduler.status().config.realtimeQueueMs :
-            kind === 'interactive' ? scheduler.status().config.interactiveQueueMs :
-              scheduler.status().config.queueTimeoutMs);
+        if (!disconnected.signal.aborted && admission.reason !== 'aborted')
+          unavailable(outgoing, admission.reason!);
         return;
       }
       if (disconnected.signal.aborted) {

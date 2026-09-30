@@ -11,7 +11,8 @@ import {
 } from './escalation';
 import type { EventSink, ResultEvent, SpendEvent } from './events';
 import type { Decision } from './helena-client';
-import type { ResolvedModel } from './models';
+import { providerOptionsKey, type ResolvedModel } from './models';
+import { LocalModelBusy, LocalQueueRetry, type QueueAttempt } from './local-queue';
 import { messageText, type SessionItem, type SessionStore } from './session';
 import { looksSecret, redactSecrets } from '@helena/facts';
 import type { AgentTool, PolicyQuestion, ToolOutput } from './tools/types';
@@ -69,13 +70,16 @@ export interface LoopResult {
 }
 
 class StepAbort extends Error {
-  constructor(readonly why: 'first-chunk' | 'chunk' | 'step-timeout' | 'budget' | 'aborted') {
+  constructor(
+    readonly why: 'first-chunk' | 'chunk' | 'step-timeout' | 'budget' | 'aborted' | 'model-busy',
+  ) {
     super(why);
   }
 }
 
 // Provider errors after which the same step goes to the next model of the chain.
 function isProviderFailure(error: unknown): boolean {
+  if (error instanceof LocalModelBusy) return true;
   if (error instanceof StepAbort)
     return ['first-chunk', 'chunk', 'step-timeout'].includes(error.why);
   const text = error instanceof Error ? `${error.name} ${error.message}` : String(error);
@@ -122,6 +126,11 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
   const budgetMs =
     (config.limits?.runBudgetSeconds ??
       (kind === 'chat' ? DEFAULTS.chatBudgetSeconds : DEFAULTS.runBudgetSeconds)) * 1000;
+  const queueRetry = new LocalQueueRetry(
+    (config.limits?.localModelQueueSeconds ??
+      (kind === 'chat' ? DEFAULTS.chatModelQueueSeconds : DEFAULTS.localModelQueueSeconds)) * 1000,
+    sink,
+  );
   const maxTurns = config.limits?.maxTurns ?? DEFAULTS.maxTurns;
   const firstChunkMs = (config.limits?.firstChunkSeconds ?? DEFAULTS.firstChunkSeconds) * 1000;
   const stepMs = (config.limits?.stepSeconds ?? DEFAULTS.stepSeconds) * 1000;
@@ -476,7 +485,26 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     for (let index = 0; index < chain.length; index++) {
       const model = chain[index]!;
       try {
-        outcome = await callModel(model, messages, toolSet, budgetMs - (now() - budgetStarted));
+        if (model.local) {
+          const controller = new AbortController();
+          const timer = setTimeout(
+            () => controller.abort(new StepAbort('budget')),
+            Math.max(1, budgetMs - (now() - budgetStarted)),
+          );
+          try {
+            outcome = await queueRetry.run(
+              model.id,
+              AbortSignal.any([stepSignal(), controller.signal]),
+              (queue) =>
+                callModel(model, messages, toolSet, budgetMs - (now() - budgetStarted), queue),
+              model.id !== input.models[0]!.id,
+            );
+          } finally {
+            clearTimeout(timer);
+          }
+        } else {
+          outcome = await callModel(model, messages, toolSet, budgetMs - (now() - budgetStarted));
+        }
         if (index > 0) {
           // The first one failed: the rest of the run stays on the one that answered.
           chain = chain.slice(index);
@@ -501,28 +529,37 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
       if (input.signal.aborted || (lastError instanceof StepAbort && lastError.why === 'aborted')) {
         return finish({ status: 'failed', text: lastText, exitCode: 130, reason: 'aborted' });
       }
+      let failureDetail = 'model-unavailable';
+      if (lastError instanceof LocalModelBusy) failureDetail = 'local-model-busy';
+      else if (lastError instanceof StepAbort) failureDetail = lastError.why;
       const escalated = await escalate(
         {
           reason: 'failure',
           ...(config.runtimeFallback &&
             isProviderFailure(lastError) && { target: config.runtimeFallback }),
-          detail: lastError instanceof StepAbort ? lastError.why : 'model-unavailable',
+          detail: failureDetail,
         },
         lastText,
       );
       if (escalated === 'switched') continue;
       if (escalated) return escalated;
       if (
+        !(lastError instanceof LocalModelBusy) &&
         config.escalation?.central?.enabled &&
         failureAttempts < config.escalation.central.failure.localAttempts &&
         now() - budgetStarted < budgetMs
       )
         continue;
+      let failureReason = 'model-unavailable';
+      if (lastError instanceof LocalModelBusy) failureReason = 'local-model-busy';
+      else if (lastError instanceof StepAbort && lastError.why === 'budget')
+        failureReason = 'budget';
       return finish({
         status: 'failed',
-        text: lastText,
+        text: lastError instanceof LocalModelBusy ? lastError.message : lastText,
         exitCode: 1,
-        reason: 'model-unavailable',
+        reason: failureReason,
+        ...(lastError instanceof LocalModelBusy && { error: lastError.message }),
       });
     }
 
@@ -708,13 +745,16 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     if (
       !model.local ||
       config.reasoning ||
-      model.providerOptions[model.provider]?.reasoningEffort === 'none'
+      model.providerOptions[providerOptionsKey(model.provider)]?.reasoningEffort === 'none'
     )
       return model.providerOptions;
     const effort = !compressing && watch?.lastTests() === false ? 'medium' : 'low';
     return {
       ...model.providerOptions,
-      [model.provider]: { ...model.providerOptions[model.provider], reasoningEffort: effort },
+      [providerOptionsKey(model.provider)]: {
+        ...model.providerOptions[providerOptionsKey(model.provider)],
+        reasoningEffort: effort,
+      },
     };
   }
 
@@ -723,6 +763,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     messages: ModelMessage[],
     tools: ToolSet,
     leftMs: number,
+    queue?: QueueAttempt,
   ) {
     const signal = stepSignal();
     const controller = new AbortController();
@@ -735,8 +776,47 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     const onAbort = () => stop('aborted');
     signal.addEventListener('abort', onAbort, { once: true });
     if (signal.aborted) onAbort();
-    let watchdog = setTimeout(() => stop('first-chunk'), Math.min(firstChunkMs, leftMs));
-    const stepTimer = setTimeout(() => stop('step-timeout'), stepMs);
+    const queued = model.queueAdmission && queue && queue.remainingMs > 0;
+    const admissionStarted = Date.now();
+    const waitingTimer = queued
+      ? setTimeout(
+          () =>
+            sink.emit({
+              type: 'status',
+              status: 'model-queued',
+              model: model.id,
+              message: 'Wartet auf freien Modellplatz',
+              retryAfterMs: 0,
+              remainingMs: Math.max(0, queue.remainingMs - (Date.now() - admissionStarted)),
+            }),
+          1000,
+        )
+      : undefined;
+    let watchdog = setTimeout(
+      () => stop(queued ? 'model-busy' : 'first-chunk'),
+      queued ? queue.remainingMs : Math.min(firstChunkMs, leftMs),
+    );
+    let stepTimer = queued ? undefined : setTimeout(() => stop('step-timeout'), stepMs);
+    const requestModel =
+      queued && typeof model.model === 'object'
+        ? new Proxy(model.model, {
+            get(target, property) {
+              if (property !== 'doStream') return Reflect.get(target, property, target);
+              return async (...args: unknown[]) => {
+                // Halogen's doStream includes queue admission; generation has separate deadlines.
+                const result = await Reflect.apply(Reflect.get(target, property), target, args);
+                if (!controller.signal.aborted) {
+                  clearTimeout(waitingTimer);
+                  queue.admitted(Date.now() - admissionStarted);
+                  clearTimeout(watchdog);
+                  watchdog = setTimeout(() => stop('first-chunk'), firstChunkMs);
+                  stepTimer = setTimeout(() => stop('step-timeout'), stepMs);
+                }
+                return result;
+              };
+            },
+          })
+        : model.model;
     const budgetTimer = setTimeout(() => stop('budget'), Math.max(leftMs, 1));
     const bump = () => {
       clearTimeout(watchdog);
@@ -755,7 +835,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     let streamError: unknown = null;
     try {
       const result = streamText({
-        model: model.model,
+        model: requestModel,
         instructions: input.system,
         messages,
         tools,
@@ -822,11 +902,13 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     } catch (error) {
       streamError ??= error;
     } finally {
+      clearTimeout(waitingTimer);
       clearTimeout(watchdog);
       clearTimeout(budgetTimer);
       clearTimeout(stepTimer);
       signal.removeEventListener('abort', onAbort);
     }
+    if (why === 'model-busy') throw new LocalModelBusy();
     if (why) throw new StepAbort(why);
     if (streamError && calls.length === 0 && !text) throw streamError;
     return { text, calls, usage };

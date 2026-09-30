@@ -4,6 +4,10 @@ import type { LanguageModel } from 'ai';
 import { isLocalHalogenUrl } from '@helena/sdk';
 import { DEFAULTS, splitModelId, type ModelServer } from './config';
 
+export function providerOptionsKey(provider: string): string {
+  return provider.replace(/[_-]([a-z])/g, (_, letter: string) => letter.toUpperCase());
+}
+
 // A model id (`helena-halogen/halogen-qwen3.8-flash-next`, `anthropic/claude-sonnet-5`) as the
 // AI SDK model the loop calls, with what the loop needs to know about it.
 export interface ResolvedModel {
@@ -13,6 +17,7 @@ export interface ResolvedModel {
   model: LanguageModel;
   contextLength: number;
   local: boolean;
+  queueAdmission?: boolean;
   // Merged into every call on this model (thinking on or off for a local Qwen).
   providerOptions: Record<string, Record<string, unknown>>;
 }
@@ -64,7 +69,7 @@ export function resolveModel(
       server.thinking === false || reasoning === 'off'
         ? 'none'
         : reasoning || (server.local ? 'low' : undefined);
-    providerOptions[server.provider] = {
+    providerOptions[providerOptionsKey(server.provider)] = {
       ...(effort && { reasoningEffort: effort }),
       ...(server.thinkingSwitch && {
         chat_template_kwargs: { enable_thinking: effort !== 'none' },
@@ -78,6 +83,7 @@ export function resolveModel(
     model: factory(server, model, env),
     contextLength: server.contextLength ?? DEFAULTS.contextLength,
     local: server.local === true,
+    queueAdmission: server.local === true && isLocalHalogenUrl(server.baseUrl ?? ''),
     providerOptions,
   };
 }

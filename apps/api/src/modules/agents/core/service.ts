@@ -202,6 +202,7 @@ export interface AgentHelenaSettings {
     onFailure?: boolean;
   };
   browserBudgetSeconds?: number;
+  localModelQueueSeconds?: number;
 }
 
 const TOOL_PROFILES = ['assistent', 'recherche', 'coder-lite', 'voll'] as const;
@@ -218,6 +219,14 @@ export function helenaSettings(value: unknown): AgentHelenaSettings | undefined 
   }
   if (typeof raw.browserBudgetSeconds === 'number' && raw.browserBudgetSeconds >= 30) {
     out.browserBudgetSeconds = Math.min(Math.round(raw.browserBudgetSeconds), 3600);
+  }
+  if (
+    typeof raw.localModelQueueSeconds === 'number' &&
+    Number.isInteger(raw.localModelQueueSeconds) &&
+    raw.localModelQueueSeconds >= 0 &&
+    raw.localModelQueueSeconds <= 86_400
+  ) {
+    out.localModelQueueSeconds = raw.localModelQueueSeconds;
   }
   const escalation = raw.escalation as Record<string, unknown> | undefined;
   if (escalation && typeof escalation === 'object') {

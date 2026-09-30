@@ -127,6 +127,7 @@ export interface RuntimeHelenaSettings {
     agentId?: number;
   };
   browserBudgetSeconds?: number;
+  localModelQueueSeconds?: number;
 }
 
 export interface RuntimePolicySnapshot {

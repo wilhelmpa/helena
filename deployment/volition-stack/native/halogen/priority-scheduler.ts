@@ -4,10 +4,12 @@ export type PriorityClass = 'interactive' | 'realtime' | 'normal' | 'background'
 const classes: PriorityClass[] = ['interactive', 'realtime', 'normal', 'background'];
 const rank: Record<PriorityClass, number> = { interactive: 3, realtime: 2, normal: 1, background: 0 };
 
+type Admission = 'admitted' | 'busy' | 'backend_unavailable' | 'aborted';
+
 interface Waiting {
   kind: PriorityClass;
   since: number;
-  finish: (admitted: boolean) => void;
+  finish: (admitted: Admission) => void;
   timer?: ReturnType<typeof setTimeout>;
 }
 
@@ -50,7 +52,7 @@ export class PriorityScheduler {
         this.waiting.splice(this.waiting.indexOf(item), 1);
         if (item.timer) clearTimeout(item.timer);
         this.fallbacks[item.kind]++;
-        item.finish(false);
+        item.finish('backend_unavailable');
       }
     }
     this.drain();
@@ -126,22 +128,24 @@ export class PriorityScheduler {
       this.waiting.splice(this.waiting.indexOf(item), 1);
       if (item.timer) clearTimeout(item.timer);
       this.active[item.kind]++;
-      item.finish(true);
+      item.finish('admitted');
     }
   }
 
-  async acquire(kind: PriorityClass, signal?: AbortSignal): Promise<(() => void) | null> {
-    if (signal?.aborted) return null;
+  async acquireWithReason(kind: PriorityClass, signal?: AbortSignal): Promise<
+    { release: () => void; reason?: never } | { release: null; reason: Exclude<Admission, 'admitted'> }
+  > {
+    if (signal?.aborted) return { release: null, reason: 'aborted' };
     if (!this.healthy && (kind === 'interactive' || kind === 'realtime')) {
       this.fallbacks[kind]++;
-      return null;
+      return { release: null, reason: 'backend_unavailable' };
     }
-    let admitted: boolean;
+    let admitted: Admission;
     if ((this.waiting.length === 0 ||
       ((kind === 'interactive' || kind === 'realtime') &&
         !this.waiting.some((item) => rank[item.kind] >= rank[kind]))) && this.eligible(kind)) {
       this.active[kind]++;
-      admitted = true;
+      admitted = 'admitted';
     } else if (this.waiting.length >= this.config.maxQueue ||
       this.waiting.filter((item) => item.kind === kind).length >= ({
         interactive: this.config.maxQueuedInteractive,
@@ -150,14 +154,14 @@ export class PriorityScheduler {
         background: this.config.maxQueuedBackground,
       })[kind]) {
       this.fallbacks[kind]++;
-      return null;
+      return { release: null, reason: this.healthy ? 'busy' : 'backend_unavailable' };
     } else {
-      admitted = await new Promise<boolean>((resolve) => {
+      admitted = await new Promise<Admission>((resolve) => {
         const item: Waiting = { kind, since: this.now(), finish: resolve };
         const timeout = kind === 'realtime' ? this.config.realtimeQueueMs :
           kind === 'interactive' ? this.config.interactiveQueueMs :
           kind === 'normal' ? this.config.queueTimeoutMs : null;
-        const finish = (value: boolean) => {
+        const finish = (value: Admission) => {
           signal?.removeEventListener('abort', abort);
           resolve(value);
         };
@@ -166,7 +170,7 @@ export class PriorityScheduler {
           if (index >= 0) {
             this.waiting.splice(index, 1);
             if (item.timer) clearTimeout(item.timer);
-            finish(false);
+            finish('aborted');
             this.drain();
           }
         };
@@ -176,7 +180,7 @@ export class PriorityScheduler {
           if (index < 0) return;
           this.waiting.splice(index, 1);
           this.fallbacks[kind]++;
-          finish(false);
+          finish(this.healthy ? 'busy' : 'backend_unavailable');
           this.drain();
         }, timeout);
         signal?.addEventListener('abort', abort, { once: true });
@@ -184,13 +188,17 @@ export class PriorityScheduler {
         this.drain();
       });
     }
-    if (!admitted) return null;
+    if (admitted !== 'admitted') return { release: null, reason: admitted };
     let released = false;
-    return () => {
+    return { release: () => {
       if (released) return;
       released = true;
       this.active[kind]--;
       this.drain();
-    };
+    } };
+  }
+
+  async acquire(kind: PriorityClass, signal?: AbortSignal): Promise<(() => void) | null> {
+    return (await this.acquireWithReason(kind, signal)).release;
   }
 }

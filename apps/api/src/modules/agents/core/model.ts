@@ -137,6 +137,7 @@ export const runtimePolicy = t.Object({
           }),
         ),
         browserBudgetSeconds: t.Optional(t.Integer({ minimum: 30, maximum: 3600 })),
+        localModelQueueSeconds: t.Optional(t.Integer({ minimum: 0, maximum: 86_400 })),
       },
       { description: "Settings of Helena's own loop (runtime helena)." },
     ),
