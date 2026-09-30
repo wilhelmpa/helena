@@ -1,0 +1,1 @@
+ALTER TABLE "volition_profile_import" ADD COLUMN "audit" jsonb;

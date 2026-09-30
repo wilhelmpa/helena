@@ -14,7 +14,8 @@ import {
 import { looksSecret } from '@helena/facts';
 import { agentSessionSource, agentMemorySource, reindexItems } from '@helena/knowledge';
 import { HttpError } from '#shared/lib';
-import type { profileImportBody } from './model';
+import { Value } from '@sinclair/typebox/value';
+import { profileImportBody } from './model';
 import { learnedInventory, nativeSkills, validateNativeSkill } from './skills';
 import type { AgentRuntimeState } from '../core/service';
 import { maskForTeam } from '../credentials/env';
@@ -28,7 +29,13 @@ function sessionId(agentId: number, sourceId: string): string {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-5${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
 }
 
-export async function importProfile(agentId: number, teamId: number, input: Bundle) {
+export async function importProfile(
+  agentId: number,
+  teamId: number,
+  input: Bundle,
+  operator?: { actor: 'system'; name: string },
+) {
+  if (!Value.Check(profileImportBody, input)) throw new HttpError(400, 'Invalid profile bundle');
   const bundle = await maskForTeam(teamId, input);
   const { apply = false, ...data } = bundle;
   if (new Set(data.memory.map((memory) => memory.file)).size !== data.memory.length)
@@ -233,9 +240,13 @@ export async function importProfile(agentId: number, teamId: number, input: Bund
           },
         })
         .where(eq(aiAgent.id, agentId));
-      await tx
-        .insert(volitionProfileImport)
-        .values({ agentId, sourceKey: data.sourceKey, fingerprint: digest, sessions: mappings });
+      await tx.insert(volitionProfileImport).values({
+        agentId,
+        sourceKey: data.sourceKey,
+        fingerprint: digest,
+        sessions: mappings,
+        audit: operator,
+      });
     }
     return {
       applied: apply,

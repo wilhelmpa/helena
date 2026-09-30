@@ -252,7 +252,7 @@ databaseTest(
     try {
       const result = await cli(
         'scripts/volition-profile-import.ts',
-        [join(directory, 'mapping.json')],
+        [join(directory, 'mapping.json'), '--http'],
         {
           VOLITION_IMPORT_URL: server.url.toString(),
           VOLITION_IMPORT_API_KEY: 'volition-test-key',
@@ -279,7 +279,7 @@ test('profile import has a total deadline when the HTTP service never responds',
   try {
     const result = await cli(
       'scripts/volition-profile-import.ts',
-      [join(directory, 'mapping.json')],
+      [join(directory, 'mapping.json'), '--http'],
       {
         VOLITION_IMPORT_URL: server.url.toString(),
         VOLITION_IMPORT_API_KEY: 'volition-test-key',
@@ -297,6 +297,7 @@ test('profile import has a total deadline when the HTTP service never responds',
 test('profile import reports missing API configuration and HTTP refusal', async () => {
   const missing = await cli('scripts/volition-profile-import.ts', [
     join(directory, 'mapping.json'),
+    '--http',
   ]);
   expect(missing.code).toBe(1);
   expect(missing.stderr).toContain('VOLITION_IMPORT_URL and VOLITION_IMPORT_API_KEY');
@@ -308,7 +309,7 @@ test('profile import reports missing API configuration and HTTP refusal', async 
   try {
     const refused = await cli(
       'scripts/volition-profile-import.ts',
-      [join(directory, 'mapping.json')],
+      [join(directory, 'mapping.json'), '--http'],
       {
         VOLITION_IMPORT_URL: server.url.toString(),
         VOLITION_IMPORT_API_KEY: 'volition-test-key',

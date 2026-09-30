@@ -1,5 +1,6 @@
 import { Database } from 'bun:sqlite';
 import { lstat, readdir, readFile } from 'node:fs/promises';
+import { assertRealPath, privateFile, snapshotProfiles } from './volition-profile-snapshot';
 import { join, resolve } from 'node:path';
 import { runVolitionScript } from './volition-script-runtime';
 
@@ -23,7 +24,7 @@ type Session = {
   ended_at?: number;
   messages: Message[];
 };
-type Mapping = {
+export type Mapping = {
   sourceKey: string;
   profile: string;
   agentId: number;
@@ -31,7 +32,7 @@ type Mapping = {
   sessions?: Record<string, { runId?: number; threadId?: string }>;
 };
 
-async function safeFile(path: string, max = 65536): Promise<string> {
+export async function safeFile(path: string, max = 65536): Promise<string> {
   const stat = await lstat(path);
   if (!stat.isFile() || stat.isSymbolicLink() || stat.size > max)
     throw new Error(`Unsafe or oversized import file: ${path}`);
@@ -40,11 +41,15 @@ async function safeFile(path: string, max = 65536): Promise<string> {
   return content;
 }
 
+const excludedFile = (name: string) =>
+  /^(auth\.json|\.env(?:$|\.)|vault(?:$|[._-])|tokens?(?:$|[._-]))/i.test(name);
+
 async function filesBelow(root: string): Promise<{ path: string; content: string }[]> {
   const files: { path: string; content: string }[] = [];
   async function walk(relative: string) {
     const entries = await readdir(join(root, relative), { withFileTypes: true });
     for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+      if (excludedFile(entry.name)) continue;
       if (entry.isSymbolicLink()) throw new Error(`Symlink in skill: ${entry.name}`);
       const path = relative ? `${relative}/${entry.name}` : entry.name;
       if (entry.isDirectory()) await walk(path);
@@ -95,10 +100,9 @@ function messageOf(message: Message) {
   };
 }
 
-export async function readProfile(mapping: Mapping) {
+export async function readProfile(mapping: Mapping, withSessions = true) {
   const root = resolve(mapping.profile);
-  if ((await lstat(root)).isSymbolicLink())
-    throw new Error('Profile must be a real snapshot directory');
+  await assertRealPath(root);
   const memory: { file: 'MEMORY.md' | 'USER.md'; content: string }[] = [];
   for (const file of ['MEMORY.md', 'USER.md'] as const) {
     const memoryRoot = join(root, 'memories');
@@ -124,7 +128,8 @@ export async function readProfile(mapping: Mapping) {
       for (const entry of (await readdir(join(skillsRoot, relative), { withFileTypes: true })).sort(
         (a, b) => a.name.localeCompare(b.name),
       )) {
-        if (entry.name === 'plan-managed' || entry.name.startsWith('.')) continue;
+        if (entry.name === 'plan-managed' || entry.name.startsWith('.') || excludedFile(entry.name))
+          continue;
         if (entry.isSymbolicLink()) throw new Error(`Symlink in skills: ${entry.name}`);
         if (!entry.isDirectory()) continue;
         const path = relative ? `${relative}/${entry.name}` : entry.name;
@@ -149,7 +154,7 @@ export async function readProfile(mapping: Mapping) {
   }
   let sessions: Session[] = [];
   const state = join(root, 'state.db');
-  if (await Bun.file(state).exists()) {
+  if (withSessions && (await Bun.file(state).exists())) {
     if ((await lstat(state)).isSymbolicLink()) throw new Error('State must not be a symlink');
     if (await Bun.file(`${state}-wal`).exists())
       throw new Error('Provide a closed, checkpointed SQLite snapshot');
@@ -166,7 +171,7 @@ export async function readProfile(mapping: Mapping) {
     } finally {
       database.close();
     }
-  } else if (await Bun.file(join(root, 'sessions.json')).exists()) {
+  } else if (withSessions && (await Bun.file(join(root, 'sessions.json')).exists())) {
     sessions = JSON.parse(await safeFile(join(root, 'sessions.json'), 32 * 1024 * 1024));
   }
   return {
@@ -190,46 +195,147 @@ export async function readProfile(mapping: Mapping) {
   };
 }
 
+export function parseArguments(args: string[]) {
+  const usage =
+    'Usage: mapping.json [--local|--http] [--apply], or --plan mapping.json [--profiles-root path], or mapping.json --snapshot target [--agent id]';
+  const positional: string[] = [];
+  const options: Record<string, string | boolean> = {};
+  for (let index = 0; index < args.length; index++) {
+    const arg = args[index]!;
+    if (!arg.startsWith('--')) positional.push(arg);
+    else {
+      if (
+        ![
+          '--local',
+          '--http',
+          '--apply',
+          '--plan',
+          '--snapshot',
+          '--profiles-root',
+          '--agent',
+        ].includes(arg) ||
+        options[arg] !== undefined
+      )
+        throw new Error(usage);
+      if (['--snapshot', '--profiles-root', '--agent'].includes(arg)) {
+        const value = args[++index];
+        if (!value || value.startsWith('--')) throw new Error(`Missing value for ${arg}`);
+        options[arg] = value;
+      } else options[arg] = true;
+    }
+  }
+  if (
+    positional.length !== 1 ||
+    (options['--local'] && options['--http']) ||
+    (options['--plan'] && options['--snapshot']) ||
+    ((options['--plan'] || options['--snapshot']) && (options['--apply'] || options['--http'])) ||
+    (options['--profiles-root'] && !options['--plan']) ||
+    (options['--agent'] &&
+      (!options['--snapshot'] || !/^[1-9][0-9]*$/.test(String(options['--agent']))))
+  )
+    throw new Error(usage);
+  return { path: resolve(positional[0]!), options };
+}
+
 if (import.meta.main) {
   await runVolitionScript(
     'volition-profile-import',
     process.argv.includes('--apply'),
-    async ({ progress }) => {
-      const args = process.argv.slice(2);
-      const manifestPath = args.find((arg) => !arg.startsWith('--'));
+    async ({ progress, onClose }) => {
+      const { path, options } = parseArguments(process.argv.slice(2));
+      if (options['--plan']) {
+        progress('Reading agent/team and session links from database.');
+        const { closeDatabase } = await import('../packages/db/src');
+        onClose(closeDatabase);
+        const { planProfiles } = await import('../apps/api/src/scripts/volition-profile-plan');
+        const profilesRoot = String(
+          options['--profiles-root'] ?? '/var/lib/volition/hermes/profiles',
+        );
+        await assertRealPath(profilesRoot);
+        const manifest = await planProfiles(profilesRoot);
+        await privateFile(path, JSON.stringify(manifest, null, 2) + '\n');
+        progress(`Wrote private mapping for ${manifest.length} profiles: ${path}`);
+        return;
+      }
+      progress('Reading mapping manifest.');
+      const manifest: unknown = JSON.parse(await safeFile(path, 32 * 1024 * 1024));
       if (
-        !manifestPath ||
-        args.filter((arg) => !arg.startsWith('--')).length !== 1 ||
-        args.some((arg) => arg.startsWith('--') && arg !== '--apply')
+        !Array.isArray(manifest) ||
+        !manifest.every(
+          (row) =>
+            row &&
+            typeof row.sourceKey === 'string' &&
+            typeof row.profile === 'string' &&
+            Number.isSafeInteger(row.agentId) &&
+            row.agentId > 0 &&
+            Number.isSafeInteger(row.teamId) &&
+            row.teamId > 0 &&
+            (row.sessions === undefined ||
+              (row.sessions && typeof row.sessions === 'object' && !Array.isArray(row.sessions))),
+        )
       )
-        throw new Error('Usage: bun scripts/volition-profile-import.ts mapping.json [--apply]');
+        throw new Error('Invalid mapping manifest');
+      const mappings: Mapping[] = manifest.map(
+        ({ sourceKey, profile, agentId, teamId, sessions }) => ({
+          sourceKey,
+          profile,
+          agentId,
+          teamId,
+          sessions,
+        }),
+      );
+      if (options['--snapshot']) {
+        const selected = options['--agent']
+          ? mappings.filter((row) => row.agentId === Number(options['--agent']))
+          : mappings;
+        if (!selected.length) throw new Error('No profiles selected for snapshot');
+        await snapshotProfiles(selected, String(options['--snapshot']), progress, onClose);
+        return;
+      }
+      let localImport:
+        | typeof import('../apps/api/src/modules/agents/native-runtime/import').importProfile
+        | undefined;
       const url = process.env.VOLITION_IMPORT_URL;
       const key = process.env.VOLITION_IMPORT_API_KEY;
-      if (!url || !key)
-        throw new Error(
-          'Set VOLITION_IMPORT_URL and VOLITION_IMPORT_API_KEY for an authorized team manager',
-        );
-      progress('Reading mapping manifest.');
-      const manifest = JSON.parse(await safeFile(resolve(manifestPath))) as Mapping[];
-      for (const mapping of manifest) {
+      if (options['--http']) {
+        if (!url || !key)
+          throw new Error(
+            'Set VOLITION_IMPORT_URL and VOLITION_IMPORT_API_KEY for an authorized team manager',
+          );
+      } else {
+        progress('Loading local import service as system operator.');
+        const { closeDatabase } = await import('../packages/db/src');
+        onClose(closeDatabase);
+        localImport = (await import('../apps/api/src/modules/agents/native-runtime/import'))
+          .importProfile;
+      }
+      for (const mapping of mappings) {
         progress(`Reading profile for agent ${mapping.agentId}.`);
-        const bundle = await readProfile(mapping);
-        progress(
-          `Calling profile-import API for agent ${mapping.agentId} (${args.includes('--apply') ? 'apply' : 'dry-run'}).`,
-        );
-        const response = await fetch(
-          `${url.replace(/\/+$/, '')}/teams/${mapping.teamId}/ai-agents/${mapping.agentId}/profile-import`,
-          {
-            method: 'POST',
-            redirect: 'error',
-            headers: { 'content-type': 'application/json', 'x-api-key': key },
-            body: JSON.stringify({ ...bundle, apply: args.includes('--apply') }),
-            signal: AbortSignal.timeout(120000),
-          },
-        );
-        if (!response.ok)
-          throw new Error(`Import refused for agent ${mapping.agentId}: HTTP ${response.status}`);
-        console.log(JSON.stringify({ agentId: mapping.agentId, result: await response.json() }));
+        const bundle = { ...(await readProfile(mapping)), apply: options['--apply'] === true };
+        let result: unknown;
+        if (localImport) {
+          progress(`Calling local profile-import service for agent ${mapping.agentId}.`);
+          result = await localImport(mapping.agentId, mapping.teamId, bundle, {
+            actor: 'system',
+            name: 'Wartungsskript (Owner-Auftrag)',
+          });
+        } else {
+          progress(`Calling profile-import API for agent ${mapping.agentId}.`);
+          const response = await fetch(
+            `${url!.replace(/\/+$/, '')}/teams/${mapping.teamId}/ai-agents/${mapping.agentId}/profile-import`,
+            {
+              method: 'POST',
+              redirect: 'error',
+              headers: { 'content-type': 'application/json', 'x-api-key': key! },
+              body: JSON.stringify(bundle),
+              signal: AbortSignal.timeout(120000),
+            },
+          );
+          if (!response.ok)
+            throw new Error(`Import refused for agent ${mapping.agentId}: HTTP ${response.status}`);
+          result = await response.json();
+        }
+        console.log(JSON.stringify({ agentId: mapping.agentId, result }));
       }
     },
   );
