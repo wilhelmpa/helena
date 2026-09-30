@@ -190,6 +190,10 @@ function measure() {
 
 // Runs in the page: where the header, the toolbar row and the first content start (O92, O104).
 function measureEdges() {
+  // A shadow of only transparent layers (a hover outline kept for later) is no box.
+  const shadowShows = (value) =>
+    value !== 'none' &&
+    value.split(/,(?![^(]*\))/).some((layer) => !/rgba\(0, 0, 0, 0\)/.test(layer));
   const main = document.querySelector('.ds-main');
   const header = document.querySelector('.ds-page-header');
   if (!main || !header) return { none: true };
@@ -227,12 +231,22 @@ function measureEdges() {
       style.backgroundColor !== 'rgba(0, 0, 0, 0)' ||
       parseFloat(style.borderTopWidth) > 0 ||
       parseFloat(style.borderLeftWidth) > 0 ||
-      style.boxShadow !== 'none';
+      shadowShows(style.boxShadow);
     const text = [...element.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
     if (!boxed && !text && element.tagName !== 'svg' && element.tagName !== 'IMG') continue;
-    items.push({ left: box.left, top: box.top });
+    const cls =
+      typeof element.className === 'string'
+        ? element.className.split(/\s+/).filter(Boolean).slice(0, 2).join('.')
+        : '';
+    items.push({
+      left: box.left,
+      top: box.top,
+      boxed,
+      at: `${element.tagName.toLowerCase()}${cls ? `.${cls}` : ''}`,
+    });
   }
   const content = items.length ? Math.min(...items.map((item) => item.left)) : null;
+  const leftmost = items.find((item) => item.left === content)?.at ?? null;
   const contentTop = items.length ? Math.min(...items.map((item) => item.top)) : null;
   const rootStyle = getComputedStyle(document.documentElement);
   const px = (name, fallback) => parseFloat(rootStyle.getPropertyValue(name)) || fallback;
@@ -242,6 +256,7 @@ function measureEdges() {
     crumb: round(first.getBoundingClientRect().left - mainBox.left),
     bar: barFirst ? round(barFirst.getBoundingClientRect().left - mainBox.left) : null,
     content: content == null ? null : round(content - mainBox.left),
+    contentAt: leftmost,
     gap: contentTop == null ? null : round(contentTop - top),
     headerHeight: phone ? null : round(headerBox.height),
     pad: {

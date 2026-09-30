@@ -3,6 +3,7 @@
 // (src/app/uiAudit.test.ts). A deviation of more than one pixel is a finding.
 
 export const TOLERANCE = 1;
+export const GAP_TOLERANCE = 8;
 const differs = (a, b) => Math.abs(a - b) > TOLERANCE;
 
 // Pages whose content deliberately does not start at the padded edge: a split page (list and
@@ -29,8 +30,12 @@ export function edgeFindings(results) {
       out.push(`${tag}: Werkzeugzeile beginnt bei ${e.bar} px, Kopfzeile bei ${e.crumb} px`);
     if (EDGE_EXEMPT.has(e.variant) || e.content == null) continue;
     if (differs(e.content, e.crumb))
-      out.push(`${tag}: Inhalt beginnt bei ${e.content} px, Kopfzeile bei ${e.crumb} px`);
-    if (e.gap != null && differs(e.gap, e.pad.top))
+      out.push(
+        `${tag}: Inhalt beginnt bei ${e.content} px, Kopfzeile bei ${e.crumb} px${e.contentAt ? ` (${e.contentAt})` : ''}`,
+      );
+    // A line of text or a small symbol sits a few pixels inside its box: the gap has a wider
+    // tolerance than the edges (a page that starts 7px low is still found).
+    if (e.gap != null && Math.abs(e.gap - e.pad.top) > GAP_TOLERANCE)
       out.push(`${tag}: Abstand Kopfzeile zum Inhalt ${e.gap} px statt ${e.pad.top} px`);
   }
   return out;

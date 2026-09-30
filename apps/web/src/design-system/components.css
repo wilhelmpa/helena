@@ -374,6 +374,16 @@
 .ds-status-dot[data-tone='error'] {
   background: var(--danger);
 }
+.ds-status-dot[data-tone='unread'] {
+  background: var(--accent);
+}
+.ds-status-dot[data-tone='quiet'] {
+  background: var(--text-3);
+  opacity: 0.6;
+}
+.ds-status-dot[data-bare] {
+  margin-inline-start: 0;
+}
 @keyframes ds-pulse {
   50% {
     opacity: 0.45;
@@ -1157,7 +1167,6 @@
 .ds-issue-list {
   height: 100%;
   overflow-y: auto;
-  padding: 16px var(--page-pad-x) var(--page-pad-bottom);
 }
 .ds-issue-list-group + .ds-issue-list-group {
   margin-top: 12px;
@@ -2129,21 +2138,20 @@ a.ds-run-card:hover {
   }
 }
 
-/* Aufgaben → Tabelle: a card in the page gutter. */
+/* Aufgaben → Tabelle: a card on the page's own padding (the page template pads, the view adds
+   no gutter of its own - owner 30.09., O107). */
 .ds-work-table {
   height: 100%;
   overflow: auto;
-  padding: var(--space-4) var(--page-pad-x);
 }
 .ds-work-table-card {
   overflow: clip;
-  border: 1px solid var(--line);
   border-radius: var(--radius-card);
   background: var(--surface-1);
+  box-shadow: var(--shadow-card);
 }
 .ds-work-calendar {
   gap: var(--space-4);
-  padding: var(--space-4) var(--page-pad-x);
 }
 
 /* A department's budgets in its settings card. */
@@ -2227,7 +2235,7 @@ a.ds-run-card:hover {
 
 /* Ziele (features/initiatives): the goals of a project as one framed list. */
 .ds-goal-list-pad {
-  padding: 0 var(--page-pad-x) var(--page-pad-bottom);
+  min-width: 0;
 }
 .ds-goal-list {
   overflow: hidden;
@@ -2683,6 +2691,8 @@ a.ds-run-card:hover {
    and the toolbar (owner, 30.09., O91). */
 .ds-board {
   margin-inline: calc(var(--space-3) * -1);
+  /* The same at the top: the heading of the columns starts the page's padding below the bar. */
+  margin-top: calc(var(--space-3) * -1);
 }
 /* Wide enough for a title on one or two lines (owner, 28.09.: narrow cards, titles
    breaking). On a phone a column is 82% of the screen, so the next one shows at the edge

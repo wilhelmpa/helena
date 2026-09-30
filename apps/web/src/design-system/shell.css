@@ -607,11 +607,15 @@
   color: var(--text-3);
   font-size: 13px;
 }
-.ds-page-crumbs[data-collapsed='true'] > .ds-page-crumb[data-crumb='middle'] {
+.ds-page-crumbs[data-level='1'] > .ds-page-crumb[data-crumb='middle'] {
   display: none;
 }
-.ds-page-crumbs[data-collapsed='true'] > .ds-page-crumb-gap {
+.ds-page-crumbs[data-level='1'] > .ds-page-crumb-gap {
   display: inline-flex;
+}
+/* Still cut: the page's name alone. */
+.ds-page-crumbs[data-level='2'] > .ds-page-crumb {
+  display: none;
 }
 .ds-page-title {
   min-width: 0;

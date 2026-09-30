@@ -40,7 +40,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import InboxItemActions from './InboxItemActions';
 import InboxSnoozeCalendar from './InboxSnoozeCalendar';
-import { Inline, Text } from '@/design-system';
+import { Inline, StatusDot, Text } from '@/design-system';
 
 const TYPE_ICON: Record<NotificationType, LucideIcon> = {
   assigned: UserRound,
@@ -155,7 +155,7 @@ export default function InboxListItem({
             <Text as="span" size="xs" tone="muted" className="group-hover:hidden">
               {formatDurationShort(n.createdAt)}
             </Text>
-            {unread && <span className="size-2 rounded-full bg-primary group-hover:hidden" />}
+            {unread && <StatusDot tone="unread" bare className="group-hover:hidden" />}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button

@@ -41,29 +41,35 @@ export function PageHeader({
   titleRef?: Ref<HTMLDivElement>;
 }) {
   const heading = useRef<HTMLElement | null>(null);
-  const [collapsed, setCollapsed] = useState(false);
-  // The middle parts give way first when the breadcrumb does not fit: "VOL > ... > Page".
+  // How far the breadcrumb has given way: 0 whole, 1 the middle parts are one "...", 2 the
+  // page's name alone. It steps down while the name is cut or the row is longer than its room,
+  // and starts over when the room grows.
+  const [level, setLevel] = useState(0);
+  const lastWidth = useRef(0);
   useLayoutEffect(() => {
     const node = heading.current;
     if (!node) return;
-    let widest = 0;
-    const title = node.querySelector<HTMLElement>('.ds-page-title');
-    const fit = () => {
-      // The page's own name is cut, or the row is longer than its room.
-      const overflowing =
-        node.scrollWidth > node.clientWidth + 1 ||
-        (title != null && title.scrollWidth > title.clientWidth + 1);
-      if (overflowing) {
-        setCollapsed(true);
-        widest = node.clientWidth;
-      } else if (node.clientWidth > widest + 24) setCollapsed(false);
+    const measure = () => {
+      const width = node.clientWidth;
+      if (width > lastWidth.current + 24) setLevel(0);
+      lastWidth.current = width;
     };
-    fit();
+    measure();
     if (typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(fit);
+    const observer = new ResizeObserver(measure);
     observer.observe(node);
     return () => observer.disconnect();
   }, [crumbs.length]);
+  useLayoutEffect(() => {
+    const node = heading.current;
+    if (!node || level >= 2) return;
+    const title = node.querySelector<HTMLElement>('.ds-page-title');
+    // The page's own name is cut, or the row is longer than its room.
+    const overflowing =
+      node.scrollWidth > node.clientWidth + 1 ||
+      (title != null && title.scrollWidth > title.clientWidth + 1);
+    if (overflowing && crumbs.length > 0) setLevel(level === 0 && crumbs.length > 1 ? 1 : 2);
+  }, [level, crumbs, title]);
   const foldable = crumbs.length > 1;
   return (
     <header className="ds-page-header" data-app-header="">
@@ -73,7 +79,7 @@ export function PageHeader({
           className="ds-page-crumbs"
           aria-label={typeof title === 'string' ? title : undefined}
           ref={heading}
-          data-collapsed={collapsed && foldable ? 'true' : undefined}
+          data-level={level > 0 ? level : undefined}
         >
           {crumbs.map((crumb, index) => (
             <Fragment key={`${index}:${crumb.label}`}>

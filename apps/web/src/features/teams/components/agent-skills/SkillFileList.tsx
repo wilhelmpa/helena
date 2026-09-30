@@ -1,5 +1,6 @@
 import { FileText, Trash2, Upload } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { StatusDot } from '@/design-system';
 import { useTranslations } from 'next-intl';
 
 // One entry in the skill's file explorer. SKILL.md is pinned and cannot be
@@ -55,12 +56,7 @@ export function SkillFileList({
                   className={cn('size-3.5 shrink-0', active ? '' : 'text-muted-foreground')}
                 />
                 <span className="truncate text-xs">{f.label}</span>
-                {dirtyPaths.has(f.path) && (
-                  <span
-                    className="size-1.5 shrink-0 rounded-full bg-primary"
-                    aria-label={t('unsaved')}
-                  />
-                )}
+                {dirtyPaths.has(f.path) && <StatusDot tone="unread" bare label={t('unsaved')} />}
               </button>
               {f.size != null && (
                 <span className="text-xs text-muted-foreground tabular-nums">
