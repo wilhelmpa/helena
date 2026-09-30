@@ -39,7 +39,7 @@ test('browser and full profiles defer unrelated schemas while keeping discovery'
   ].map((name): AgentTool => ({
     name,
     description: name,
-    kind: 'browser',
+    kind: name.startsWith('browser_') ? 'browser' : 'normal',
     readOnly: true,
     inputSchema: { type: 'object', properties: {} },
     execute: async () => ({ text: 'ok' }),
@@ -48,6 +48,7 @@ test('browser and full profiles defer unrelated schemas while keeping discovery'
     expect([...directTools(profile, all)]).toEqual([
       'browser_navigate',
       'browser_snapshot',
+      'browser_click',
       'find_tools',
     ]);
   }
