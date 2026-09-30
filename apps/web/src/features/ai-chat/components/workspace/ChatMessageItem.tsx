@@ -11,6 +11,8 @@ import type { PlanUIMessage } from '../../utils/chatMessages';
 import ChatMessageBubbleUser from './ChatMessageBubbleUser';
 import ChatMessageBubbleAssistant from './ChatMessageBubbleAssistant';
 import ChatBranchNav from './ChatBranchNav';
+import FollowupNotes from '@/components/helena/FollowupNotes';
+import type { Followup } from '@/lib/api/endpoints/agentFollowups';
 import ChatMessageActions from './ChatMessageActions';
 import ChatMessageMeta, { ChatMessageTime } from './ChatMessageMeta';
 
@@ -28,6 +30,8 @@ export interface ChatMessageItemProps {
   onEdit: (messageId: string, text: string) => void;
   onShowArtifact: (artifact: Artifact) => void;
   onSwitchVersion: (messageId: string) => void;
+  // The instructions given while this answer ran (see ChatFollowupNotes).
+  followups?: Followup[];
 }
 
 // One turn of the transcript, claude.ai-style: the member's words in a quiet bubble on
@@ -46,6 +50,7 @@ function ChatMessageItem({
   onEdit,
   onShowArtifact,
   onSwitchVersion,
+  followups,
 }: ChatMessageItemProps) {
   const isUser = message.role === 'user';
   const streaming = isLast && !isUser && (status === 'streaming' || status === 'submitted');
@@ -81,6 +86,7 @@ function ChatMessageItem({
             </BubbleContent>
           )}
         </Bubble>
+        {!isUser && followups && followups.length > 0 && <FollowupNotes items={followups} />}
         {!editing && !streaming && (
           <MessageFooter className="h-7 gap-1">
             {isUser ? null : <ChatMessageTime message={message} />}

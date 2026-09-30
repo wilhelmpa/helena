@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import {
   getFollowups,
@@ -21,6 +21,8 @@ export function useAgentFollowups(target: FollowupTarget | null) {
     queryKey: key,
     queryFn: () => getFollowups(target!),
     enabled: target !== null,
+    // The modes are the agent's: kept while the next answer's list is read.
+    placeholderData: keepPreviousData,
   });
   const accept = useCallback(
     (item: Followup) => {
@@ -55,7 +57,8 @@ export function useAgentFollowups(target: FollowupTarget | null) {
   return {
     ...query,
     modes: query.data?.modes ?? [],
-    items: query.data?.items ?? [],
+    // What the previous answer's list showed while this one's is being read is not this one's.
+    items: query.isPlaceholderData ? [] : (query.data?.items ?? []),
     send: mutation.mutateAsync,
     sending: mutation.isPending,
     onEvent,

@@ -134,7 +134,8 @@
     "queuedList": "En attente d’envoi",
     "localModel": "{name} (local)",
     "fallbackModel": "Repli : {name}",
-    "busyElsewhere": "{agent} travaille sur autre chose en ce moment – la réponse peut prendre un peu de temps."
+    "busyElsewhere": "{agent} travaille sur autre chose en ce moment – la réponse peut prendre un peu de temps.",
+    "sendAs": "Envoyer : {mode}"
   },
   "artifact": {
     "title": "Artefact",
@@ -304,5 +305,25 @@
     "collapse": "Replier le chat",
     "openTab": "Ouvrir en onglet",
     "empty": "Demande à {agent} …"
+  },
+  "followups": {
+    "failed": "L’instruction n’a pas pu être envoyée.",
+    "modeLabel": "Comment envoyer",
+    "mode": {
+      "inject": "Intercaler",
+      "after": "Ensuite",
+      "replace": "Arrêter et remplacer"
+    },
+    "hint": {
+      "inject": "L’agent le lit à la prochaine étape et continue",
+      "after": "Posée comme question suivante une fois la réponse terminée",
+      "replace": "Annule l’étape en cours et fait ceci à la place"
+    },
+    "state": {
+      "pending": "en attente",
+      "applied": "prise en compte",
+      "queued": "planifiée"
+    },
+    "listLabel": "Instructions à la réponse en cours"
   }
 }

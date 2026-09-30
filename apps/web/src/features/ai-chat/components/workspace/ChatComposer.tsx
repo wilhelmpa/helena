@@ -34,11 +34,14 @@ import { useComposerCommands } from '../../hooks/useComposerCommands';
 import { fillPrompt, promptVariables } from '../../utils/promptVariables';
 import { CHAT_PROMPT_LIMIT, type PlanChatMetadata } from '../../utils/chatMessages';
 import { composerKeyAction } from '../../utils/composerKeys';
+import { defaultFollowupMode } from '../../utils/followups';
+import type { FollowupMode } from '@/lib/api/endpoints/agentFollowups';
 import type { PlanSendOptions } from '../../services/planChatTransport';
 import type { ChatAgentState } from '../../utils/agentPresence';
 import type { ComposerActivity, PendingChoices } from '../../utils/composerActivity';
 import ChatAutoSpeakToggle from './ChatAutoSpeakToggle';
 import ChatVoiceNotice from './ChatVoiceNotice';
+import FollowupModePicker from '@/components/helena/FollowupModePicker';
 import ChatComposerQueue, { type QueuedMessage } from './ChatComposerQueue';
 import { ChatPendingAttachment } from './ChatAttachmentChip';
 import ChatSlashMenu from './ChatSlashMenu';
@@ -73,6 +76,13 @@ export interface ChatComposerProps {
   queuePaused: boolean;
   onQueue: (text: string, options: PlanSendOptions, metadata: PlanChatMetadata) => void;
   onRemoveQueued: (id: string) => void;
+  // Steering the running answer (see useChatFollowups): while the agent works, what is
+  // typed goes in as an instruction in the chosen mode instead of waiting in the queue.
+  // Absent where the running answer cannot be steered yet (its number is not known).
+  steer?: {
+    modes: FollowupMode[];
+    send: (mode: FollowupMode, text: string) => Promise<boolean>;
+  };
   // The answers the agent offered for its last question (Hermes' clarify), if any.
   choices: PendingChoices | null;
   // The conversation's context size after its last answer (see AgentContextSize);
@@ -134,6 +144,7 @@ export default function ChatComposer({
   queuePaused,
   onQueue,
   onRemoveQueued,
+  steer,
   choices,
   contextTokens,
   readAll,
@@ -197,6 +208,12 @@ export default function ChatComposer({
   const checkConcurrency = useConcurrentChatCheck(agent.id, threadId);
   const dictation = useDictation();
   const talking = conversation.phase !== 'off';
+  // How the next instruction goes in while the agent works: the member's choice, or the
+  // first mode the runtime supports.
+  const [chosenMode, setChosenMode] = useState<FollowupMode | null>(null);
+  const steerModes = steer?.modes ?? [];
+  const mode: FollowupMode | null =
+    chosenMode && steerModes.includes(chosenMode) ? chosenMode : defaultFollowupMode(steerModes);
   // Dictation and the conversation share the microphone: one at a time.
   const [dictating, setDictating] = useState(false);
 
@@ -272,6 +289,16 @@ export default function ChatComposer({
             },
       ),
     };
+    // While the agent works, what is typed steers it: taken over at its next step,
+    // after the answer, or in place of the step that runs (attachments cannot ride along,
+    // they wait their turn below).
+    if (busy && steer && queue.length === 0 && attachments.length === 0 && mode) {
+      if (await steer.send(mode, text)) {
+        setValue('');
+        requestAnimationFrame(() => textareaRef.current?.focus());
+      }
+      return;
+    }
     // While an answer is still coming (or others wait before it), the message waits its
     // turn instead of being refused or lost.
     if (busy || queue.length > 0) {
@@ -573,9 +600,18 @@ export default function ChatComposer({
                   <Square className="size-3 fill-current" />
                 </PromptInputButton>
               )}
+              {busy && steer && mode && (
+                <FollowupModePicker modes={steerModes} mode={mode} onChange={setChosenMode} />
+              )}
               {value.trim() ? (
                 <PromptInputSubmit
-                  label={busy ? t('composer.queue') : t('composer.send')}
+                  label={
+                    busy
+                      ? steer && mode
+                        ? t('composer.sendAs', { mode: t(`followups.mode.${mode}`) })
+                        : t('composer.queue')
+                      : t('composer.send')
+                  }
                   disabled={upload.isPending}
                 />
               ) : ((homeLanding || conversation.ready) && !dictating) || talking ? (

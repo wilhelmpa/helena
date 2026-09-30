@@ -96,9 +96,7 @@ export function ToolHeader({
         {name}
       </span>
       {/* A command that ended with a code says so in the row: a result, not a failure. */}
-      {neutral && (
-        <span className="ms-auto shrink-0 ps-2 text-xs text-muted-foreground">{stateLabel}</span>
-      )}
+      {neutral && <span className="shrink-0 ps-1 text-xs text-muted-foreground">{stateLabel}</span>}
     </CollapsibleTrigger>
   );
 }

@@ -134,7 +134,8 @@
     "queuedList": "Wartet auf das Senden",
     "localModel": "{name} (lokal)",
     "fallbackModel": "Rückfall: {name}",
-    "busyElsewhere": "{agent} arbeitet gerade an anderer Stelle – eine Antwort kann etwas dauern."
+    "busyElsewhere": "{agent} arbeitet gerade an anderer Stelle – eine Antwort kann etwas dauern.",
+    "sendAs": "Senden als {mode}"
   },
   "artifact": {
     "title": "Artefakt",
@@ -304,5 +305,25 @@
     "collapse": "Chat zuklappen",
     "openTab": "Als Tab öffnen",
     "empty": "Frag {agent} …"
+  },
+  "followups": {
+    "failed": "Die Anweisung konnte nicht gesendet werden.",
+    "modeLabel": "Wie senden",
+    "mode": {
+      "inject": "Einschieben",
+      "after": "Danach",
+      "replace": "Stoppen und ersetzen"
+    },
+    "hint": {
+      "inject": "Der Agent liest es beim nächsten Schritt und arbeitet weiter",
+      "after": "Wird nach der laufenden Antwort als nächste Frage gestellt",
+      "replace": "Bricht den laufenden Schritt ab und führt stattdessen das hier aus"
+    },
+    "state": {
+      "pending": "wartet",
+      "applied": "übernommen",
+      "queued": "eingeplant"
+    },
+    "listLabel": "Anweisungen an die laufende Antwort"
   }
 }

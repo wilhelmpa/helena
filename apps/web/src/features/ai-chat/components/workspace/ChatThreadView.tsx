@@ -11,6 +11,8 @@ import { toast } from 'sonner';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import { ApiError } from '@/lib/api/core/client';
 import { usePlanChat } from '../../hooks/usePlanChat';
+import { useChatFollowups } from '../../hooks/useChatFollowups';
+import type { AgUiEvent } from '@/lib/api/endpoints/agentChat';
 import { useChatSummary } from '../../hooks/useChatSummary';
 import type { PlanSendOptions } from '../../services/planChatTransport';
 import type { PlanChatMetadata } from '../../utils/chatMessages';
@@ -97,11 +99,15 @@ export default function ChatThreadView({
   const t = useTranslations('chatWorkspace');
   const appName = useDisplayName();
   const motionEnabled = useAccountPreferences().homeDashboard.chatAnimation !== false;
+  // The events of the answer that say an instruction was taken over reach the follow-up
+  // state below, which needs the chat this creates.
+  const eventSink = useRef<(event: AgUiEvent) => void>(undefined);
   const plan = usePlanChat({
     scopeKey,
     agent,
     threadId,
     onThreadCreated,
+    onEvent: (event) => eventSink.current?.(event),
     pageContext,
     // The composer checks the agent's chat limit before sending; this catches the race
     // where two sends (two tabs) both passed it, so the one that lost is explained.
@@ -113,6 +119,17 @@ export default function ChatThreadView({
       }
     },
   });
+  const followups = useChatFollowups({
+    scopeKey,
+    agentId: agent.id,
+    messages: plan.messages,
+    busy: plan.busy,
+    followAnswer: plan.followAnswer,
+  });
+  const onFollowupEvent = followups.onEvent;
+  useEffect(() => {
+    eventSink.current = onFollowupEvent;
+  }, [onFollowupEvent]);
   const [model, setModel] = useState<{
     model: string | null;
     thinkingLevel: string | null;
@@ -351,6 +368,7 @@ export default function ChatThreadView({
               editingId={editingId}
               onEditingChange={setEditingId}
               onShowArtifact={onArtifact}
+              followups={followups.notes}
               showOrb={showAnswerOrb}
             />
           )}
@@ -394,6 +412,7 @@ export default function ChatThreadView({
           activity={activity}
           queue={queue}
           queuePaused={queuePaused}
+          steer={followups.canSteer ? { modes: followups.modes, send: followups.send } : undefined}
           onQueue={(text, options, metadata) => {
             setQueuePaused(false);
             setQueue((current) => [...current, { id: uuid(), text, options, metadata }]);

@@ -134,7 +134,8 @@
     "queuedList": "Waiting to send",
     "localModel": "{name} (local)",
     "fallbackModel": "Fallback: {name}",
-    "busyElsewhere": "{agent} is working on something else right now – an answer may take a while."
+    "busyElsewhere": "{agent} is working on something else right now – an answer may take a while.",
+    "sendAs": "Send as {mode}"
   },
   "artifact": {
     "title": "Artifact",
@@ -304,5 +305,25 @@
     "collapse": "Close the chat",
     "openTab": "Open as tab",
     "empty": "Ask {agent} …"
+  },
+  "followups": {
+    "failed": "The instruction could not be sent.",
+    "modeLabel": "How to send",
+    "mode": {
+      "inject": "Inject",
+      "after": "After",
+      "replace": "Stop and replace"
+    },
+    "hint": {
+      "inject": "The agent reads it at its next step and keeps working",
+      "after": "Asked as the next question once the current answer is done",
+      "replace": "Cancels the running step and does this instead"
+    },
+    "state": {
+      "pending": "waiting",
+      "applied": "taken over",
+      "queued": "scheduled"
+    },
+    "listLabel": "Instructions to the running answer"
   }
 }
