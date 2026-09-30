@@ -259,6 +259,15 @@
 .ds-tree-search > * {
   width: 100%;
 }
+/* A long list inside a tree section: a bounded box that scrolls by itself, so the sidebar's
+   navigation below it stays in view whatever the number of rows (owner, O94). */
+.ds-tree-scroll {
+  max-height: clamp(7rem, 26vh, 18rem);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
 .ds-tree-skeleton {
   height: 24px;
   margin: var(--space-1) 12px var(--space-1) 28px;

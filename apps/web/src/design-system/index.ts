@@ -12,6 +12,7 @@ export {
   TreeAction,
   TreeNote,
   TreeSearch,
+  TreeScroll,
   useTreeLevel,
 } from './components/Tree';
 export type { TreeItemProps } from './components/Tree';
