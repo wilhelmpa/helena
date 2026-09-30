@@ -92,7 +92,22 @@ it('lists marked September 30 objects without writes and applies only that selec
   expect(plan.files).toEqual(['Projects/VOL/Inbox/battle-test-result.md']);
   expect((await api.issues({ issueId: test.id }).get()).status).toBe(200);
   expect(await readFile(testFile, 'utf8')).toContain('[Battle-Test]');
-  await cleanupBattleTests({ apply: true, log: (line) => logs.push(line) });
+  const child = Bun.spawn(
+    [process.execPath, new URL('../cleanup-battle-tests.ts', import.meta.url).pathname, '--apply'],
+    { env: process.env, stdout: 'pipe', stderr: 'pipe' },
+  );
+  const output = new Response(child.stdout).text();
+  const errors = new Response(child.stderr).text();
+  const timer = setTimeout(() => child.kill(), 5_000);
+  try {
+    const exit = await child.exited;
+    expect(JSON.parse(await output).mode).toBe('apply');
+    expect(await errors).toBe('');
+    expect(exit).toBe(0);
+  } finally {
+    clearTimeout(timer);
+    child.kill();
+  }
   expect((await api.issues({ issueId: test.id }).get()).status).toBe(404);
   expect((await api.issues({ issueId: real.id }).get()).status).toBe(200);
   expect((await api.issues({ issueId: older.id }).get()).status).toBe(200);
@@ -110,4 +125,4 @@ it('lists marked September 30 objects without writes and applies only that selec
 
   expect((await cleanupBattleTests({ log: () => {} })).tasks).toHaveLength(0);
   expect(logs.every((line) => JSON.parse(line).mode)).toBe(true);
-});
+}, 20_000);
