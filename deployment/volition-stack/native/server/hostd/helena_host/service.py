@@ -10,7 +10,7 @@ import threading
 from dataclasses import dataclass
 from typing import Callable
 
-from . import audit, backup, events, guard, owner_sudo, power, storage, system, privileged, model_server
+from . import audit, backup, events, guard, owner_sudo, power, storage, system, privileged, model_server, development
 from .common import VERSION, Host, HostError, iso
 from .config import GUARD_LIMIT_RANGE, Config, load_settings, save_settings
 from .varlink import VarlinkError
@@ -23,8 +23,12 @@ DESCRIPTION = """# Helena's host helper: the disks and the RAID, backups, power 
 interface io.helena.hostd
 
 method PrivilegedResult(id: string) -> (result: object)
+method DevelopmentEnqueue(name: string, body: object, model: string, effort: string, actor: ?string) -> (result: object)
+method DevelopmentStatus() -> (result: object)
+method DevelopmentReport(number: int) -> (result: object)
+method DevelopmentRelease() -> (result: object)
 method RootSettings() -> (result: object)
-method SetRootSettings(enabled: bool, directOnly: bool, actor: ?string) -> (result: object)
+method SetRootSettings(enabled: bool, directOnly: bool, unrestricted: ?bool, actor: ?string) -> (result: object)
 method RunPrivileged(id: string, command: string, seconds: int, epoch: int, actor: ?string) -> (result: object)
 method Capabilities() -> (result: object)
 method SystemStatus() -> (result: object)
@@ -222,8 +226,12 @@ def _locked(lock: threading.Lock, fn: Callable[[Context, dict], dict]) -> Callab
 
 METHODS: dict[str, Method] = {
     'PrivilegedResult': Method(privileged.result, _p(id='string')),
+    'DevelopmentEnqueue': Method(development.enqueue, _p(name='string', body='object', model='string', effort='string', actor='?string'), mutating=True),
+    'DevelopmentStatus': Method(development.status, _p()),
+    'DevelopmentReport': Method(development.report, _p(number='int')),
+    'DevelopmentRelease': Method(development.release, _p()),
     'RootSettings': Method(privileged.settings, _p()),
-    'SetRootSettings': Method(privileged.configure, _p(enabled='bool', directOnly='bool', actor='?string'), mutating=True),
+    'SetRootSettings': Method(privileged.configure, _p(enabled='bool', directOnly='bool', unrestricted='?bool', actor='?string'), mutating=True),
     'RunPrivileged': Method(privileged.run, _p(id='string', command='string', seconds='int', epoch='int', actor='?string'), mutating=True),
     'Capabilities': Method(capabilities, {}),
     'SystemStatus': Method(lambda ctx, _: system.status(ctx.host, ctx.config.state_dir), {}),

@@ -41,6 +41,15 @@ class RootCommands(unittest.TestCase):
     def run_command(self):
         return self.call('RunPrivileged', id='a' * 32, command='id -u', seconds=30, epoch=0, actor='agent:1;chat:2')
 
+    def test_unrestricted_defaults_and_legacy_settings(self):
+        self.assertTrue(self.call('RootSettings')['unrestricted'])
+        with open(os.path.join(self.temp.name, 'volition-root.json'), 'w') as handle:
+            json.dump({'enabled': True, 'directOnly': False, 'epoch': 1, 'units': {}, 'completed': {}}, handle)
+        self.assertTrue(self.call('RootSettings')['unrestricted'])
+        changed = self.call('SetRootSettings', enabled=True, directOnly=False, unrestricted=False)
+        self.assertFalse(changed['unrestricted'])
+        self.assertEqual(changed['epoch'], 2)
+
     def test_unit_limits_result_and_replay(self):
         result = self.run_command()
         self.assertEqual(result['output'], '0\n')

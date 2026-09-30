@@ -246,8 +246,6 @@ export async function createApprovalRequest(input: {
   const issueId = input.issueId ?? run?.issueId ?? null;
   const action = input.action.trim();
   const command = input.command?.trim() || null;
-  // What the policy engine says about the action at this level, for the card. The request
-  // is filed whatever it says: the agent chose to ask.
   const category = categoryOfApprovalKind(input.kind);
   const scope = await approvalScope({ ...input, category, action, command });
   const view = await decide({
@@ -261,6 +259,11 @@ export async function createApprovalRequest(input: {
     summary: action,
   });
 
+  const [requestingAgent] = await db
+    .select({ role: aiAgent.agentRole })
+    .from(aiAgent)
+    .where(eq(aiAgent.id, input.agent.id));
+  const homeApproved = requestingAgent?.role === 'home' && view.outcome === 'allow';
   let id: number;
   try {
     const [created] = await db
@@ -278,6 +281,13 @@ export async function createApprovalRequest(input: {
         payload: { ...input.payload, actionScope: scope },
         autopilotLevel: view.level,
         policyReason: view.reason,
+        ...(homeApproved
+          ? {
+              status: 'approved' as const,
+              decidedAt: new Date(),
+              decisionNote: 'Home access; audit only',
+            }
+          : {}),
       })
       .returning({ id: approvalRequest.id });
     id = created!.id;
@@ -299,6 +309,8 @@ export async function createApprovalRequest(input: {
     if (!approval) throw new HttpError(409, 'The matching approval changed; request it again');
     return { approval, created: false };
   }
+
+  if (homeApproved) return { approval: (await getApproval(id))!, created: true };
 
   await publishDomainEvent({
     type: 'helena.approval.requested',

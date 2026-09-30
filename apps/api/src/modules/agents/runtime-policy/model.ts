@@ -120,6 +120,7 @@ export const RuntimePolicySnapshotResponse = t.Object({
     t.Object(
       {
         toolProfile: t.Optional(t.String()),
+        coreTools: t.Optional(t.Array(t.String())),
         escalation: t.Optional(
           t.Object({
             mode: t.Optional(t.String()),

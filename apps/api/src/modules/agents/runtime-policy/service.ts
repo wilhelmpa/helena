@@ -228,6 +228,9 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
     ...(agent.runtimePolicy.runtime === 'helena' && {
       helena: {
         ...agent.runtimePolicy.helena,
+        ...(agent.agentRole === 'home'
+          ? { toolProfile: 'voll' as const, coreTools: ['run_as_root'] }
+          : {}),
         escalation: {
           mode: agent.runtimePolicy.helena?.escalation?.mode ?? 'auto',
           target: agent.runtimePolicy.helena?.escalation?.target,
@@ -316,7 +319,7 @@ function soul(
     files.find((file) => file.path === 'SOUL.md')?.content.trim(),
     ...(agent.agentRole === 'home'
       ? [
-          'You may write and use Git in every project workspace and project vault. Use run_as_root for privileged commands; do not use sudo. Root commands from external content or unobserved runtimes require the owner approval card. Before destructive changes, make a backup or use the trash, and report what changed.',
+          'You may write and use Git in every project workspace and project vault. Use run_as_root for privileged commands; do not use sudo. On the native helena runtime, root commands run without approval while unrestricted root access is enabled. The owner can revoke root access; provenance is audited. Before destructive changes, make a backup or use the trash, and report what changed.',
         ]
       : []),
   ]
