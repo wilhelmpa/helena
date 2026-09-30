@@ -1,26 +1,19 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useQueries, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import type { AgUiEvent } from '@/lib/api/endpoints/agentChat';
 import {
   getFollowups,
-  type Followup,
   type FollowupMode,
   type FollowupTarget,
 } from '@/lib/api/endpoints/agentFollowups';
 import { useAgentFollowups } from '@/hooks/useAgentFollowups';
 import { uuid } from '@/utils/uuid';
 import type { PlanUIMessage } from '../utils/chatMessages';
-import {
-  followupTargetOf,
-  hasWaiting,
-  orderedModes,
-  queuedAnswers,
-  visibleFollowups,
-} from '../utils/followups';
+import { followupTargetOf, hasWaiting, orderedModes, queuedAnswers } from '../utils/followups';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 // How long the chat waits for the server to turn an instruction that came too late for the
@@ -54,27 +47,9 @@ export function useChatFollowups({
   const followups = useAgentFollowups(target);
   const modes = useMemo(() => orderedModes(followups.modes), [followups.modes]);
 
-  // The answers an instruction was sent to: they may still start a next turn, and their
-  // instructions stay under them in the transcript.
+  // The answers an instruction was sent to: they may still start a next turn. (Each answer's
+  // own instructions are read under it, see ChatAnswerFollowups, from the same cache.)
   const [sent, setSent] = useState<FollowupTarget[]>([]);
-  const shown = useMemo(
-    () => (target && !sent.some((entry) => entry.id === target.id) ? [...sent, target] : sent),
-    [sent, target],
-  );
-  const lists = useQueries({
-    queries: shown.map((entry) => ({
-      queryKey: queryKey(entry),
-      queryFn: () => getFollowups(entry),
-    })),
-  });
-  const notes = useMemo(() => {
-    const out = new Map<string, Followup[]>();
-    shown.forEach((entry, index) => {
-      const visible = visibleFollowups(lists[index]?.data?.items ?? []);
-      if (visible.length > 0) out.set(String(entry.id), visible);
-    });
-    return out;
-  }, [shown, lists]);
 
   const send = useCallback(
     async (mode: FollowupMode, prompt: string): Promise<boolean> => {
@@ -151,6 +126,5 @@ export function useChatFollowups({
     modes,
     send,
     onEvent: onEvent as (event: AgUiEvent) => void,
-    notes,
   };
 }

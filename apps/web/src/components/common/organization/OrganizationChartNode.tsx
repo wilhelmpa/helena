@@ -22,6 +22,8 @@ export interface ChartAgentData extends Record<string, unknown> {
   reportCount: number;
   // A row with many reports shows them narrower and without the decider line (tree view).
   compact?: boolean;
+  // Two lines only, name and status (a row that is too wide even when compact).
+  short?: boolean;
   showCollapse: boolean;
   collapsed: boolean;
   onToggle: (id: number) => void;
@@ -51,6 +53,7 @@ export default function OrganizationChartNode({ data }: NodeProps<ChartAgentNode
     dimmed,
     reportCount,
     compact = false,
+    short = false,
     showCollapse,
     collapsed,
     onToggle,
@@ -86,6 +89,53 @@ export default function OrganizationChartNode({ data }: NodeProps<ChartAgentNode
     status === 'offline'
       ? t(status)
       : null;
+  if (short) {
+    return (
+      <div
+        data-selected={selected || undefined}
+        data-throttled={agent.throttled && !selected ? 'true' : undefined}
+        className={`organization-card group relative rounded-xl border bg-card px-2.5 text-start text-card-foreground transition-[opacity,border-color,box-shadow] duration-200 ${leader ? 'h-16 w-[152px]' : 'h-16 w-[120px]'} ${selected ? 'border-brand ring-[3px] ring-brand/20' : 'border-border hover:border-muted-foreground/40'} ${dimmed ? 'opacity-30' : ''}`}
+      >
+        <Handle type="target" position={Position.Top} className={handle} isConnectable={false} />
+        <button
+          type="button"
+          aria-keyshortcuts="Shift+Enter"
+          className="flex h-full w-full cursor-pointer flex-col justify-center text-start focus-visible:rounded-md focus-visible:outline-2 focus-visible:outline-brand"
+          aria-pressed={selected}
+          aria-label={agent.name}
+        >
+          <span className="block truncate text-[14px] font-medium" title={agent.name}>
+            {agent.name}
+          </span>
+          <span className="mt-1 flex items-center gap-1.5 font-mono text-[12px] text-muted-foreground">
+            <Orb
+              state={status}
+              size="small"
+              className={`organization-orb organization-orb-${status}`}
+            />
+            <span className="truncate">
+              {agent.throttled ? t('throttled') : (statusWord ?? label)}
+            </span>
+          </span>
+        </button>
+        {showCollapse && reportCount > 0 && (
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onToggle(agent.id);
+            }}
+            aria-expanded={!collapsed}
+            aria-label={t(collapsed ? 'expand' : 'collapse', { name: agent.name })}
+            className={`nodrag absolute end-2 top-1 rounded-full px-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:opacity-100 ${collapsed ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+          >
+            {collapsed ? '+' : '−'} {reportCount}
+          </button>
+        )}
+        <Handle type="source" position={Position.Bottom} className={handle} isConnectable={false} />
+      </div>
+    );
+  }
   return (
     <div
       data-selected={selected || undefined}

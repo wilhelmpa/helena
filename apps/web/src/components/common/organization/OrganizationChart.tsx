@@ -36,7 +36,13 @@ import { HoverLayer, createHoverStore } from './organizationHoverStore';
 import OrganizationTaskSheet from './OrganizationTaskSheet';
 import type { ChartAgentData } from './OrganizationChartNode';
 import { organizationChartAgents } from './organizationChartAgents';
-import { organizationChartLayout } from './organizationChartLayout';
+import {
+  TREE_MIN_ZOOM,
+  TREE_PADDING,
+  TREE_SHORT_MIN_ZOOM,
+  chartWidth,
+  organizationChartLayout,
+} from './organizationChartLayout';
 import {
   organizationRingLayout,
   type RingGroup,
@@ -326,11 +332,26 @@ export default function OrganizationChart({
   const ringLevel: RingLevel =
     focus.kind === 'root' ? (projectId == null ? 'home' : 'project') : focus.kind;
   const focusId = focus.kind === 'root' ? projectId : focus.id;
-  const tree = useMemo(
-    () =>
-      view === 'tree' ? organizationChartLayout(agents, collapsed, delegating, { tasks }) : null,
-    [agents, collapsed, delegating, tasks, view],
-  );
+  // A row too wide for a readable zoom with compact cards is drawn with short ones (two lines:
+  // name and status) instead of a smaller zoom (owner, O96).
+  // The canvas is only there once the organisation has loaded: a callback ref, so the
+  // measuring starts whenever it appears.
+  const [canvas, setCanvas] = useState<HTMLDivElement | null>(null);
+  const [canvasWidth, setCanvasWidth] = useState(0);
+  useEffect(() => {
+    if (!canvas) return;
+    const observer = new ResizeObserver(() => setCanvasWidth(canvas.clientWidth));
+    observer.observe(canvas);
+    return () => observer.disconnect();
+  }, [canvas]);
+  const tree = useMemo(() => {
+    if (view !== 'tree') return null;
+    const compact = organizationChartLayout(agents, collapsed, delegating, { tasks });
+    const room = canvasWidth - TREE_PADDING * 2;
+    if (room <= 0 || chartWidth(compact.nodes) * TREE_MIN_ZOOM <= room) return compact;
+    return organizationChartLayout(agents, collapsed, delegating, { tasks, density: 'short' });
+  }, [agents, canvasWidth, collapsed, delegating, tasks, view]);
+  const short = tree?.nodes.some((node) => (node.data as { short?: boolean }).short) ?? false;
   const ring = useMemo(
     () =>
       view === 'ring'
@@ -677,14 +698,15 @@ export default function OrganizationChart({
             </ol>
           </nav>
         )}
-        <div className="ds-org-canvas">
+        <div className="ds-org-canvas" ref={setCanvas}>
           <OrganizationChartFlow
             key={view}
             view={view}
             nodes={nodes}
             edges={edges}
             orbits={ring?.orbits ?? []}
-            fitKey={`${view}:${focusParam(focus) ?? 'root'}:${showTasks ? 'tasks' : ''}`}
+            fitKey={`${view}:${focusParam(focus) ?? 'root'}:${showTasks ? 'tasks' : ''}:${short ? 'short' : ''}`}
+            minZoom={short ? TREE_SHORT_MIN_ZOOM : TREE_MIN_ZOOM}
             onActivate={onActivate}
             onDrill={onDrill}
             onPaneClick={() => {

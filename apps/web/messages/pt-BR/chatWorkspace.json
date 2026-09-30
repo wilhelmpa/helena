@@ -324,6 +324,7 @@
       "applied": "aplicada",
       "queued": "agendada"
     },
-    "listLabel": "Instruções para a resposta em andamento"
+    "listLabel": "Instruções para a resposta em andamento",
+    "openNext": "Abrir a próxima execução"
   }
 }

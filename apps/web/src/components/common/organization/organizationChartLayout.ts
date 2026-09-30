@@ -21,7 +21,19 @@ export const COMPACT_LEAF_WIDTH = 176;
 export const COMPACT_LEAF_HEIGHT = 92;
 // A manager with more reports than this shows them compact.
 export const COMPACT_FROM = 4;
+// The short card of a row that would still be too wide at a readable zoom with compact cards
+// (owner 30.09., O96): two lines, name and status, instead of a smaller zoom.
+export const SHORT_LEADER_WIDTH = 152;
+export const SHORT_LEAF_WIDTH = 120;
+export const SHORT_HEIGHT = 64;
+// Room around the chart when it is fitted, and the smallest zoom it is fitted to: compact
+// cards down to 0.7, short cards down to 0.5 (their text is larger); beyond that the chart
+// starts at its left edge and is panned.
+export const TREE_PADDING = 32;
+export const TREE_MIN_ZOOM = 0.7;
+export const TREE_SHORT_MIN_ZOOM = 0.45;
 const X_GAP = 16;
+const SHORT_X_GAP = 10;
 // Room between a leader and its reports for a clear trunk and the shared line (owner
 // 29.09.: the lines from the coordinator to its specialists were not to be seen).
 const LEVEL_GAP = 56;
@@ -35,7 +47,11 @@ const TASK_GAP = 6;
 const TASK_INDENT = 12;
 const TASKS_PER_AGENT = 4;
 
+export type ChartDensity = 'compact' | 'short';
+
 export interface ChartLayoutOptions {
+  // How the reports of a wide row are drawn: compact (default) or short (two lines).
+  density?: ChartDensity;
   // The current tasks of the agents, shown under their cards while "Aufgaben" is on.
   tasks?: RingTask[];
 }
@@ -75,19 +91,34 @@ export function organizationChartLayout(
     return count ? TASK_GAP + count * (TASK_HEIGHT + TASK_GAP) : 0;
   };
   // The reports of a manager with many of them are compact, so the row stays one row.
+  const short = options.density === 'short';
   const compact = new Set<number>();
+  // Short cards are drawn for every agent below the top, so the levels look alike.
   for (const reports of children.values())
-    if (reports.length > COMPACT_FROM) for (const report of reports) compact.add(report.id);
+    if (short || reports.length > COMPACT_FROM)
+      for (const report of reports) compact.add(report.id);
+  // Short cards also stand closer.
+  const gap = short ? SHORT_X_GAP : X_GAP;
   const width = (agent: OrganizationAgent) =>
     isLeader(agent)
       ? compact.has(agent.id)
-        ? COMPACT_LEADER_WIDTH
+        ? short
+          ? SHORT_LEADER_WIDTH
+          : COMPACT_LEADER_WIDTH
         : LEADER_WIDTH
       : compact.has(agent.id)
-        ? COMPACT_LEAF_WIDTH
+        ? short
+          ? SHORT_LEAF_WIDTH
+          : COMPACT_LEAF_WIDTH
         : LEAF_WIDTH;
   const cardHeight = (agent: OrganizationAgent) =>
-    isLeader(agent) ? LEADER_HEIGHT : compact.has(agent.id) ? COMPACT_LEAF_HEIGHT : LEAF_HEIGHT;
+    compact.has(agent.id) && short
+      ? SHORT_HEIGHT
+      : isLeader(agent)
+        ? LEADER_HEIGHT
+        : compact.has(agent.id)
+          ? COMPACT_LEAF_HEIGHT
+          : LEAF_HEIGHT;
   // The card and its tasks under it.
   const height = (agent: OrganizationAgent) => cardHeight(agent) + taskRoom(agent);
   const visible = (agent: OrganizationAgent) =>
@@ -105,8 +136,7 @@ export function organizationChartLayout(
     let result = width(agent);
     if (reports.length) {
       const sum =
-        reports.reduce((total, report) => total + measure(report), 0) +
-        X_GAP * (reports.length - 1);
+        reports.reduce((total, report) => total + measure(report), 0) + gap * (reports.length - 1);
       result = Math.max(result, sum);
     }
     measuring.delete(agent.id);
@@ -153,7 +183,7 @@ export function organizationChartLayout(
       data: {
         agent,
         reportCount: (children.get(agent.id) ?? []).length,
-        ...(compact.has(agent.id) && { compact: true }),
+        ...(compact.has(agent.id) && { compact: true, ...(short && { short: true }) }),
       },
       draggable: false,
     });
@@ -189,12 +219,12 @@ export function organizationChartLayout(
     const childTop = rowTop[(depthOf.get(agent.id) ?? 0) + 1] ?? 0;
     const childrenWidth =
       reports.reduce((sum, report) => sum + measure(report), 0) +
-      X_GAP * Math.max(0, reports.length - 1);
+      gap * Math.max(0, reports.length - 1);
     let cursor = left + (total - childrenWidth) / 2;
     for (const report of reports) {
       edges.push(edge(agent, report, childTop - BUS_OFFSET));
       place(report, cursor);
-      cursor += measure(report) + X_GAP;
+      cursor += measure(report) + gap;
     }
   }
   let cursor = 0;
@@ -204,4 +234,16 @@ export function organizationChartLayout(
     cursor += measure(root) + X_GAP * 2;
   }
   return { nodes, edges };
+}
+
+// The width the laid-out agent cards take, for deciding how densely to draw them.
+export function chartWidth(nodes: Node[]): number {
+  let left = Infinity;
+  let right = -Infinity;
+  for (const node of nodes) {
+    if (node.type !== 'agent') continue;
+    left = Math.min(left, node.position.x);
+    right = Math.max(right, node.position.x + (node.width ?? 0));
+  }
+  return right > left ? right - left : 0;
 }

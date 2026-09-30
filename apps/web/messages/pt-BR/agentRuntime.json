@@ -74,7 +74,11 @@
     "unarchive": "Restaurar",
     "archived": "Arquivada",
     "showArchived": "Mostrar arquivadas",
-    "archiveFailed": "Não foi possível arquivar a execução."
+    "archiveFailed": "Não foi possível arquivar a execução.",
+    "steerTitle": "Conduzir a execução",
+    "steerPlaceholder": "Instrução para a execução em andamento …",
+    "steerSend": "Enviar",
+    "steerInstructions": "Instruções"
   },
   "sessions": {
     "search": "Pesquisar em todas as sessões",

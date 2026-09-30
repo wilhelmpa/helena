@@ -368,7 +368,7 @@ export default function ChatThreadView({
               editingId={editingId}
               onEditingChange={setEditingId}
               onShowArtifact={onArtifact}
-              followups={followups.notes}
+              scopeKey={scopeKey}
               showOrb={showAnswerOrb}
             />
           )}

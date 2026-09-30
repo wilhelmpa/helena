@@ -32,4 +32,9 @@ describe('brand tokens in tokens.css', () => {
     assert.equal(ORB.onDark.length, 3);
     assert.equal(ORB.onLight.length, 3);
   });
+
+  it('the brand ink (icon tiles, mail bar, link preview) is the dark page ground', () => {
+    const ground = css.match(/\[data-theme='dark'\]\s*\{[^}]*?--bg:\s*(#[0-9a-f]{6})/i)?.[1];
+    assert.equal(ORB.ink.toLowerCase(), ground?.toLowerCase());
+  });
 });

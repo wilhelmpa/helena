@@ -74,7 +74,11 @@
     "unarchive": "استعادة",
     "archived": "مؤرشف",
     "showArchived": "إظهار المؤرشفة",
-    "archiveFailed": "تعذّرت أرشفة التشغيل."
+    "archiveFailed": "تعذّرت أرشفة التشغيل.",
+    "steerTitle": "توجيه التشغيل",
+    "steerPlaceholder": "تعليمات للتشغيل الجاري …",
+    "steerSend": "إرسال",
+    "steerInstructions": "التعليمات"
   },
   "sessions": {
     "search": "البحث في كل الجلسات",

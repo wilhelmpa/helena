@@ -74,7 +74,11 @@
     "unarchive": "Zurückholen",
     "archived": "Archiviert",
     "showArchived": "Archivierte anzeigen",
-    "archiveFailed": "Der Lauf konnte nicht archiviert werden."
+    "archiveFailed": "Der Lauf konnte nicht archiviert werden.",
+    "steerTitle": "Lauf steuern",
+    "steerPlaceholder": "Anweisung an den laufenden Lauf …",
+    "steerSend": "Senden",
+    "steerInstructions": "Anweisungen"
   },
   "sessions": {
     "search": "Alle Sitzungen durchsuchen",

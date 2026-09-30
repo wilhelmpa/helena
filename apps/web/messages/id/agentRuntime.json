@@ -74,7 +74,11 @@
     "unarchive": "Pulihkan",
     "archived": "Diarsipkan",
     "showArchived": "Tampilkan yang diarsipkan",
-    "archiveFailed": "Eksekusi tidak dapat diarsipkan."
+    "archiveFailed": "Eksekusi tidak dapat diarsipkan.",
+    "steerTitle": "Arahkan eksekusi",
+    "steerPlaceholder": "Instruksi untuk eksekusi yang berjalan …",
+    "steerSend": "Kirim",
+    "steerInstructions": "Instruksi"
   },
   "sessions": {
     "search": "Cari di semua sesi",
