@@ -30,6 +30,13 @@ export class PriorityScheduler {
     background: 0,
   };
   private waiting: Waiting[] = [];
+  private fairnessTimer?: ReturnType<typeof setTimeout>;
+  private waitTimes: Record<PriorityClass, number[]> = {
+    interactive: [],
+    realtime: [],
+    normal: [],
+    background: [],
+  };
   private healthy = true;
   private consecutiveHealthFailures = 0;
   private administrativePaused = false;
@@ -59,6 +66,8 @@ export class PriorityScheduler {
 
   setConfig(config: PriorityConfig): void {
     this.config = config;
+    for (const kind of classes)
+      this.waitTimes[kind] = this.waitTimes[kind].slice(-config.waitTimeSampleSize);
     this.drain();
   }
 
@@ -108,6 +117,20 @@ export class PriorityScheduler {
           Math.max(0, ...waits[kind].map((item) => this.now() - item.since)),
         ]),
       ) as Record<PriorityClass, number>,
+      // Completed waits include timeouts, cancellations and zero-wait admissions.
+      waitTimesMsByClass: Object.fromEntries(
+        classes.map((kind) => {
+          const sorted = [...this.waitTimes[kind]].sort((a, b) => a - b);
+          return [
+            kind,
+            {
+              count: sorted.length,
+              p50: sorted.length ? sorted[Math.ceil(sorted.length / 2) - 1]! : 0,
+              max: sorted.at(-1) ?? 0,
+            },
+          ];
+        }),
+      ) as Record<PriorityClass, { count: number; p50: number; max: number }>,
       fallbacks: { ...this.fallbacks },
       paused: {
         interactive: !this.healthy || this.paused(),
@@ -116,14 +139,34 @@ export class PriorityScheduler {
         background:
           !this.healthy ||
           this.paused() ||
-          this.active.interactive + this.active.realtime > 0 ||
-          waits.interactive.length + waits.realtime.length > 0,
+          (this.interactiveDemand() &&
+            (this.active.background >= this.config.minBackgroundSlots || !this.agedBackground())),
       },
     };
   }
 
   private total(): number {
     return classes.reduce((sum, kind) => sum + this.active[kind], 0);
+  }
+
+  private interactiveDemand(): boolean {
+    return (
+      this.active.interactive + this.active.realtime > 0 ||
+      this.waiting.some((item) => item.kind === 'interactive' || item.kind === 'realtime')
+    );
+  }
+
+  private agedBackground(): Waiting | undefined {
+    return this.waiting.find(
+      (item) =>
+        item.kind === 'background' && this.now() - item.since >= this.config.maxBackgroundWaitMs,
+    );
+  }
+
+  private recordWait(kind: PriorityClass, since: number): void {
+    const samples = this.waitTimes[kind];
+    samples.push(Math.max(0, this.now() - since));
+    if (samples.length > this.config.waitTimeSampleSize) samples.shift();
   }
 
   private eligible(kind: PriorityClass): boolean {
@@ -141,20 +184,20 @@ export class PriorityScheduler {
       this.config.maxConcurrent - this.config.reservedInteractive
     )
       return false;
-    if (
-      kind === 'background' &&
-      (this.active.interactive + this.active.realtime > 0 ||
-        this.waiting.some((item) => item.kind === 'interactive' || item.kind === 'realtime'))
-    ) {
-      // Aged work may use spare non-interactive capacity even under sustained demand.
-      return this.waiting.some(
-        (item) => item.kind === 'background' && this.now() - item.since >= this.config.agingMs * 3,
-      );
+    if (kind === 'background' && this.interactiveDemand()) {
+      return this.active.background < this.config.minBackgroundSlots && !!this.agedBackground();
     }
     return true;
   }
 
   private choose(): Waiting | undefined {
+    const background = this.agedBackground();
+    if (
+      background &&
+      this.active.background < this.config.minBackgroundSlots &&
+      this.eligible('background')
+    )
+      return background;
     const eligible = this.waiting.filter((item) => this.eligible(item.kind));
     eligible.sort((a, b) => {
       const score = (item: Waiting) =>
@@ -172,7 +215,19 @@ export class PriorityScheduler {
   private drain(): void {
     for (;;) {
       const item = this.choose();
-      if (!item) return;
+      if (!item) {
+        if (this.fairnessTimer) clearTimeout(this.fairnessTimer);
+        this.fairnessTimer = undefined;
+        const background = this.waiting.find((waiting) => waiting.kind === 'background');
+        const delay = background
+          ? this.config.maxBackgroundWaitMs - (this.now() - background.since)
+          : 0;
+        if (delay > 0) {
+          this.fairnessTimer = setTimeout(() => this.drain(), delay);
+          this.fairnessTimer.unref();
+        }
+        return;
+      }
       this.waiting.splice(this.waiting.indexOf(item), 1);
       if (item.timer) clearTimeout(item.timer);
       this.active[item.kind]++;
@@ -188,6 +243,7 @@ export class PriorityScheduler {
     | { release: null; reason: Exclude<Admission, 'admitted'> }
   > {
     if (signal?.aborted) return { release: null, reason: 'aborted' };
+    this.drain();
     if (!this.healthy && (kind === 'interactive' || kind === 'realtime')) {
       this.fallbacks[kind]++;
       return { release: null, reason: 'backend_unavailable' };
@@ -201,6 +257,7 @@ export class PriorityScheduler {
     ) {
       this.active[kind]++;
       admitted = 'admitted';
+      this.recordWait(kind, this.now());
     } else if (
       this.waiting.length >= this.config.maxQueue ||
       this.waiting.filter((item) => item.kind === kind).length >=
@@ -226,6 +283,7 @@ export class PriorityScheduler {
                 : null;
         const finish = (value: Admission) => {
           signal?.removeEventListener('abort', abort);
+          this.recordWait(kind, item.since);
           resolve(value);
         };
         const abort = () => {

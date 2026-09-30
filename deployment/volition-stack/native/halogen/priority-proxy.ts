@@ -126,6 +126,7 @@ export async function startPriorityProxy(options: ProxyOptions) {
     async (incoming: IncomingMessage, outgoing: ServerResponse) => {
       if (!fixedClass && incoming.url === '/priority/status' && incoming.method === 'GET') {
         outgoing.setHeader('content-type', 'application/json');
+        outgoing.setHeader('cache-control', 'no-store');
         const status = scheduler.status();
         outgoing.end(
           JSON.stringify({
