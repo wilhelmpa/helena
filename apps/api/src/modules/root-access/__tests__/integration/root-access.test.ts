@@ -6,6 +6,10 @@ import { bootstrapHomeAgent } from '../../../../scripts/bootstrap-home-agent';
 import { setRootSettings } from '../../service';
 import { heldProjects, budgetExhausted } from '#modules/autopilot/budgets';
 import { useHostdTransport } from '#modules/server/hostd';
+import { agentChatMessage, agentRun, db } from '@repo/db';
+import { eq } from 'drizzle-orm';
+import { createAgent } from '#tests/helpers/agents';
+import { connectMcp } from '../../../../../../../packages/agent-runtime/src/tools/mcp';
 
 process.env.AGENT_CHAT_CLAIM_WAIT_MS = '50';
 let calls: string[];
@@ -46,7 +50,16 @@ async function setup(runtime = 'hermes') {
   expect(sent.status).toBe(200);
   const claimed = await asHome['agent-chats'].claim.post();
   expect(claimed.data?.message?.id).toBe(sent.data!.messageId);
-  const request = async (path: string, body?: unknown, ownerCall = false) => {
+  await db
+    .update(agentChatMessage)
+    .set({ observedRuntime: runtime })
+    .where(eq(agentChatMessage.id, sent.data!.messageId));
+  const request = async (
+    path: string,
+    body?: unknown,
+    ownerCall = false,
+    extraHeaders?: Record<string, string>,
+  ) => {
     const response = await app.handle(
       new Request(`http://localhost:3000${path}`, {
         method: body === undefined ? 'GET' : 'POST',
@@ -61,6 +74,7 @@ async function setup(runtime = 'hermes') {
                 'x-volition-agent-unit': `volition-agent-home--a0-c${sent.data!.messageId}-abcdef012345.service`,
                 'x-volition-agent-runtime': runtime,
               }),
+          ...extraHeaders,
         },
         ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
       }),
@@ -74,6 +88,123 @@ async function setup(runtime = 'hermes') {
 }
 
 describe('root broker', () => {
+  it('runs native Home MCP root without launcher headers and restricts it when unrestricted is off', async () => {
+    const { home, messageId, owner, asOwner } = await setup('helena');
+    await db
+      .update(agentChatMessage)
+      .set({ taintSources: ['web'] })
+      .where(eq(agentChatMessage.id, messageId));
+    const server = Bun.serve({ hostname: '127.0.0.1', port: 0, fetch: (req) => app.handle(req) });
+    let connection;
+    try {
+      connection = await connectMcp(
+        {
+          name: 'itsaplan',
+          transport: 'http',
+          url: `${server.url}mcp`,
+          headers: [{ name: 'Authorization', value: { template: 'Bearer ${ITSAPLAN_API_KEY}' } }],
+        },
+        { ITSAPLAN_API_KEY: home.apiKey, ITSAPLAN_MESSAGE_ID: String(messageId) },
+      );
+      const call = () =>
+        connection!.client.callTool({
+          name: 'run_as_root',
+          arguments: { command: 'id', reason: 'Native chat work' },
+        });
+      const result = await call();
+      expect(result.isError).not.toBe(true);
+      expect(result.structuredContent).toMatchObject({
+        ok: true,
+        data: { status: 'success', approvalId: null },
+      });
+      expect((await asOwner.approvals.get()).data?.items).toEqual([]);
+      await setRootSettings(
+        { enabled: true, directOnly: false, unrestricted: false },
+        owner.userId,
+      );
+      const restricted = await call();
+      expect(restricted.structuredContent).toMatchObject({
+        ok: true,
+        data: { status: 'pending', approvalId: expect.any(Number) },
+      });
+      expect(calls.filter((method) => method === 'RunPrivileged')).toHaveLength(1);
+    } finally {
+      await connection?.close();
+      await server.stop(true);
+    }
+  });
+  it('uses the chat runtime from the database when the header disagrees or observation is missing', async () => {
+    const { request, messageId } = await setup('codex');
+    const forged = await request(
+      '/agent-root',
+      { command: 'id', reason: 'Forged runtime' },
+      false,
+      {
+        'x-volition-agent-runtime': 'helena',
+      },
+    );
+    expect(forged.data.status).toBe('pending');
+    const audit = await request('/god/root-access/audit', undefined, true);
+    expect(audit.data).toEqual(
+      expect.arrayContaining([expect.objectContaining({ runtime: 'codex' })]),
+    );
+    await db
+      .update(agentChatMessage)
+      .set({ observedRuntime: null })
+      .where(eq(agentChatMessage.id, messageId));
+    expect(
+      (
+        await request('/agent-root', { command: 'id', reason: 'No observation' }, false, {
+          'x-volition-agent-runtime': 'helena',
+        })
+      ).data.status,
+    ).toBe('pending');
+    expect(calls).not.toContain('RunPrivileged');
+  });
+  it('uses the run runtime from the database and rejects work belonging to another agent', async () => {
+    const { request, home, project, asOwner, messageId } = await setup('helena');
+    const [run] = await db
+      .insert(agentRun)
+      .values({
+        agentId: home.agentId,
+        projectId: project.id,
+        prompt: 'Check identity',
+        observedRuntime: 'helena',
+        taintSources: ['web'],
+        startedAt: new Date(),
+        nextAttemptAt: new Date(Date.now() + 60_000),
+      })
+      .returning({ id: agentRun.id });
+    const headers = {
+      'x-helena-run': String(run!.id),
+      'x-volition-message': '',
+      'x-volition-agent-unit': '',
+      'x-volition-agent-runtime': 'codex',
+    };
+    expect(
+      (await request('/agent-root', { command: 'id', reason: 'Native run' }, false, headers)).data
+        .status,
+    ).toBe('success');
+    const other = (
+      await createAgent(asOwner, 'ROOT', { name: 'Other agent', username: 'root-other' })
+    ).data!;
+    await db.update(agentRun).set({ agentId: other.agent.id }).where(eq(agentRun.id, run!.id));
+    expect(
+      (await request('/agent-root', { command: 'id', reason: 'Foreign run' }, false, headers))
+        .status,
+    ).toBe(409);
+    await db
+      .update(agentChatMessage)
+      .set({ agentId: other.agent.id })
+      .where(eq(agentChatMessage.id, messageId));
+    expect((await request('/agent-root', { command: 'id', reason: 'Foreign chat' })).status).toBe(
+      409,
+    );
+    const asOther = apiKeyApi(other.apiKey);
+    expect(
+      (await asOther['agent-root'].post({ command: 'id', reason: 'Other agent' })).status,
+    ).toBe(403);
+  });
   it('runs native Home root after web content without a card and keeps source attribution', async () => {
     const { request, asHome, asOwner, messageId, owner } = await setup('helena');
     await asHome['agent-policy'].decide.post({ runtime: 'helena', messageId, tool: 'WebFetch' });

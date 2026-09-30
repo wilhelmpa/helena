@@ -90,7 +90,6 @@ export async function requestRoot(
 ) {
   const ownerId = await rootOwner(agent.id);
   const provenance = await workProvenance(agent.id, work);
-  provenance.runtime = work.runtime ?? 'unknown';
   const settings = await rootSettings();
   if (!settings.enabled) throw new HttpError(409, 'Root access is disabled');
   const sources = [...provenance.taintSources];

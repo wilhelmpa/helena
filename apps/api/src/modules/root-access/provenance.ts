@@ -7,6 +7,7 @@ import { and, eq, sql } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
 import { taintSourcesOf } from './policy';
 
+// Runtime headers are hints; authorization uses the work's database observation.
 export type Work = { runtime?: string; runId?: number | null; messageId?: number | null };
 
 export async function ownerOrigin(agentId: number, userId: string): Promise<string> {
