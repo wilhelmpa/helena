@@ -26,7 +26,7 @@ import { useChatDock } from '@/context/chatDock';
 import ChatMessageList from './ChatMessageList';
 import ChatComposer from '@/components/helena/Composer';
 import ChatNewChatIntro from './ChatNewChatIntro';
-import { HomeChatActivityCards, HomeChatHero, HomeChatMasthead } from './HomeChatLanding';
+import { HomeChatActivityCards, HomeChatHero } from './HomeChatLanding';
 import ChatRestoreError from './ChatRestoreError';
 import {
   activeTool,
@@ -311,9 +311,6 @@ export default function ChatThreadView({
   return (
     <WebLinkScope projectKey={scopeKey.startsWith('team:') ? null : scopeKey}>
       <div className="flex h-full min-h-0 flex-col">
-        {/* The start page's masthead; a conversation has its own header row instead, so
-            the page never shows two headers. */}
-        {inPage && projectKey === null && homeLanding && <HomeChatMasthead />}
         {dock && (
           <ChatDockBar
             dock={dock}

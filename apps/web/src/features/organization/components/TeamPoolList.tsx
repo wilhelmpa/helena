@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useTeamQuery } from '@/services/teams.service';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
-import { Text } from '@/design-system';
+import { ListBox, Text } from '@/design-system';
 import { AgentSectionProvider } from '@/features/teams/context/agentSection';
 import TeamAiAgents from '@/features/teams/components/ai-agents/TeamAiAgents';
 import { TeamAiAgentSheet } from '@/features/teams/components/ai-agents/TeamAiAgentSheet';
@@ -49,9 +49,9 @@ export default function TeamPoolList({
   return (
     <AgentSectionProvider teamId={teamId} permissions={permissions}>
       {!onlyOverlays && (
-        <div className="ds-team-pool">
+        <ListBox className="ds-team-pool">
           <TeamAiAgents search={search} show={show} projectKey={projectKey} />
-        </div>
+        </ListBox>
       )}
       <TeamAiAgentSheet
         open={creating != null}

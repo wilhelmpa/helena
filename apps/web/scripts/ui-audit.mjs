@@ -7,7 +7,13 @@
 //   spacing      the page body's side and top padding, the gap from the toolbar to the first
 //                content and the top of the title are the page template's (PageTemplate.tsx);
 //   frames       task list and table are framed (.ds-issue-list-box / table card) and their
-//                status is its own box (.ds-issue-status) in list, table and board.
+//                status is its own box (.ds-issue-status) in list, table and board;
+//   edges        (O92, O104) the breadcrumb, the toolbar row of a phone and the first content
+//                of every page stand on one left edge, the header is 56px and the content starts
+//                the padding below it;
+//   overlays     (O102, O103) the chat panel, a task, an agent, a file and the settings modal are
+//                opened and compared: head height, control order and size, distance to the
+//                window, inner distance, Esc; a pinned overlay takes its room from the page.
 // It needs a running Ava and a user; it writes a JSON report and prints what deviates.
 //
 //   UI_AUDIT_WEB=http://127.0.0.1:3661 UI_AUDIT_API=http://127.0.0.1:3662 \
@@ -18,6 +24,7 @@
 // UI_AUDIT_CHROME names the Chrome or Chromium binary it drives.
 import { writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { edgeFindings, overlayFindings } from './ui-audit-rules.mjs';
 
 // playwright-core, as the browser gateway uses it (no browsers of its own: UI_AUDIT_CHROME).
 const require = createRequire(
@@ -181,6 +188,221 @@ function measure() {
   return out;
 }
 
+// Runs in the page: where the header, the toolbar row and the first content start (O92, O104).
+function measureEdges() {
+  const main = document.querySelector('.ds-main');
+  const header = document.querySelector('.ds-page-header');
+  if (!main || !header) return { none: true };
+  const round = (value) => Math.round(value * 10) / 10;
+  const mainBox = main.getBoundingClientRect();
+  const headerBox = header.getBoundingClientRect();
+  const visible = (element) => element && getComputedStyle(element).display !== 'none';
+  const menu = header.querySelector('.ds-page-menu-button');
+  const first = visible(menu)
+    ? menu.querySelector('svg')
+    : header.querySelector('.ds-page-crumb, .ds-page-title');
+  const bar = header.querySelector('.ds-page-bar');
+  const phone = innerWidth < 900;
+  const barFirst =
+    phone && visible(bar)
+      ? [...bar.querySelectorAll('button, a, input, nav, [role=tablist]')].find(
+          (element) => element.getBoundingClientRect().width > 0,
+        )
+      : null;
+  const scroll =
+    document.querySelector('.ds-page-scroll') ?? document.querySelector('.ds-page-content');
+  const top = headerBox.bottom;
+  const items = [];
+  for (const element of (scroll ?? main).querySelectorAll('*')) {
+    if (element.closest('.ds-side-panel, [role=dialog], .ds-dock, .ds-empty, .react-flow'))
+      continue;
+    const box = element.getBoundingClientRect();
+    if (box.width < 4 || box.height < 4 || box.top < top - 1 || box.top > top + 120) continue;
+    if (box.left < mainBox.left - 1 || box.width > mainBox.width - 8) continue;
+    const style = getComputedStyle(element);
+    if (style.visibility === 'hidden' || style.display === 'none' || style.opacity === '0')
+      continue;
+    if (style.position === 'fixed') continue;
+    const boxed =
+      style.backgroundColor !== 'rgba(0, 0, 0, 0)' ||
+      parseFloat(style.borderTopWidth) > 0 ||
+      parseFloat(style.borderLeftWidth) > 0 ||
+      style.boxShadow !== 'none';
+    const text = [...element.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
+    if (!boxed && !text && element.tagName !== 'svg' && element.tagName !== 'IMG') continue;
+    items.push({ left: box.left, top: box.top });
+  }
+  const content = items.length ? Math.min(...items.map((item) => item.left)) : null;
+  const contentTop = items.length ? Math.min(...items.map((item) => item.top)) : null;
+  const rootStyle = getComputedStyle(document.documentElement);
+  const px = (name, fallback) => parseFloat(rootStyle.getPropertyValue(name)) || fallback;
+  return {
+    variant: document.querySelector('.ds-page')?.getAttribute('data-page') ?? null,
+    phone,
+    crumb: round(first.getBoundingClientRect().left - mainBox.left),
+    bar: barFirst ? round(barFirst.getBoundingClientRect().left - mainBox.left) : null,
+    content: content == null ? null : round(content - mainBox.left),
+    gap: contentTop == null ? null : round(contentTop - top),
+    headerHeight: phone ? null : round(headerBox.height),
+    pad: {
+      x: px('--page-pad-x', 32) - (phone ? 0 : 0),
+      top: px('--page-pad-top', 24),
+      header: px('--page-header-h', 56),
+    },
+  };
+}
+
+// The overlays of the seeded project, opened one after the other and measured (O102, O103).
+async function overlayScenes(page, { phone }) {
+  const measure = () =>
+    page.evaluate(() => {
+      const roots = [
+        ...document.querySelectorAll('.ds-side-panel[data-open="true"], .ds-modal'),
+      ].filter((element) => element.getBoundingClientRect().width > 0);
+      const root = roots.at(-1);
+      if (!root) return null;
+      const head = root.querySelector('.ds-panel-head');
+      const box = (element) => {
+        const b = element.getBoundingClientRect();
+        return {
+          x: Math.round(b.x * 10) / 10,
+          y: Math.round(b.y * 10) / 10,
+          w: Math.round(b.width * 10) / 10,
+          h: Math.round(b.height * 10) / 10,
+        };
+      };
+      const own = box(root);
+      const style = getComputedStyle(root);
+      const body = root.querySelector('.ds-overlay-body') ?? root.querySelector('.ds-modal-pane');
+      const bodyStyle = body && getComputedStyle(body);
+      const flush = !!body?.classList.contains('is-flush');
+      return {
+        kind: root.classList.contains('ds-modal') ? 'modal' : 'panel',
+        box: own,
+        viewport: innerWidth,
+        radius: style.borderTopLeftRadius,
+        bg: style.backgroundColor,
+        head: {
+          ...box(head),
+          padL: parseFloat(getComputedStyle(head).paddingLeft),
+          padR: parseFloat(getComputedStyle(head).paddingRight),
+        },
+        tab: head.querySelector('[role=tab]') ? box(head.querySelector('[role=tab]')) : null,
+        controls: [...head.querySelectorAll('[data-control]')].map((button) => ({
+          c: button.dataset.control,
+          ...box(button),
+          icon: button.querySelector('svg')?.getBoundingClientRect().width,
+        })),
+        padded: !flush && !!body && !!root.querySelector('.ds-overlay-body'),
+        bodyPad: bodyStyle
+          ? [
+              bodyStyle.paddingTop,
+              bodyStyle.paddingRight,
+              bodyStyle.paddingBottom,
+              bodyStyle.paddingLeft,
+            ].join(' ')
+          : null,
+        rightGap: Math.round(innerWidth - own.x - own.w),
+        topGap: own.y,
+        expected: { headHeight: 56, bodyPad: '24px 24px 24px 24px', radius: '16px' },
+      };
+    });
+  const settle = (ms = 900) => page.waitForTimeout(ms);
+  const open = {
+    chat: async () => {
+      await page.goto(`${web}/project/${project}`, { waitUntil: 'load' });
+      await settle(1200);
+      await page.locator('.ds-dock').first().click();
+    },
+    task: async () => {
+      await page.goto(`${web}/project/${project}`, { waitUntil: 'load' });
+      await settle(1500);
+      await page.locator('.board-card-title').first().click();
+    },
+    agent: async () => {
+      if (!process.env.UI_AUDIT_AGENT) throw new Error('UI_AUDIT_AGENT fehlt');
+      await page.goto(`${web}/?agentSheet=${process.env.UI_AUDIT_AGENT}`, { waitUntil: 'load' });
+    },
+    file: async () => {
+      await page.goto(`${web}/project/${project}/files?path=Docs`, { waitUntil: 'load' });
+      await settle(1500);
+      await page.locator('[data-row-button]').first().click();
+    },
+    settings: async () => {
+      await page.goto(`${web}/project/${project}`, { waitUntil: 'load' });
+      await settle(1200);
+      await page.keyboard.press('Meta+,');
+    },
+  };
+  const scenes = {};
+  for (const [name, action] of Object.entries(open)) {
+    try {
+      await action();
+      await settle(1500);
+      const found = await measure();
+      if (!found) throw new Error('nicht geöffnet');
+      scenes[name] = found;
+      // Esc: full screen first, then the overlay (the task's overlay is the reference).
+      if (name === 'task') {
+        const full = page.locator('.ds-overlay [data-control="full"]');
+        await full.click();
+        await settle(300);
+        await page.keyboard.press('Escape');
+        await settle(400);
+        const fullAfterEsc = await page.evaluate(
+          () => document.querySelector('.ds-overlay')?.getAttribute('data-full') === 'true',
+        );
+        const openAfterFirst = await page.evaluate(() => !!document.querySelector('.ds-overlay'));
+        await page.keyboard.press('Escape');
+        await settle(400);
+        const openAfterSecond = await page.evaluate(() => !!document.querySelector('.ds-overlay'));
+        scenes[name].esc = { fullAfterEsc, openAfterFirst, openAfterSecond };
+        // Pinned: the main area gets as narrow as the overlay is wide, and the overlay stays
+        // on the next page; unpinned, the room is back.
+        if (!phone) {
+          await page.locator('.board-card-title').first().click();
+          await settle(900);
+          const mainOf = () =>
+            page.evaluate(() => {
+              const main = document.querySelector('.ds-main').getBoundingClientRect();
+              const header = document.querySelector('.ds-page-header').getBoundingClientRect();
+              const overlay = document.querySelector('.ds-overlay')?.getBoundingClientRect();
+              return {
+                main: { right: main.right, width: main.width },
+                header: { right: header.right },
+                overlay: overlay ? { left: overlay.left, width: overlay.width } : null,
+              };
+            });
+          const before = await mainOf();
+          await page.locator('.ds-overlay [data-control="pin"]').click();
+          await settle(600);
+          const after = await mainOf();
+          await page.goto(`${web}/project/${project}/initiatives`, { waitUntil: 'load' });
+          await settle(1500);
+          const elsewhere = await page.evaluate(() => !!document.querySelector('.ds-overlay'));
+          await page.locator('.ds-overlay [data-control="pin"]').click();
+          await settle(600);
+          const released = await mainOf();
+          scenes[name].dock = {
+            mainBefore: before.main,
+            mainAfter: after.main,
+            headerAfter: after.header,
+            overlayLeft: after.overlay?.left ?? 0,
+            overlayWidth: after.overlay?.width ?? 0,
+            stillOpenOnOtherPage: elsewhere,
+            mainReleased: released.main,
+          };
+          await page.keyboard.press('Escape');
+        }
+      }
+    } catch (error) {
+      scenes[name] = { error: String(error.message ?? error).slice(0, 120) };
+    }
+    await page.keyboard.press('Escape').catch(() => {});
+  }
+  return scenes;
+}
+
 async function login() {
   const context = await request.newContext({ baseURL: api });
   const response = await context.post('/api/auth/sign-in/email', {
@@ -240,6 +462,7 @@ async function main() {
     ...(process.env.UI_AUDIT_CHROME ? { executablePath: process.env.UI_AUDIT_CHROME } : {}),
   });
   const results = [];
+  const overlays = [];
   for (const theme of themes)
     for (const width of widths) {
       const phone = width < 600;
@@ -272,12 +495,26 @@ async function main() {
           await page.waitForTimeout(800);
           return page.evaluate(measure);
         });
-        results.push({ route, theme, width, ...measured });
+        const edges = await page.evaluate(measureEdges).catch(() => ({ none: true }));
+        results.push({ route, theme, width, ...measured, edges });
+      }
+      if (!args['no-overlays']) {
+        const scenes = await overlayScenes(page, { phone: width < 1024 });
+        overlays.push({ theme, width, scenes });
       }
       await context.close();
     }
   await browser.close();
-  const report = { at: new Date().toISOString(), results, findings: findings(results) };
+  const report = {
+    at: new Date().toISOString(),
+    results,
+    overlays,
+    findings: [
+      ...findings(results),
+      ...edgeFindings(results),
+      ...overlays.flatMap((entry) => overlayFindings(entry.scenes, entry)),
+    ],
+  };
   if (args.out) writeFileSync(args.out, JSON.stringify(report, null, 1));
   console.log(`${results.length} Ansichten, ${report.findings.length} Befunde`);
   for (const finding of report.findings) console.log(`  ${finding}`);

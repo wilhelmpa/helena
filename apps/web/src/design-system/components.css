@@ -3096,7 +3096,7 @@ a.ds-run-card:hover {
 }
 /* Team › Liste: the pool under the toolbar, the width of the page. */
 .ds-team-pool {
-  padding-top: var(--space-2);
+  padding: var(--space-2);
 }
 
 /* Where a project setting stands against Ava's default (InheritedMark, Auftrag 117). */

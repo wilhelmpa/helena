@@ -92,7 +92,8 @@ export function useShellHeading({
               : /^\/settings(\/|$)/.test(pathname)
                 ? t('settings')
                 : null;
-    const title = globalTitle ?? home;
+    // The start page is the chat: "Ava › Chats", like every Home page ("Ava › Aufgaben").
+    const title = globalTitle ?? (/^\/(chat)?$/.test(pathname) ? t('sidebarChats') : home);
     if (/^\/files(\/|$)/.test(pathname)) {
       const knowledge = { label: t('sidebarKnowledge'), href: '/files' };
       const root = search.get('root');
