@@ -6,7 +6,7 @@ import {
 import { retryLocalAiEval, type EvalRetry } from './local-ai-eval-retry';
 // The local AI task-class evals from the command line (docs/helena-decisions/local-ai-platform.md
 // §7): the same cases Administrator → Server → Lokale KI runs, against any OpenAI-compatible
-// server, without Helena's database. For measuring models before they are registered.
+// server. Registered servers persist valid evaluations when DATABASE_URL is configured.
 //
 //   bun apps/api/src/scripts/local-ai-eval.ts --base http://127.0.0.1:13305/api/v1 \
 //     --key-file /etc/helena/local-ai.key --model Qwen3.6-35B-A3B-GGUF \
@@ -146,6 +146,21 @@ for (const entry of [...BUILTIN_TASK_CLASSES, DECISIONS_LOCAL_AI_CLASS]) {
   } catch (caught) {
     if (caught instanceof NpuDecisionReadoutError) npuReadout = caught.report;
     error = caught instanceof Error ? caught.message : String(caught);
+  }
+  if (result && !process.env.DATABASE_URL)
+    say(`    ${entry.id}: evaluation not saved (DATABASE_URL is not configured)`);
+  if (result && process.env.DATABASE_URL) {
+    const { storeCliEval } = await import('./local-ai-eval-store');
+    const saved = await storeCliEval({
+      baseUrl: base,
+      model: target,
+      entry,
+      result,
+      ranAt: new Date(started),
+    });
+    say(
+      `    ${entry.id}: ${saved ? 'evaluation saved' : 'server not registered uniquely; evaluation not saved'}`,
+    );
   }
   rows.push({
     classId: entry.id,

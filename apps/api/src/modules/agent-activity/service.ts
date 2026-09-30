@@ -26,6 +26,8 @@ import {
 import type { ActivityKind } from './model';
 import { purgeActivityEntries } from '#modules/trash/service';
 import { workflowRunEntries } from './workflow-runs';
+import { unresolvedAgentFailure } from '#modules/pipelines/unresolved';
+import { unresolvedChatFailure } from './attention';
 
 // One timeline of what the agents did: their chat answers, their runs, and the runs of
 // the Helena engine (agent teams, workflows, routines), merged newest first.
@@ -60,6 +62,7 @@ async function agentRunEntries(
       id: agentRun.id,
       at: key.iso,
       status: agentRun.status,
+      requiresAttention: unresolvedAgentFailure,
       attempts: agentRun.attempts,
       nextAttemptAt: agentRun.nextAttemptAt,
       lastError: agentRun.lastError,
@@ -102,6 +105,7 @@ async function agentRunEntries(
     kind: 'agent-run' as const,
     at: row.at,
     status: runStatus(row),
+    requiresAttention: row.requiresAttention,
     project: { id: row.projectId, key: row.projectKey, name: row.projectName },
     agent: { id: row.agentId, username: row.agentUsername, name: row.agentName },
     issue:
@@ -152,6 +156,7 @@ async function chatEntries(
       id: agentChatMessage.id,
       at: key.iso,
       status: agentChatMessage.status,
+      requiresAttention: unresolvedChatFailure,
       threadId: agentChatMessage.threadId,
       startedAt: agentChatMessage.startedAt,
       finishedAt: agentChatMessage.finishedAt,
@@ -180,6 +185,7 @@ async function chatEntries(
     kind: 'chat' as const,
     at: row.at,
     status: row.status,
+    requiresAttention: row.requiresAttention,
     project: within,
     agent: { id: row.agentId, username: row.agentUsername, name: row.agentName },
     threadId: row.threadId,

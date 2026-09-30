@@ -11,6 +11,7 @@ import {
 import { alias } from 'drizzle-orm/pg-core';
 import { and, eq, exists, inArray, or, sql, type SQL } from 'drizzle-orm';
 import { agentTeamStages } from '#modules/control-plane-workflows/agent-team';
+import { unresolvedPipelineFailure } from '#modules/pipelines/unresolved';
 import { emptyEntry, type ActivityEntry, type ActivityFilters } from './entry';
 
 // The runs of the Helena engine in a timeline: agent teams, builder workflows and
@@ -60,6 +61,7 @@ export async function workflowRunEntries(
   const rows = await db
     .select({
       run: pipelineRun,
+      requiresAttention: unresolvedPipelineFailure,
       at,
       entryId: id,
       projectKey: project.key,
@@ -96,6 +98,7 @@ export async function workflowRunEntries(
       kind: run.kind === 'agent_team' ? 'agent-team-run' : 'workflow-run',
       at: row.at,
       status: run.status,
+      requiresAttention: row.requiresAttention,
       project: { id: run.projectId, key: row.projectKey, name: row.projectName },
       agent:
         run.agentId && row.agentUsername

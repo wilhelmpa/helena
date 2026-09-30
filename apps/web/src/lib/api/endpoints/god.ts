@@ -306,7 +306,7 @@ export interface RuntimeLoginsHealth {
 
 export interface SystemHealth {
   vault?: {
-    state: 'ok' | 'down';
+    state: 'ok' | 'down' | 'unknown';
     checkedAt: string | null;
     findings: { code: string; path: string; detail: string }[];
   };

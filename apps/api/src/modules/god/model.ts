@@ -327,7 +327,7 @@ export const EngineSettingsResponse = t.Object({
 
 export const SystemHealthResponse = t.Object({
   vault: t.Object({
-    state: t.Union([t.Literal('ok'), t.Literal('down')]),
+    state: t.Union([t.Literal('ok'), t.Literal('down'), t.Literal('unknown')]),
     checkedAt: t.Nullable(t.String()),
     findings: t.Array(t.Object({ code: t.String(), path: t.String(), detail: t.String() })),
   }),

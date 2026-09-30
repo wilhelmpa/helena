@@ -2,6 +2,7 @@ import type { MessageInjectedEventBody } from '../native-runtime/model';
 import { dispatchFollowups } from '../native-runtime/followups';
 import { toolsFullyObserved } from '@helena/sdk';
 import { ownerOrigin, inheritedChatTaint } from '#modules/root-access/provenance';
+import { markChatFailuresSeen } from '#modules/agent-activity/attention';
 import { queueChatEscalation } from './escalation';
 import type { EscalationReport } from '../runner/escalation';
 import {
@@ -373,6 +374,11 @@ export async function getThreadMessages(
       ? await db.select().from(agentChatMessage).where(inArray(agentChatMessage.id, ids))
       : [];
   const turns = ids.flatMap((id) => rows.filter((row) => row.id === id));
+  await markChatFailuresSeen(
+    userId,
+    undefined,
+    turns.filter((row) => row.status === 'failed').map((row) => row.id),
+  );
   const newest = page === 0 ? turns.at(-1) : undefined;
   const activeAnswer =
     newest?.role === 'assistant' && isLive(newest.status)

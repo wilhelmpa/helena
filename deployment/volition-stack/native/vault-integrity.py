@@ -241,7 +241,8 @@ def scan(root, index, receipts, project_users=None, backup=None, git=None):
         issue('backup_unchecked', 'Vault')
     elif backup.get('state', 'ok') != 'ok':
         code = {'disabled': 'backup_disabled', 'no_snapshot': 'backup_no_snapshot',
-                'stale': 'backup_stale'}.get(backup.get('state'), 'backup_unchecked')
+                'stale': 'backup_stale', 'unavailable': 'backup_unavailable',
+                'error': 'backup_check_failed', 'pending': 'backup_unchecked'}.get(backup.get('state'), 'backup_check_failed')
         issue(code, 'Vault')
     else:
         paths = set(backup.get('paths', []))
@@ -253,8 +254,12 @@ def scan(root, index, receipts, project_users=None, backup=None, git=None):
         if not backup.get('sample_ok'):
             issue('backup_restore', sample or 'Vault')
 
-    return {'checkedAt': datetime.now(timezone.utc).isoformat(), 'state': 'ok' if not findings else 'down',
-            'findings': findings}
+    state = 'ok'
+    if findings:
+        pending_backup = backup is None or backup.get('state') == 'pending'
+        only_pending = all(item['code'] == 'backup_unchecked' for item in findings)
+        state = 'unknown' if pending_backup and only_pending else 'down'
+    return {'checkedAt': datetime.now(timezone.utc).isoformat(), 'state': state, 'findings': findings}
 
 
 def git_state(folder):
@@ -277,7 +282,7 @@ def backup_state():
         parameters = reply.get('parameters') if isinstance(reply, dict) else None
         result = parameters.get('result') if isinstance(parameters, dict) else None
         if isinstance(reply, dict) and 'error' not in reply and isinstance(result, dict) and result.get('state') in (
-                'ok', 'disabled', 'no_snapshot', 'stale', 'unavailable', 'error'):
+                'ok', 'disabled', 'no_snapshot', 'stale', 'unavailable', 'error', 'pending'):
             return result
     except (OSError, ValueError, TypeError):
         pass

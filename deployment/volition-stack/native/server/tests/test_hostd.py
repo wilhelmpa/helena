@@ -884,6 +884,16 @@ class BackupTests(HostTest):
 # ── Events ───────────────────────────────────────────────────────────────────────────────
 
 class EventTests(HostTest):
+    def test_repaired_boot_entries_stay_visible_without_problem_count(self):
+        state = self.config.state_dir
+        events.record(state, source='boot', severity='warning', code='BootEntryRepaired', device=None, message='Repaired', at=1.0)
+        listing = events.listing(state)
+        self.assertEqual(listing['unseen'], 0)
+        self.assertEqual(listing['events'][0]['code'], 'BootEntryRepaired')
+        events.record(state, source='boot', severity='critical', code='BootEntryRepaired', device=None, message='Requires owner', at=2.0)
+        self.assertEqual(events.listing(state)['unseenCritical'], 1)
+        self.assertEqual(events.listing(state)['unseen'], 1)
+
     def test_mdadm_and_smartd_events(self):
         self.assertEqual(events.from_mdadm(['Fail', '/dev/md127', '/dev/nvme0n1p2'])['severity'], 'critical')
         self.assertEqual(events.from_mdadm(['Rebuild40', '/dev/md127'])['severity'], 'info')

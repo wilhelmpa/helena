@@ -23,6 +23,7 @@ export const ActivityEntryResponse = t.Object({
   kind: ActivityKind,
   at: t.String(),
   status: t.String(),
+  requiresAttention: t.Optional(t.Boolean()),
   project: t.Nullable(t.Object({ id: t.Number(), key: t.String(), name: t.String() })),
   agent: t.Nullable(t.Object({ id: t.Number(), username: t.String(), name: t.String() })),
   issue: t.Nullable(

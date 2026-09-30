@@ -9,6 +9,7 @@ export interface AgentActivityEntry {
   kind: AgentActivityKind;
   at: string;
   status: string;
+  requiresAttention?: boolean;
   project: { id: number; key: string; name: string } | null;
   agent: { id: number; username: string; name: string } | null;
   issue: { id: number; identifier: string; sequenceNumber: number; title: string } | null;
