@@ -348,6 +348,7 @@ export const ClaimChatResponse = t.Object({
       ),
       model: t.Nullable(t.String()),
       thinkingLevel: t.Nullable(t.String()),
+      via: t.Optional(t.Literal('voice')),
       images: t.Array(t.String(), {
         description:
           'Absolute paths of the images attached to the question, for a model that reads images.',

@@ -810,7 +810,7 @@ export async function sendMessage(
   // back to the runner when the question needs the agent.
   const answerer = spokenAnswerer;
   const voiceHeld =
-    input.via === 'voice' && answerer
+    input.via === 'voice' && !input.attachments?.length && answerer
       ? await answerer.available(agentId).catch(() => false)
       : false;
   const command =
@@ -865,6 +865,7 @@ export async function sendMessage(
         rootOrigin: await ownerOrigin(agentId, userId),
         taintSources: await inheritedChatTaint(threadId, !!input.attachments?.length),
         role: 'assistant',
+        via: input.via ?? null,
         ...(held && {
           nextAttemptAt: sql`now() + make_interval(secs => ${SPOKEN_HOLD_SECONDS})`,
         }),
@@ -894,43 +895,51 @@ export async function sendMessage(
     );
     return { threadId, messageId: answer.id, userMessageId: question.id };
   });
-  if (sent && command) {
-    const reply = await command(prompt, sent.messageId, () =>
-      takeHeldAnswer(agentId, sent.messageId),
-    ).catch(() => null);
-    if (reply !== null) {
-      const messageId = `msg-${sent.messageId}`;
-      await appendEvents(agentId, sent.messageId, [
-        { type: 'TEXT_MESSAGE_START', messageId, role: 'assistant' },
-        { type: 'TEXT_MESSAGE_CONTENT', messageId, delta: reply },
-        { type: 'TEXT_MESSAGE_END', messageId },
-      ]);
-      await finishSpokenAnswer(agentId, sent.messageId, {
-        model: 'jev-command',
-        inputTokens: null,
-        outputTokens: null,
-        via: input.via ?? null,
-      });
-      return sent;
+  const answer = async () => {
+    if (sent && command) {
+      const reply = await command(prompt, sent.messageId, () =>
+        takeHeldAnswer(agentId, sent.messageId),
+      ).catch(() => null);
+      if (reply !== null) {
+        const messageId = `msg-${sent.messageId}`;
+        await appendEvents(agentId, sent.messageId, [
+          { type: 'TEXT_MESSAGE_START', messageId, role: 'assistant' },
+          { type: 'TEXT_MESSAGE_CONTENT', messageId, delta: reply },
+          { type: 'TEXT_MESSAGE_END', messageId },
+        ]);
+        await finishSpokenAnswer(agentId, sent.messageId, {
+          model: 'jev-command',
+          inputTokens: null,
+          outputTokens: null,
+          via: input.via ?? null,
+        });
+        return sent;
+      }
+      if (!voiceHeld) await releaseHeldAnswer(agentId, sent.messageId);
     }
-    if (!voiceHeld) await releaseHeldAnswer(agentId, sent.messageId);
-  }
-  if (sent && voiceHeld && answerer) {
-    const job = {
-      agentId,
-      messageId: sent.messageId,
-      threadId: sent.threadId,
-      userId,
-      projectId: input.projectId,
-    };
-    // Never awaited: the question is stored and the chat follows the answer's stream. Should
-    // the voice reply fail before it hands the answer back, the hold runs out and the runner
-    // takes it.
-    void answerer.answer(job).catch(async (error: unknown) => {
-      console.warn('[voice] the voice reply failed; the agent answers', error);
-      await releaseHeldAnswer(agentId, sent.messageId).catch(() => {});
+    if (sent && voiceHeld && answerer) {
+      const job = {
+        agentId,
+        messageId: sent.messageId,
+        threadId: sent.threadId,
+        userId,
+        projectId: input.projectId,
+      };
+      // Never awaited: the question is stored and the chat follows the answer's stream. Should
+      // the voice reply fail before it hands the answer back, the hold runs out and the runner
+      // takes it.
+      void answerer.answer(job).catch(async (error: unknown) => {
+        console.warn('[voice] the voice reply failed; the agent answers', error);
+        await releaseHeldAnswer(agentId, sent.messageId).catch(() => {});
+      });
+    }
+  };
+  if (input.via === 'voice')
+    void answer().catch(async (error: unknown) => {
+      console.warn('[voice] fast path failed; the agent answers', error);
+      if (sent) await releaseHeldAnswer(agentId, sent.messageId).catch(() => {});
     });
-  }
+  else await answer();
   return sent;
 }
 
@@ -1154,6 +1163,7 @@ export async function showVersion(
 }
 
 export interface ClaimedChat {
+  via?: 'voice';
   projectId: number | null;
   id: number;
   threadId: string;
@@ -1280,7 +1290,10 @@ async function claimAdmittedMessage(agent: RunnerAgent): Promise<ClaimedChat | n
   let lastOwn = history.length - 1;
   while (
     lastOwn >= 0 &&
-    !(history[lastOwn]!.role === 'assistant' && history[lastOwn]!.via !== 'voice')
+    !(
+      history[lastOwn]!.role === 'assistant' &&
+      (history[lastOwn]!.via !== 'voice' || history[lastOwn]!.sessionId != null)
+    )
   )
     lastOwn -= 1;
   const sessionId =
@@ -1369,6 +1382,7 @@ async function claimAdmittedMessage(agent: RunnerAgent): Promise<ClaimedChat | n
     attempts: row.attempts,
     sessionId,
     ...settings,
+    ...(spoken && { via: 'voice' as const, thinkingLevel: 'none' }),
     images: imagePaths(attachments),
     autopilotLevel: (await resolveLevel(agent.id, row.projectId)).level,
   };

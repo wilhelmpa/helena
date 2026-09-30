@@ -288,7 +288,8 @@ export default function ChatThreadView({
       talking,
       lastQuestionVia: lastQuestionVia.current,
     });
-    if (text) speak(text, { speaker: voice.speaker, speed: voice.speed });
+    if (text && lastQuestionVia.current !== 'voice')
+      speak(text, { speaker: voice.speaker, speed: voice.speed });
   }, [plan.busy, plan.messages, readAll, talking, voice.speaker, voice.speed]);
 
   // One send per turn: between handing a message to the chat and the chat reporting it
@@ -305,8 +306,9 @@ export default function ChatThreadView({
     dispatching.current = true;
     setQueue(rest);
     lastQuestionVia.current = next!.options.via ?? null;
+    if (next!.options.via === 'voice') conversation.followReply();
     void plan.send(next!.text, next!.options, next!.metadata);
-  }, [plan, queue, queuePaused]);
+  }, [plan, queue, queuePaused, conversation]);
 
   return (
     <WebLinkScope projectKey={scopeKey.startsWith('team:') ? null : scopeKey}>
@@ -435,6 +437,7 @@ export default function ChatThreadView({
             setQueuePaused(false);
             if (threadId) onActivity(threadId);
             lastQuestionVia.current = options.via ?? null;
+            if (options.via === 'voice') conversation.followReply();
             void plan.send(text, options, metadata);
           }}
           onStop={() => void plan.stop()}

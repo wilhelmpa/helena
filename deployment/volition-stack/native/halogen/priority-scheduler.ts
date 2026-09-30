@@ -6,8 +6,8 @@ import {
 export type PriorityClass = 'interactive' | 'realtime' | 'normal' | 'background';
 const classes: PriorityClass[] = ['interactive', 'realtime', 'normal', 'background'];
 const rank: Record<PriorityClass, number> = {
-  interactive: 3,
-  realtime: 2,
+  interactive: 2,
+  realtime: 3,
   normal: 1,
   background: 0,
 };
@@ -178,9 +178,15 @@ export class PriorityScheduler {
       background: this.config.maxBackground,
     };
     if (this.active[kind] >= cap[kind]) return false;
+    if (kind === 'realtime') return true;
+    if (
+      this.config.maxConcurrent > 1 &&
+      this.total() - this.active.realtime >= this.config.maxConcurrent - 1
+    )
+      return false;
     if (kind === 'interactive') return true;
     if (
-      this.total() - this.active.interactive >=
+      this.total() - this.active.interactive - this.active.realtime >=
       this.config.maxConcurrent - this.config.reservedInteractive
     )
       return false;
@@ -191,6 +197,10 @@ export class PriorityScheduler {
   }
 
   private choose(): Waiting | undefined {
+    const realtime = this.waiting.find(
+      (item) => item.kind === 'realtime' && this.eligible(item.kind),
+    );
+    if (realtime) return realtime;
     const background = this.agedBackground();
     if (
       background &&

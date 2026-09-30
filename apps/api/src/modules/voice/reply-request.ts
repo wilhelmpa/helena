@@ -6,10 +6,10 @@ import type { LocalAiChatRequest } from '@helena/sdk';
 
 export const VOICE_REPLY_CLASS = 'voice-reply';
 
-const MAX_TOKENS = 200;
+const MAX_TOKENS = 128;
 // The turns of the conversation the model reads, and how much of each.
-const HISTORY_TURNS = 10;
-const TURN_CHARS = 1_200;
+const HISTORY_TURNS = 4;
+const TURN_CHARS = 500;
 // Text is held back until it is clearly an answer (a sentence, or this much): a model that
 // starts writing and then calls the hand-over has said nothing yet.
 const COMMIT_CHARS = 60;
@@ -41,30 +41,23 @@ export function voiceReplyRequest(input: VoiceReplyInput): LocalAiChatRequest {
   const language = LANGUAGE_NAMES[input.language] ?? 'German';
   const person = input.personName ?? 'the person';
   const system = [
-    `You are ${input.agentName}, an assistant in ${input.displayName ?? 'Ava'}. You are talking with ${person} by ` +
-      'voice: everything you write is read aloud at once.',
-    'Answer yourself ONLY when this conversation and general knowledge are enough: a greeting, ' +
-      'small talk, whether you can hear them, thanks or goodbye, the time or the date (it is ' +
-      `${input.now}), a general-knowledge question, or repeating, shortening or explaining ` +
-      'something already said in this conversation.',
-    `For everything else call ${HAND_OVER_TOOL} at once, without writing anything first: ` +
-      'anything about their tasks, projects, mails, calendar, files, notes, agents, servers ' +
-      'or other data you cannot see here; anything that should be done (create, change, send, ' +
-      'start, stop, delete, search, look up, remember); anything current (news, weather, ' +
-      'prices); anything you are not sure about. Never guess and never promise to do ' +
-      'something yourself.',
-    'If you are about to say that you will check, look, open, search, send, note or do ' +
-      'something ("I will look at your calendar", "one moment, I will check"), that is a ' +
-      `hand-over: call ${HAND_OVER_TOOL} instead and write nothing. The agent tells the person ` +
-      'what it found.',
-    `When you answer: ${language}, one or two short spoken sentences, no Markdown, no lists, ` +
-      'no emojis.',
+    `You are ${input.agentName}, an assistant in ${input.displayName ?? 'Ava'}, speaking with ${person}. ` +
+      'Your streamed answer is read aloud immediately.',
+    'Answer only from the conversation or stable general knowledge: greetings, thanks, goodbye, ' +
+      'whether you hear them, the supplied local time/date, general questions, or repeating, ' +
+      'shortening and explaining earlier answers.',
+    `Otherwise call ${HAND_OVER_TOOL} immediately, with no text: actions (create, change, send, ` +
+      'start, stop, delete, search, remember); tasks, projects, mail, calendar, files, agents, ' +
+      'servers or other unseen data; current news, weather or prices; anything uncertain. ' +
+      'Never guess or promise to check or act: hand over instead.',
+    `Answer in ${language}, one or two short spoken sentences, no Markdown, lists or emojis.`,
   ].join('\n\n');
   const earlier = input.turns.slice(-HISTORY_TURNS).map((turn) => {
     const speaker = turn.role === 'user' ? 'Person' : turn.mine ? 'You' : 'Another agent';
     return `${speaker}: ${turn.text.replace(/\s+/g, ' ').trim().slice(0, TURN_CHARS)}`;
   });
   const prompt = [
+    `Current local date and time: ${input.now}`,
     ...(earlier.length ? ['The conversation so far:', ...earlier, ''] : []),
     `The person says now: ${input.question}`,
   ].join('\n');

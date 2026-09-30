@@ -560,6 +560,10 @@ class LauncherRequestTest(unittest.TestCase):
         self.assertEqual(launcher_module.work_socket(
             'halogen', '/run/volition-halogen-priority/normal-8731.sock', 'background'),
             '/run/volition-halogen-priority/background-8731.sock')
+        voice_props = self.worker.sandbox_properties(
+            'alpha', checked['account'], [checked['workspace']], [], checked['limits'], 'voice')
+        self.assertIn('BindReadOnlyPaths=-/run/volition-halogen-priority/voice-8731.sock', voice_props)
+        self.assertNotIn('BindReadOnlyPaths=-/run/volition-halogen-priority/chat-8731.sock', voice_props)
         self.assertIn('BindReadOnlyPaths=/run/volition-agents/egress.sock', props)
         self.assertIn('BindReadOnlyPaths=/run/volition-agents/plan.sock', props)
 

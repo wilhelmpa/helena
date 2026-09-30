@@ -84,13 +84,13 @@ RESERVED_ENV = {
 # approval guard) are the runtime's.
 RESERVED_ENV_PREFIXES = ('VOLITION_AGENT_', 'SYSTEMD_')
 PROXY_ENV = {'http_proxy', 'https_proxy', 'all_proxy', 'no_proxy', 'ftp_proxy'}
-WORK_KINDS = {'run': 'r', 'chat': 'c', 'helper': 'h', 'background': 'b'}
+WORK_KINDS = {'run': 'r', 'chat': 'c', 'voice': 'c', 'helper': 'h', 'background': 'b'}
 
 
 def work_socket(name: str, path: str, work_kind: str) -> str:
     if name not in ('halogen', 'halogenquiet'):
         return path
-    priority = 'chat' if work_kind == 'chat' else 'background' if work_kind in ('helper', 'background') else 'normal'
+    priority = 'voice' if work_kind == 'voice' else 'chat' if work_kind == 'chat' else 'background' if work_kind in ('helper', 'background') else 'normal'
     return path.replace('/normal-', f'/{priority}-')
 REQUEST_KEYS = {
     'ping': {'v', 'op'},

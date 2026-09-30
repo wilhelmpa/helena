@@ -10,7 +10,7 @@ test('background gets the next free slot under continuous interactive demand by 
   );
   const abort = new AbortController();
   const running = await Promise.all(
-    Array.from({ length: 4 }, () => scheduler.acquire('interactive')),
+    [0, 1, 2].map(() => scheduler.acquire('interactive')).concat(scheduler.acquire('realtime')),
   );
   const background = scheduler.acquire('background', abort.signal);
   const chats = Array.from({ length: 8 }, () => scheduler.acquire('interactive', abort.signal));
@@ -23,7 +23,8 @@ test('background gets the next free slot under continuous interactive demand by 
   backgroundRelease?.();
   for (const chat of chats) (await chat)?.();
   expect(status.active.background).toBe(1);
-  expect(status.active.interactive).toBe(3);
+  expect(status.active.interactive).toBe(2);
+  expect(status.active.realtime).toBe(1);
 });
 
 test('the minimum quota serves the oldest background job and preserves interactive capacity', async () => {
@@ -31,7 +32,7 @@ test('the minimum quota serves the oldest background job and preserves interacti
   const scheduler = new PriorityScheduler(DEFAULT_PRIORITY_CONFIG, () => now);
   const abort = new AbortController();
   const running = await Promise.all(
-    Array.from({ length: 4 }, () => scheduler.acquire('interactive')),
+    [0, 1, 2].map(() => scheduler.acquire('interactive')).concat(scheduler.acquire('realtime')),
   );
   const order: string[] = [];
   const backgrounds = ['first', 'second'].map((name) =>
@@ -118,9 +119,9 @@ test('fairness preserves administrative pauses, backend health and reserved inte
   const background = await pending;
   expect(background).toBeFunction();
   const interactive = await Promise.all(
-    Array.from({ length: 3 }, () => scheduler.acquire('interactive')),
+    [0, 1].map(() => scheduler.acquire('interactive')).concat(scheduler.acquire('realtime')),
   );
-  expect(scheduler.status().active).toMatchObject({ background: 1, interactive: 3 });
+  expect(scheduler.status().active).toMatchObject({ background: 1, interactive: 2, realtime: 1 });
   background!();
   interactive.forEach((release) => release!());
   abort.abort();

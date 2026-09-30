@@ -84,7 +84,7 @@ const SEND_TIMEOUT_MS = 10_000;
 const WAITING_CHIME_MS = 1_600;
 // A finished-looking last sentence of a streaming answer is read once the text has been quiet
 // this long (speechChunks.settledTail): the runner sends text every 150 ms while it comes.
-const TAIL_QUIET_MS = 100;
+const TAIL_QUIET_MS = 0;
 const BRIDGE_DELAY_MS = 120;
 const PROGRESS_INTERVAL_MS = 6_000;
 
@@ -131,6 +131,7 @@ export class ConversationController {
   // How long a pause ends a turn, and how fast the browser's voice reads (the owner's settings).
   private pauseMs = DEFAULT_PAUSE_MS;
   private speed = 1;
+  private replyOnly = false;
   private immediateResponse = true;
   private bridgeEnabled = true;
   // The turn being timed: from the end of the owner's speech to the first sound of the answer.
@@ -146,7 +147,7 @@ export class ConversationController {
     const listenerChanged = listener.engine !== this.listener.engine;
     this.listener = listener;
     this.speaker = speaker;
-    if (this.state.active !== 'on' || !listenerChanged) return;
+    if (this.replyOnly || this.state.active !== 'on' || !listenerChanged) return;
     // Lokale KI changed while talking (local went down in "prefer", or came back): the ear
     // follows. A voice keeps reading what it has; the next answer uses the new one.
     void this.openEar();
@@ -172,6 +173,7 @@ export class ConversationController {
 
   // Starts from a click: the voice is unlocked before anything waits.
   start(messages: ConversationMessage[], busy: boolean, wakeText?: string): void {
+    if (this.replyOnly) this.stop();
     if (this.state.active !== 'off') return;
     if (this.listener.engine === 'none') {
       this.deps.onProblem(this.listener.blocker);
@@ -206,6 +208,35 @@ export class ConversationController {
     });
   }
 
+  prepareReply(): void {
+    if (this.state.active !== 'off') return;
+    this.voice ??= this.createVoice(this.speaker);
+    this.voice?.unlock();
+    this.voice?.preload(preloadedPhrases(pageLanguage() ?? 'de'));
+  }
+
+  followReply(messages: ConversationMessage[]): void {
+    if (this.state.active !== 'off') return;
+    stopSpeaking();
+    this.replyOnly = true;
+    this.generation += 1;
+    this.messages = messages;
+    this.baseline = new Set(messages.map((message) => message.id));
+    this.sawBusy = false;
+    this.reading = null;
+    this.bridgeSinceAnswer = false;
+    this.answerReading = false;
+    this.prepareReply();
+    const now = performance.now();
+    this.marks = { stoppedAt: now, heardAt: now, sentAt: now };
+    performance.mark('volition-voice-speech-ended', { startTime: now });
+    this.state = { ...initialConversation, active: 'on', awaitingAnswer: true };
+    this.bridgeDueAt = now + (this.deps.bridgeDelayMs ?? BRIDGE_DELAY_MS);
+    this.lastProgressAt = now;
+    this.scheduleBridge();
+    this.scheduleProgress();
+  }
+
   stop(): void {
     this.dispatch({ type: 'stop' });
   }
@@ -237,6 +268,7 @@ export class ConversationController {
       this.dispatch({ type: 'answerEnded' });
     }
     this.readAnswer();
+    if (this.replyOnly && !this.state.awaitingAnswer && !busy && !this.voice?.busy()) this.stop();
     this.scheduleProgress();
   }
 
@@ -245,7 +277,7 @@ export class ConversationController {
   private dispatch(event: ConversationEvent): void {
     const step = conversationStep(this.state, event);
     this.state = step.state;
-    this.deps.onState(step.state);
+    if (!this.replyOnly) this.deps.onState(step.state);
     for (const effect of step.effects) this.run(effect);
   }
 
@@ -287,6 +319,7 @@ export class ConversationController {
         if (this.reading) this.reading.dropped = true;
         return;
       case 'stopAll':
+        this.replyOnly = false;
         this.generation += 1;
         this.deps.onStream?.(null);
         this.deps.onOutputAnalyser?.(null);
@@ -338,7 +371,7 @@ export class ConversationController {
         performance.mark('volition-voice-speech-ended', {
           startTime: Math.max(0, this.marks.stoppedAt),
         });
-        this.bridgeDueAt = now + (this.deps.bridgeDelayMs ?? BRIDGE_DELAY_MS);
+        this.bridgeDueAt = this.marks.stoppedAt + (this.deps.bridgeDelayMs ?? BRIDGE_DELAY_MS);
         this.scheduleBridge();
         this.utterances.push({ samples, text, reading: this.voice?.reading() ?? '' });
         this.dispatch({ type: 'speechEnd' });
@@ -386,6 +419,7 @@ export class ConversationController {
         this.bridgeActive = false;
         this.ear?.setGuarded(false);
         this.dispatch({ type: 'speakerIdle' });
+        if (this.replyOnly && !this.state.awaitingAnswer && !this.busy) this.stop();
       },
       onAudible: (text) => {
         this.recordFirstTone();

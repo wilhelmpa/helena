@@ -216,6 +216,7 @@ export default function ChatComposer({
     chosenMode && steerModes.includes(chosenMode) ? chosenMode : defaultFollowupMode(steerModes);
   // Dictation and the conversation share the microphone: one at a time.
   const [dictating, setDictating] = useState(false);
+  const dictated = useRef(false);
 
   function focusAfter(update: () => void) {
     update();
@@ -269,6 +270,7 @@ export default function ChatComposer({
       refs: attachments.flatMap((item) => (item.ref ? [item.ref] : [])),
       model,
       thinkingLevel,
+      ...(dictated.current && { via: 'voice' as const }),
     };
     const metadata: PlanChatMetadata = {
       attachments: attachments.map((item) =>
@@ -313,6 +315,7 @@ export default function ChatComposer({
       onSend(text, options, metadata);
     }
     setValue('');
+    dictated.current = false;
     setAttachments([]);
     // Sending by the arrow leaves the focus on a button the answer replaces with "stop":
     // the next message is typed into the field, not into the page (O64).
@@ -487,7 +490,10 @@ export default function ChatComposer({
                     {dictation.ready && !talking && (
                       <SpeechInput
                         value={value}
-                        onChange={setValue}
+                        onChange={(text) => {
+                          dictated.current = true;
+                          setValue(text);
+                        }}
                         maxLength={CHAT_PROMPT_LIMIT}
                         engine={dictation.engine}
                         recorder={dictation.recorder}
@@ -495,7 +501,10 @@ export default function ChatComposer({
                         onError={dictation.onError}
                         onBusyChange={(busy) => {
                           setDictating(busy);
-                          if (busy) dictation.clearError();
+                          if (busy) {
+                            dictation.clearError();
+                            conversation.prepareReply();
+                          }
                         }}
                         labels={{
                           start: dictation.local
@@ -532,7 +541,10 @@ export default function ChatComposer({
               {!homeLanding && dictation.ready && !talking && (
                 <SpeechInput
                   value={value}
-                  onChange={setValue}
+                  onChange={(text) => {
+                    dictated.current = true;
+                    setValue(text);
+                  }}
                   maxLength={CHAT_PROMPT_LIMIT}
                   engine={dictation.engine}
                   recorder={dictation.recorder}
@@ -547,7 +559,10 @@ export default function ChatComposer({
                   }
                   onBusyChange={(busy) => {
                     setDictating(busy);
-                    if (busy) dictation.clearError();
+                    if (busy) {
+                      dictation.clearError();
+                      conversation.prepareReply();
+                    }
                   }}
                   labels={{
                     start: dictation.local ? t('composer.dictateLocal') : t('composer.dictate'),

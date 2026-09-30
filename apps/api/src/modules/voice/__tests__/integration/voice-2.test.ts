@@ -414,7 +414,8 @@ describe('spoken turns', () => {
     expect(claimed.prompt).toStartWith('[Said in a voice conversation');
     expect(claimed.prompt).toEndWith('Wie viele Aufgaben hat Verve?');
     expect(claimed.model).toBe('gpt-5.6-luna');
-    expect(claimed.thinkingLevel).toBe('low');
+    expect(claimed.thinkingLevel).toBe('none');
+    expect(claimed.via).toBe('voice');
 
     // A typed question stays as it was.
     await asAgent['agent-chats']({ messageId: claimed.id }).result.post({ status: 'success' });
@@ -469,6 +470,47 @@ describe('the voice reply', () => {
     expect(request.tools.map((tool) => tool.function.name)).toEqual(['hand_to_agent']);
   });
 
+  it('uses the native agent model while the legacy voice class is off', async () => {
+    const { asOwner, agent, asAgent } = await setup();
+    const previous = process.env.HELENA_NATIVE_RUNTIME;
+    process.env.HELENA_NATIVE_RUNTIME = 'on';
+    try {
+      const updated = await asOwner
+        .teams({ teamId: await teamOf(asOwner, 'VERVE') })
+        ['ai-agents']({ agentId: agent.id })
+        .patch({
+          model: 'helena-local/Qwen3.6-35B-A3B-GGUF',
+          runtimePolicy: { ...agent.runtimePolicy, runtime: 'helena' },
+        });
+      expect(updated.error?.value).toBeUndefined();
+      expect(updated.status).toBe(200);
+      const sent = await chatOf(asOwner, agent.id).chat.post({
+        prompt: '[Test-171] Hallo, hörst du mich?',
+        via: 'voice',
+      });
+      const thread = chatOf(asOwner, agent.id).threads({ threadId: sent.data!.threadId });
+      const items = await until(
+        async () => (await thread.messages.get()).data!.items,
+        (list) => list.some((item) => item.role === 'assistant' && item.durationMs != null),
+      );
+      expect(items.find((item) => item.role === 'assistant')).toMatchObject({
+        via: 'voice',
+        model: 'helena-local/Qwen3.6-35B-A3B-GGUF',
+        parts: [{ type: 'text', text: 'Ja, ich höre dich gut.' }],
+      });
+      expect((await asAgent['agent-chats'].claim.post()).data!.message).toBeNull();
+      const request = received
+        .filter((entry) => entry.path === '/api/v1/chat/completions')
+        .at(-1)!.json!;
+      expect(request.reasoning_effort).toBe('none');
+      expect(request.chat_template_kwargs).toEqual({ enable_thinking: false });
+      expect(request.max_tokens).toBe(128);
+    } finally {
+      if (previous === undefined) delete process.env.HELENA_NATIVE_RUNTIME;
+      else process.env.HELENA_NATIVE_RUNTIME = previous;
+    }
+  });
+
   it('hands what needs the agent to its runner at once', async () => {
     const { asOwner, agent, asAgent } = await setup();
     await switchOn(asOwner);
@@ -482,6 +524,16 @@ describe('the voice reply', () => {
     );
     expect(claimed!.prompt).toStartWith('[Said in a voice conversation');
     expect(claimed!.model).not.toBe('helena-local/Qwen3.6-35B-A3B-GGUF');
+    expect(claimed!.via).toBe('voice');
+    expect(claimed!.thinkingLevel).toBe('none');
+    await asAgent['agent-chats']({ messageId: claimed!.id }).events.post({
+      events: [{ type: 'TEXT_MESSAGE_CONTENT', messageId: 'answer', delta: 'Fertig.' }],
+    });
+    await asAgent['agent-chats']({ messageId: claimed!.id }).result.post({ status: 'success' });
+    const items = (
+      await chatOf(asOwner, agent.id).threads({ threadId: claimed!.threadId }).messages.get()
+    ).data!.items;
+    expect(items.find((item) => item.role === 'assistant')?.via).toBe('voice');
   });
 
   it('keeps the agent’s session, and tells it what the voice reply said meanwhile', async () => {
@@ -563,6 +615,9 @@ describe('the voice reply', () => {
     expect(claimed!.model).toBe('openai/gpt-5.5');
     await asAgent['agent-chats']({ messageId: claimed!.id }).events.post({
       events: [{ type: 'TEXT_MESSAGE_CONTENT', messageId: 'fallback', delta: 'Fertig.' }],
+    });
+    await asAgent['agent-chats']({ messageId: claimed!.id }).events.post({
+      events: [{ type: 'TEXT_MESSAGE_CONTENT', messageId: 'answer', delta: 'Fertig.' }],
     });
     await asAgent['agent-chats']({ messageId: claimed!.id }).result.post({ status: 'success' });
     const items = (
