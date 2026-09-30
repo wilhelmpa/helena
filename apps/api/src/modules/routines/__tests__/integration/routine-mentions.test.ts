@@ -129,7 +129,7 @@ async function fire(scheduleId: string, at: Date) {
   const runId = await planFire(scheduleId, at.toISOString(), at.getTime());
   const { startRun } = await import('#modules/engine/runs');
   await startRun(runId!);
-  return waitForStatus(runId!, 'succeeded', 'skipped', 'failed');
+  return waitForStatus(runId!, 'waiting', 'succeeded', 'skipped', 'failed');
 }
 
 beforeAll(async () => {
@@ -160,7 +160,7 @@ describe('routine mentions', () => {
     ]);
 
     const run = (await routines(asOwner)({ routineId: created.data!.id }).run.post()).data!;
-    const fired = await waitForStatus(run.runId, 'succeeded');
+    const fired = await waitForStatus(run.runId, 'waiting', 'succeeded');
     const runs = await runsOn(fired.issueId!);
     expect(runs.map((row) => [row.agentId, row.trigger, row.sourceActivityId])).toEqual([
       [coder.id, 'mention', null],
@@ -240,7 +240,7 @@ describe('routine mentions', () => {
       ['seo', null],
     ]);
     const fired = await fire(saved.id, new Date('2026-09-21T07:00:00.000Z'));
-    expect(fired.status).toBe('succeeded');
+    expect(fired.status).toBe('waiting');
     const runs = await runsOn(fired.issueId!);
     expect(runs.map((row) => row.agentId)).toEqual([seo.id, writer.id]);
     const parts = await mentionParts(fired.id);
@@ -267,7 +267,7 @@ describe('routine mentions', () => {
       ['quiet', 'mentions-off'],
     ]);
     const run = (await routines(asOwner)({ routineId: created.id }).run.post()).data!;
-    const fired = await waitForStatus(run.runId, 'succeeded');
+    const fired = await waitForStatus(run.runId, 'waiting', 'succeeded');
     expect((await runsOn(fired.issueId!)).map((row) => row.agentId)).toEqual([seo.id, writer.id]);
     const outcomes = (await mentionParts(fired.id)).map((step) => [step.agentId, step.outcome]);
     expect(outcomes).toEqual([
@@ -307,7 +307,7 @@ describe('routine mentions', () => {
     const member = await agentAdmin(asOwner);
     const created = (await routines(asOwner).post(routineBody(writer.id, INSTRUCTIONS))).data!;
     const run = (await routines(asOwner)({ routineId: created.id }).run.post()).data!;
-    const fired = await waitForStatus(run.runId, 'succeeded');
+    const fired = await waitForStatus(run.runId, 'waiting', 'succeeded');
     const taskId = fired.issueId!;
     // The routine filed the task: its author does not follow it.
     expect(await db.select().from(issueWatcher).where(eq(issueWatcher.issueId, taskId))).toEqual(
@@ -367,7 +367,7 @@ describe('routine mentions', () => {
       )
     ).data!;
     const run = (await routines(asOwner)({ routineId: created.id }).run.post()).data!;
-    await waitForStatus(run.runId, 'succeeded');
+    await waitForStatus(run.runId, 'waiting', 'succeeded');
     const delegation = (await writer.runner['agent-runs'].claim.post()).data!.run!;
     expect(delegation.issueId).toBe(task.id);
     await writer.runner.issues({ issueId: task.id }).comments.post({ body: 'Backups ok' });
