@@ -1,5 +1,7 @@
 import importlib.util
+import json
 import os
+import sys
 from pathlib import Path
 import tempfile
 import unittest
@@ -49,6 +51,65 @@ class VaultIntegrityTest(unittest.TestCase):
         (self.root / 'Home/bad.md ').write_text('bad')
         self.assertIn('duplicate_file_case', self.codes())
         self.assertIn('noncanonical_file', self.codes())
+
+    def test_backup_report_states_preserve_other_checks(self):
+        for state, code in (('disabled', 'backup_disabled'), ('no_snapshot', 'backup_no_snapshot'),
+                            ('stale', 'backup_stale'), ('unavailable', 'backup_unchecked'),
+                            ('error', 'backup_unchecked')):
+            with self.subTest(state=state):
+                report = audit.scan(self.root, self.index, [], backup={'state': state}, git=self.git)
+                self.assertEqual(report['state'], 'down')
+                self.assertEqual({item['code'] for item in report['findings']}, {code})
+                self.assertIn('git_dirty', self.codes(backup={'state': state},
+                              git={**self.git, 'shared': {'fsck': True, 'dirty': True}}))
+        self.assertEqual(self.codes(backup={'state': 'ok', 'vault_present': True,
+                                         'private_present': True, 'sample_ok': True}), set())
+
+    def test_backup_paths_require_vault_prefix(self):
+        paths = ['/old/srv/volition/vault/Private/secret.md', '/srv/volition/vault-other/file']
+        self.assertTrue({'backup_missing', 'backup_private_missing'} <=
+                        self.codes(backup={'paths': paths, 'sample_ok': True}))
+
+    def test_backup_uses_hostd_and_handles_unavailable_helper(self):
+        with patch.object(audit, 'call', return_value={'parameters': {'result': {'state': 'no_snapshot'}}}) as call:
+            self.assertEqual(audit.backup_state(), {'state': 'no_snapshot'})
+            call.assert_called_once_with('/run/helena-hostd/hostd.sock',
+                                         'io.helena.hostd.VaultBackupIntegrity', timeout=600)
+        for reply in ({}, None, {'parameters': None}, {'error': 'org.varlink.service.MethodNotFound'},
+                      {'parameters': {'result': {'state': 'unknown'}}}):
+            with patch.object(audit, 'call', return_value=reply):
+                self.assertEqual(audit.backup_state(), {'state': 'error'})
+        with patch.object(audit, 'call', side_effect=OSError('test socket missing')):
+            self.assertEqual(audit.backup_state(), {'state': 'error'})
+
+    def test_findings_write_report_with_successful_exit(self):
+        with tempfile.TemporaryDirectory() as output:
+            fixture = Path(output) / 'fixture.json'
+            report = Path(output) / 'report.json'
+            for state, code in (('disabled', 'backup_disabled'), ('no_snapshot', 'backup_no_snapshot')):
+                fixture.write_text(json.dumps({'index': self.index, 'receipts': [],
+                                              'backup': {'state': state}, 'git': self.git}))
+                argv = ['vault-integrity.py', '--root', str(self.root), '--fixture', str(fixture),
+                        '--report', str(report)]
+                with patch.object(sys, 'argv', argv), patch('builtins.print'):
+                    self.assertEqual(audit.main(), 0)
+                self.assertEqual(json.loads(report.read_text())['state'], 'down')
+                self.assertEqual(json.loads(report.read_text())['findings'],
+                                 [{'code': code, 'path': 'Vault', 'detail': ''}])
+        with patch.object(sys, 'argv', ['vault-integrity.py', '--root', str(self.root)]), \
+                patch.object(audit, 'database_rows', side_effect=RuntimeError('test failure')), \
+                patch('builtins.print'):
+            self.assertEqual(audit.main(), 1)
+
+    def test_native_systemd_has_no_old_operator_paths(self):
+        for folder in (module_path.parent / 'systemd', module_path.parent / 'server' / 'systemd'):
+            for unit in folder.rglob('*'):
+                if unit.is_file():
+                    self.assertNotIn('/home/pw', unit.read_text(), str(unit))
+        unit = (module_path.parent / 'systemd' / 'volition-vault-integrity.service').read_text()
+        self.assertNotIn('RESTIC_', unit)
+        self.assertIn('Requires=helena-hostd.socket', unit)
+        self.assertIn('InaccessiblePaths=-/etc/helena/backup -/var/backups/helena', unit)
 
     def test_files_and_receipts(self):
         (self.root / 'Home/empty.md').touch()

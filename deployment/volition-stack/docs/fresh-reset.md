@@ -1,5 +1,7 @@
 # Plan fresh reset
 
+This workflow belongs to Docker package G and its legacy backup repository under `/home/pw/services/volition-backups`; it must not be used for the native Helena stack. Native backup and offsite copies are managed by helena-hostd through Server → Backup.
+
 `deployment/volition-stack/scripts/fresh-reset.mjs` inventories the Plan PostgreSQL database and can replace its domain state with one minimal Home-chat bootstrap. Running it without `--apply` is read-only.
 
 ## Target state

@@ -46,6 +46,7 @@ method OwnerSudoStatus() -> (result: object)
 method SetOwnerSudo(enabled: bool, actor: ?string) -> (result: object)
 method BackupStatus() -> (result: object)
 method BackupSnapshots() -> (result: object)
+method VaultBackupIntegrity() -> (result: object)
 method BackupList(snapshot: string, path: string) -> (result: object)
 method RunBackup(kind: string, actor: ?string) -> (result: object)
 method SetBackupSettings(schedule: ?object, retention: ?object, checkWeekly: ?bool, restoreTestMonthly: ?bool, actor: ?string) -> (result: object)
@@ -252,6 +253,7 @@ METHODS: dict[str, Method] = {
                            _p(enabled='bool', actor='?string'), mutating=True),
     'BackupStatus': Method(backup_status, {}),
     'BackupSnapshots': Method(lambda ctx, _: {'snapshots': backup.snapshots(ctx.host, ctx.config)}, {}),
+    'VaultBackupIntegrity': Method(lambda ctx, _: backup.vault_integrity(ctx.host, ctx.config), {}),
     'BackupList': Method(lambda ctx, p: backup.list_dir(ctx.host, ctx.config, p['snapshot'], p['path']),
                          _p(snapshot='string', path='string')),
     'RunBackup': Method(lambda ctx, p: backup.run(ctx.host, p['kind']), _p(kind='string', actor='?string'),

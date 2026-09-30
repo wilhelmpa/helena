@@ -614,6 +614,97 @@ class BackupTests(HostTest):
         os.makedirs(self.config.backup['repository'], exist_ok=True)
         open(os.path.join(self.config.backup['repository'], 'config'), 'w').close()
 
+    def vault_snapshot(self, age=0):
+        self.install()
+        from helena_host.common import iso
+        self.runner.on('/usr/bin/restic', 'snapshots', out=json.dumps([
+            {'id': 'a' * 64, 'time': iso(self.host.now() - age), 'tags': [backup.TAG]},
+        ]))
+
+    def test_vault_integrity_disabled_unavailable_empty_and_stale(self):
+        settings = load_settings(self.config)
+        settings['backup']['schedule']['frequency'] = 'off'
+        save_settings(self.config, settings)
+        self.assertEqual(backup.vault_integrity(self.host, self.config), {'state': 'disabled'})
+        self.assertEqual(self.runner.calls, [])
+        settings['backup']['schedule']['frequency'] = 'hourly'
+        save_settings(self.config, settings)
+        self.assertEqual(backup.vault_integrity(self.host, self.config), {'state': 'unavailable'})
+        self.install()
+        self.runner.on('/usr/bin/restic', 'snapshots', out='[]')
+        self.assertEqual(backup.vault_integrity(self.host, self.config), {'state': 'no_snapshot'})
+        self.vault_snapshot(age=36 * 3600 + 1)
+        self.assertEqual(backup.vault_integrity(self.host, self.config), {'state': 'stale'})
+        self.assertEqual(self.runner.called('/usr/bin/restic', 'ls'), [])
+
+    def test_vault_integrity_uses_backup_credentials_tag_and_binary_probe(self):
+        self.vault_snapshot(age=36 * 3600)
+        nodes = [
+            {'struct_type': 'snapshot', 'paths': ['/srv/volition']},
+            {'struct_type': 'node', 'path': '/srv/volition/vault', 'type': 'dir'},
+            {'struct_type': 'node', 'path': '/srv/volition/vault/.git/config', 'type': 'file', 'size': 1},
+            {'message_type': 'node', 'path': '/srv/volition/vault/Private/note.bin', 'type': 'file', 'size': 3},
+            {'struct_type': 'node', 'path': '/srv/volition/vault/Home/note.md', 'type': 'file', 'size': 20},
+        ]
+        self.runner.on('/usr/bin/restic', 'ls', out='\n'.join(json.dumps(node) for node in nodes))
+        restored_paths = []
+        def dump(argv, **kwargs):
+            restored_paths.append(kwargs['stdout_path'])
+            with open(kwargs['stdout_path'], 'wb') as handle:
+                handle.write(b'\x00\xff\x80')
+            self.assertEqual(os.stat(os.path.dirname(kwargs['stdout_path'])).st_mode & 0o777, 0o700)
+            return CommandResult(0, '', '')
+        # This runner keeps the binary file written by dump; FakeRunner normally writes text.
+        original_run = self.host.run
+        self.host.run = lambda argv, **kwargs: dump(argv, **kwargs) if argv[1] == 'dump' else original_run(argv, **kwargs)
+        result = backup.vault_integrity(self.host, self.config)
+        self.assertEqual(result, {'state': 'ok', 'vault_present': True,
+                                  'private_present': True, 'sample_ok': True})
+        self.assertTrue(all(not os.path.exists(path) for path in restored_paths))
+        self.assertEqual(self.runner.called('/usr/bin/restic', 'snapshots')[0],
+                         ['/usr/bin/restic', 'snapshots', '--json', '--no-lock', '--tag', 'helena'])
+        for argv, kwargs in zip(self.runner.calls, self.runner.kwargs):
+            if argv[0] == '/usr/bin/restic':
+                self.assertEqual(kwargs['env'], backup.restic_env(self.config))
+        self.assertNotIn('password', json.dumps(result))
+
+    def test_vault_integrity_coverage_and_restore_failures(self):
+        self.vault_snapshot()
+        for path, rc, out, expected in (
+            ('/srv/volition/vault-other/Private/note.md', 0, 'abc', (False, False, False)),
+            ('/srv/volition/vault/Home/note.md', 0, 'ab', (True, False, False)),
+            ('/srv/volition/vault/Private/note.md', 1, 'abc', (True, True, False)),
+        ):
+            with self.subTest(path=path, rc=rc):
+                self.runner.on('/usr/bin/restic', 'ls', out=json.dumps(
+                    {'struct_type': 'node', 'path': path, 'type': 'file', 'size': 3}))
+                self.runner.on('/usr/bin/restic', 'dump', rc=rc, out=out)
+                result = backup.vault_integrity(self.host, self.config)
+                self.assertEqual((result['vault_present'], result['private_present'], result['sample_ok']), expected)
+
+    def test_vault_integrity_command_errors_are_safe_findings(self):
+        self.vault_snapshot()
+        for out in ('not json', '[{"id":"aaaaaaaa","time":"bad time"}]'):
+            self.runner.on('/usr/bin/restic', 'snapshots', out=out)
+            self.assertEqual(backup.vault_integrity(self.host, self.config), {'state': 'error'})
+        self.runner.on('/usr/bin/restic', 'snapshots', rc=1, err='sensitive command output')
+        self.assertEqual(backup.vault_integrity(self.host, self.config), {'state': 'error'})
+        self.vault_snapshot()
+        self.runner.on('/usr/bin/restic', 'ls', rc=1)
+        self.assertEqual(backup.vault_integrity(self.host, self.config), {'state': 'error'})
+        self.runner.on('/usr/bin/restic', 'ls', out='not json')
+        self.assertEqual(backup.vault_integrity(self.host, self.config), {'state': 'error'})
+
+    def test_vault_integrity_method_has_no_caller_selected_paths(self):
+        dispatcher = service.Dispatcher(self.host, self.config, lambda _: None)
+        with mock.patch.object(backup, 'vault_integrity', return_value={'state': 'disabled'}) as check:
+            self.assertEqual(dispatcher('VaultBackupIntegrity', {}, {'uid': 0, 'name': 'root'}),
+                             {'result': {'state': 'disabled'}})
+            check.assert_called_once_with(self.host, self.config)
+        for params in ({'path': '/etc'}, {'snapshot': 'latest'}, {'repository': '/tmp/repo'}):
+            with self.assertRaises(VarlinkError):
+                dispatcher('VaultBackupIntegrity', params, {'uid': 0, 'name': 'root'})
+
     def test_schedules_and_retention(self):
         self.assertEqual(on_calendar({'frequency': 'hourly', 'time': '03:15'}), '*-*-* *:15:00')
         self.assertEqual(on_calendar({'frequency': 'every6h', 'time': '03:15'}), '*-*-* 03,09,15,21:15:00')
@@ -899,6 +990,10 @@ class VarlinkTests(HostTest):
         self.assertIn('io.helena.hostd', info['parameters']['interfaces'])
         description = call(path, 'org.varlink.service.GetInterfaceDescription', {'interface': 'io.helena.hostd'})
         self.assertIn('method SetFans', description['parameters']['description'])
+        self.assertIn('method VaultBackupIntegrity()', description['parameters']['description'])
+        with mock.patch.object(backup, 'vault_integrity', return_value={'state': 'no_snapshot'}):
+            self.assertEqual(call(path, 'io.helena.hostd.VaultBackupIntegrity'),
+                             {'parameters': {'result': {'state': 'no_snapshot'}}})
         self.write('/proc/meminfo', 'MemTotal: 1024 kB\nMemAvailable: 512 kB\n')
         reply = call(path, 'io.helena.hostd.SystemStatus')
         self.assertEqual(reply['parameters']['result']['memory']['totalBytes'], 1024 * 1024)

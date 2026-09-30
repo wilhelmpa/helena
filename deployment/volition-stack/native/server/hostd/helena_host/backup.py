@@ -25,7 +25,10 @@ import secrets
 import shutil
 import sqlite3
 import stat
+import subprocess
+import tempfile
 import time
+from datetime import datetime
 
 from . import events
 from .common import Host, HostError, atomic_write_json, atomic_write_text, clip, file_lock, iso, json_load_file
@@ -93,11 +96,12 @@ def initialized(config: Config) -> bool:
 
 
 def _restic(host: Host, config: Config, args: list[str], *, timeout: float = 120,
-            env: dict[str, str] | None = None):
+            env: dict[str, str] | None = None, stdout_path: str | None = None):
     restic = host.which('restic')
     if not restic:
         raise HostError('NotAvailable', 'restic is not installed')
-    return host.run([restic, *args], timeout=timeout, env={**restic_env(config), **(env or {})})
+    return host.run([restic, *args], timeout=timeout, env={**restic_env(config), **(env or {})},
+                    **({'stdout_path': stdout_path} if stdout_path is not None else {}))
 
 
 def unit_active(host: Host, unit: str) -> bool:
@@ -212,6 +216,50 @@ def snapshots(host: Host, config: Config) -> list[dict]:
         })
     out.sort(key=lambda snapshot: snapshot.get('time') or '', reverse=True)
     return out
+
+
+def vault_integrity(host: Host, config: Config) -> dict:
+    """Return only Vault coverage and a restore probe, never file contents or credentials."""
+    vault = '/srv/volition/vault'
+    try:
+        if load_settings(config)['backup']['schedule']['frequency'] == 'off':
+            return {'state': 'disabled'}
+        if not installed(host, config):
+            return {'state': 'unavailable'}
+        items = snapshots(host, config)
+        if not items:
+            return {'state': 'no_snapshot'}
+        latest = items[0]
+        timestamp = datetime.fromisoformat(latest['time'].replace('Z', '+00:00'))
+        if timestamp.tzinfo is None:
+            raise ValueError('snapshot time has no timezone')
+        if host.now() - timestamp.timestamp() > 36 * 3600:
+            return {'state': 'stale'}
+        snapshot = _check_snapshot(latest['id'])
+        listing = _restic(host, config, ['ls', '--json', '--no-lock', snapshot, vault], timeout=180)
+        if listing.returncode != 0:
+            return {'state': 'error'}
+        nodes = [json.loads(line) for line in listing.stdout.splitlines() if line]
+        nodes = [node for node in nodes
+                 if node.get('struct_type', node.get('message_type')) == 'node'
+                 and isinstance(node.get('path'), str)
+                 and (node['path'] == vault or node['path'].startswith(vault + '/'))]
+        samples = [node for node in nodes if node.get('type') == 'file' and node.get('size', 0) > 0
+                   and '/.git/' not in node['path'] and '/.trash/' not in node['path']]
+        sample_ok = False
+        if samples:
+            sample = min(samples, key=lambda node: node['size'])
+            path = _check_path(sample['path'])
+            with tempfile.TemporaryDirectory(prefix='volition-vault-probe-') as directory:
+                restored = os.path.join(directory, 'sample')
+                result = _restic(host, config, ['dump', '--no-lock', snapshot, path],
+                                 timeout=180, stdout_path=restored)
+                sample_ok = result.returncode == 0 and os.path.getsize(restored) == sample['size']
+        return {'state': 'ok', 'vault_present': bool(nodes),
+                'private_present': any(node['path'].startswith(vault + '/Private/') for node in nodes),
+                'sample_ok': sample_ok}
+    except (HostError, OSError, ValueError, TypeError, KeyError, subprocess.TimeoutExpired):
+        return {'state': 'error'}
 
 
 def _check_path(path: object, name: str = 'path') -> str:
