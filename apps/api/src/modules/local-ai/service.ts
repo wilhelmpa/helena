@@ -1212,6 +1212,7 @@ export async function localAiStatus() {
     queued: Counts;
     oldestWaitMs: number;
     oldestWaitMsByClass: Counts;
+    waitTimesMsByClass?: Record<keyof Counts, { count: number; p50: number; max: number }>;
     fallbacks: Counts;
     paused: { interactive: boolean; realtime: boolean; normal: boolean; background: boolean };
   };

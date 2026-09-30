@@ -7,11 +7,20 @@ export class LocalModelBusy extends Error {
   }
 }
 
-function busyError(error: unknown): APICallError | null {
-  if (!APICallError.isInstance(error) || error.statusCode !== 503) return null;
+function localRetryError(
+  error: unknown,
+): { error: APICallError; backendUnavailable: boolean } | null {
+  if (!APICallError.isInstance(error)) return null;
   try {
     const body = error.data ?? JSON.parse(error.responseBody ?? '{}');
-    return body?.error?.code === 'engine_busy' ? error : null;
+    if (error.statusCode === 503 && body?.error?.code === 'engine_busy')
+      return { error, backendUnavailable: false };
+    if (
+      (error.statusCode === 502 || error.statusCode === 503) &&
+      body?.error?.code === 'backend_unavailable'
+    )
+      return { error, backendUnavailable: true };
+    return null;
   } catch {
     return null;
   }
@@ -44,6 +53,7 @@ export class LocalQueueRetry {
     fallback = false,
   ): Promise<T> {
     let attempt = 0;
+    let backendAttempts = 0;
     for (;;) {
       signal.throwIfAborted();
       if (this.remainingMs <= 0 && !fallback) throw new LocalModelBusy();
@@ -59,19 +69,27 @@ export class LocalQueueRetry {
         });
       } catch (error) {
         signal.throwIfAborted();
-        const busy = busyError(error);
-        if (!busy) throw error;
+        const retry = localRetryError(error);
+        if (!retry) throw error;
         if (!admitted) this.remainingMs -= Date.now() - started;
+        if (retry.backendUnavailable && (admitted || backendAttempts >= 2 || this.remainingMs <= 0))
+          throw error;
         if (this.remainingMs <= 0) throw new LocalModelBusy();
+        const retryAttempt = retry.backendUnavailable ? backendAttempts++ : attempt++;
         const delayMs = Math.min(
           this.remainingMs,
-          Math.max(Math.min(1000 * 2 ** Math.min(attempt++, 5), 30_000), retryAfterMs(busy)),
+          Math.max(
+            Math.min(1000 * 2 ** Math.min(retryAttempt, 5), 30_000),
+            retryAfterMs(retry.error),
+          ),
         );
         this.sink.emit({
           type: 'status',
           status: 'model-queued',
           model,
-          message: 'Wartet auf freien Modellplatz',
+          message: retry.backendUnavailable
+            ? 'Wartet auf lokales Modell'
+            : 'Wartet auf freien Modellplatz',
           retryAfterMs: delayMs,
           remainingMs: Math.max(0, this.remainingMs),
         });
@@ -91,7 +109,10 @@ export class LocalQueueRetry {
           if (signal.aborted) abort();
         });
         this.remainingMs -= Date.now() - waiting;
-        if (this.remainingMs <= 0) throw new LocalModelBusy();
+        if (this.remainingMs <= 0) {
+          if (retry.backendUnavailable) throw error;
+          throw new LocalModelBusy();
+        }
       }
     }
   }
