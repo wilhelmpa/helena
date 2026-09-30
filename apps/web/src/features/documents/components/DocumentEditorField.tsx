@@ -15,7 +15,7 @@ export default function DocumentEditorField({
   children,
 }: {
   editor: Editor | null;
-  onUploadImage: (file: File) => Promise<{ url: string; filename: string }>;
+  onUploadImage?: (file: File) => Promise<{ url: string; filename: string }>;
   // Only where the text can be edited. The field itself stays either way, so the editor
   // inside keeps its place (and its text) when editing is switched on or off, as it is while
   // a save runs.

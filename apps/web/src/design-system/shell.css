@@ -857,6 +857,12 @@
    them are even (owner, O22: "Läufe" stood apart from "Gedächtnis"). */
 .ds-overlay .ds-panel-tab {
   min-width: 0;
+  /* A word is never cut to a stub: on a narrow screen the row of tabs scrolls instead (the
+     open tab is scrolled into view by the Overlay). */
+  flex: none;
+}
+.ds-overlay .ds-panel-tab-select > span:last-child {
+  max-width: none;
 }
 /* Four tabs or more: the ones in the background show their icon alone, the open one keeps
    its name — no row of one-letter stubs (owner 28.09.). */

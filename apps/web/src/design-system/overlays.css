@@ -436,6 +436,12 @@ body[data-modal-open='true'] [data-radix-popper-content-wrapper] {
 .ds-agent-overview-runs li + li {
   border-top: 1px solid var(--line);
 }
+.ds-agent-overview-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
 .ds-agent-nav {
   display: flex;
   min-height: 0;
@@ -817,4 +823,286 @@ body[data-modal-open='true'] [data-radix-popper-content-wrapper] {
 }
 :is([data-slot='dialog-content'], [data-slot='sheet-content'], [data-slot='alert-dialog-content']) {
   z-index: var(--z-dialog);
+}
+
+/* ── Skills and memory of an agent (Skills tab, Memory tab, instructions, learning) ── */
+.ds-agent-page-back {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: var(--space-2);
+  margin-inline-start: calc(-1 * var(--space-2));
+  border-radius: var(--radius-md);
+  padding: var(--space-1) var(--space-2);
+  color: var(--text-2);
+  font-size: 13px;
+}
+.ds-agent-page-back:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.ds-agent-page-back svg {
+  width: 14px;
+  height: 14px;
+}
+.ds-agent-page-head > .ds-button {
+  flex: none;
+}
+.ds-segment-count {
+  margin-inline-start: var(--space-2);
+  color: var(--text-3);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.ds-segmented [aria-selected='true'] .ds-segment-count {
+  color: var(--text-2);
+}
+.ds-skills-search {
+  width: 240px;
+  max-width: 100%;
+}
+/* Views of a page in the agent dialog: the row of options scrolls on a narrow screen instead of
+   running out of the page. */
+.ds-agent-page .ds-segmented {
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.ds-agent-page .ds-segmented::-webkit-scrollbar {
+  display: none;
+}
+.ds-agent-page .ds-segmented > button {
+  flex: none;
+}
+@container (max-width: 620px) {
+  .ds-skills-search {
+    width: 100%;
+  }
+}
+.ds-link-button {
+  display: inline;
+  color: var(--accent);
+  font-size: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+.ds-link-button:hover {
+  text-decoration: underline;
+}
+.ds-skill-flag {
+  color: var(--status-waiting);
+  font-family: var(--font-sans);
+}
+.ds-skill-text {
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+  padding: var(--space-3) var(--space-4);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.ds-skill-version {
+  border-radius: var(--radius-lg);
+}
+.ds-skill-version-body {
+  padding: var(--space-2) var(--space-3) var(--space-4) var(--space-5);
+}
+.ds-skill-version-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.ds-memory-entries {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ds-memory-entries > li {
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  padding: var(--space-2) var(--space-3);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.ds-memory-entries > li p {
+  margin: 0;
+}
+.ds-memory-text {
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  padding: var(--space-2) var(--space-3);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.ds-memory-edit-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+.ds-memory-edit-row .ds-field {
+  flex: 1;
+}
+.ds-memory-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+.ds-note-line {
+  display: flex;
+  gap: var(--space-3);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.ds-note-time {
+  flex: none;
+  width: 44px;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.ds-facts {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ds-fact {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+}
+.ds-fact:hover {
+  background: var(--surface-2);
+}
+.ds-fact-main {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.ds-fact-main > p {
+  margin: 0;
+  color: var(--text);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.ds-fact-trust {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-3);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.ds-fact-trust-bar {
+  display: inline-block;
+  width: 40px;
+  height: 4px;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: var(--surface-3);
+}
+.ds-fact-trust-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--status-done);
+}
+.ds-file-row-toggle {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text);
+  font-size: 13px;
+}
+.ds-file-row-toggle svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  color: var(--text-3);
+  transition: transform var(--dur);
+}
+.ds-file-row-toggle svg[data-open] {
+  transform: rotate(90deg);
+}
+.ds-inherited-text {
+  margin: 0;
+  color: var(--text-2);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.ds-markdown-field-switch {
+  align-self: flex-start;
+}
+.ds-markdown-field-source {
+  min-height: 240px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.ds-markdown-field-text {
+  min-height: 96px;
+  font-size: 14px;
+  line-height: 1.65;
+}
+.ds-markdown-field-text .ProseMirror {
+  min-height: 96px;
+}
+
+/* How much of a size limit a text uses (LimitMeter). */
+.ds-limit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.ds-limit-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.ds-limit-count {
+  color: var(--text-3);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.ds-limit-bar {
+  display: block;
+  width: 80px;
+  height: 4px;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: var(--surface-3);
+}
+.ds-limit-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--text-3);
+}
+.ds-limit-note {
+  margin: 0;
+  color: var(--text-3);
+  font-size: 12px;
+}
+.ds-limit[data-state='warning'] .ds-limit-count,
+.ds-limit[data-state='warning'] .ds-limit-note {
+  color: var(--status-waiting);
+}
+.ds-limit[data-state='warning'] .ds-limit-bar > span {
+  background: var(--status-waiting);
+}
+.ds-limit[data-state='full'] .ds-limit-count,
+.ds-limit[data-state='full'] .ds-limit-note {
+  color: var(--danger);
+}
+.ds-limit[data-state='full'] .ds-limit-bar > span {
+  background: var(--danger);
 }

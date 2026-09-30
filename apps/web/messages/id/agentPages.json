@@ -1,0 +1,278 @@
+{
+  "editor": {
+    "label": "Tampilan editor",
+    "formatted": "Terformat",
+    "source": "Sumber",
+    "lossy": "Dibuka sebagai sumber, karena pemformatan akan mengubah teks."
+  },
+  "skills": {
+    "title": "Skills",
+    "hint": "Panduan yang dapat dipakai ulang dan dimuat agen saat dibutuhkan: dari pustaka, bawaan, atau dipelajari sendiri.",
+    "viewsLabel": "Tampilan skill",
+    "views": {
+      "assigned": "Ditetapkan",
+      "library": "Pustaka",
+      "proposals": "Usulan",
+      "archive": "Arsip"
+    },
+    "search": "Cari skill",
+    "kinds": {
+      "learned": "Dipelajari",
+      "library": "Dari pustaka",
+      "installed": "Terpasang",
+      "bundled": "Bawaan"
+    },
+    "back": "Semua skill",
+    "proposal": "Usulan",
+    "archived": "Diarsipkan",
+    "pinned": "Disematkan",
+    "version": "Versi {version}",
+    "uses": "{count, plural, other {Dipakai # kali}}",
+    "lastUsed": "terakhir {when}",
+    "loadNameHint": "Cara agen memuat skill ini",
+    "pendingTitle": "Ada perubahan yang menunggu Anda",
+    "pendingText": "Pada {when} agen mengusulkan versi baru. Baru berlaku setelah Anda menerimanya.",
+    "tabs": {
+      "content": "Isi",
+      "history": "Riwayat ({count})"
+    },
+    "runtimeSkill": "Skill ini bagian dari perlengkapan dasar agen. Anda dapat mengaktifkan dan menonaktifkannya.",
+    "noContent": "Isi skill ini belum tersedia.",
+    "empty": {
+      "assigned": "Belum ada skill yang ditetapkan",
+      "library": "Pustaka masih kosong",
+      "proposals": "Tidak ada usulan terbuka",
+      "archive": "Tidak ada yang diarsipkan",
+      "search": "Tidak ada hasil untuk “{query}”"
+    },
+    "emptyHint": {
+      "assigned": "Tambahkan skill dari pustaka atau biarkan agen belajar sendiri.",
+      "library": "Skill baru dibuat di pustaka skill.",
+      "proposals": "Skill baru atau yang diubah yang diusulkan agen muncul di sini.",
+      "archive": "Skill yang Anda atau proses rapi-rapi simpan dapat ditemukan lagi di sini."
+    },
+    "proposalsTitle": "{count, plural, other {# usulan menunggu Anda}}",
+    "proposalsText": "Agen mengusulkan skill baru atau yang diubah.",
+    "proposalsOpen": "Tinjau",
+    "libraryHint": "Skill di pustaka berlaku untuk setiap agen yang Anda beri skill tersebut.",
+    "libraryOpen": "Buka pustaka",
+    "switch": "{name} untuk agen ini",
+    "menu": "Aksi untuk {name}",
+    "actions": {
+      "open": "Buka",
+      "pin": "Sematkan",
+      "unpin": "Lepas sematan",
+      "archive": "Arsipkan",
+      "restore": "Pulihkan",
+      "promote": "Tambahkan ke pustaka",
+      "approve": "Terima",
+      "reject": "Tolak"
+    },
+    "history": {
+      "title": "Versi skill",
+      "empty": "Skill ini belum punya riwayat.",
+      "pending": "Menunggu persetujuan",
+      "rejected": "Ditolak",
+      "versionOf": "Versi {version}",
+      "session": "Buka sesi",
+      "sameText": "Teks tidak berubah."
+    },
+    "actor": {
+      "agent": "Agen",
+      "user": "Anda",
+      "curator": "Rapi-rapi",
+      "owner": "Atas permintaan Anda",
+      "system": "Sistem"
+    },
+    "action": {
+      "create": "Dibuat",
+      "update": "Diubah",
+      "pin": "Disematkan",
+      "unpin": "Sematan dilepas",
+      "archive": "Diarsipkan",
+      "restore": "Dipulihkan",
+      "approve": "Diterima",
+      "reject": "Ditolak",
+      "merge": "Digabung dengan skill yang mirip",
+      "archiveUnused": "Diarsipkan setelah lama tidak dipakai",
+      "discard-skill": "Diarsipkan",
+      "pin-skill": "Disematkan",
+      "other": "Diubah"
+    },
+    "reviewed": {
+      "approve": "Perubahan diterima.",
+      "reject": "Perubahan ditolak.",
+      "restore": "Skill aktif kembali."
+    }
+  },
+  "memory": {
+    "title": "Memori",
+    "approvalOn": "Perubahan yang dibuat agen pada memorinya menunggu persetujuan Anda; sampai saat itu, versi yang sudah disetujui yang berlaku.",
+    "approvalOff": "Agen mengubah memorinya sendiri. Setiap versi disimpan di “Versi”.",
+    "viewsLabel": "Tampilan memori",
+    "views": {
+      "memory": "Memori",
+      "notes": "Catatan harian",
+      "facts": "Fakta",
+      "proposals": "Usulan",
+      "versions": "Versi"
+    },
+    "pendingTitle": "{count, plural, other {# perubahan menunggu persetujuan}}",
+    "pendingText": "Agen ingin mengubah sesuatu di memorinya.",
+    "pendingOpen": "Tinjau",
+    "noPending": "Tidak ada yang menunggu persetujuan.",
+    "notEditable": "Agen ini hanya melaporkan memorinya; ia bisa mengubahnya sendiri.",
+    "files": {
+      "memory": {
+        "title": "Yang diingat agen",
+        "hint": "Pengalaman, aturan, dan petunjuk yang ia pegang di setiap percakapan."
+      },
+      "user": {
+        "title": "Yang diketahui agen tentang Anda",
+        "hint": "Nama Anda, preferensi Anda, dan cara Anda suka bekerja."
+      }
+    },
+    "edit": "Ubah",
+    "clear": "Kosongkan",
+    "clearTitle": "Kosongkan “{title}”?",
+    "clearBody": "Agen kehilangan entri ini. Versi sebelumnya tetap tersimpan di “Versi”.",
+    "empty": "Belum ada yang diingat.",
+    "truncated": "Hanya bagian awal berkas yang ditampilkan.",
+    "size": "{chars, plural, other {# karakter}}",
+    "entryLabel": "Entri {index}",
+    "removeEntry": "Hapus entri {index}",
+    "addEntry": "Tambah entri",
+    "placeholder": "Yang harus diingat agen …",
+    "notes": {
+      "title": "Catatan harian",
+      "empty": "Belum ada catatan harian",
+      "emptyHint": "Yang dicatat agen sepanjang hari muncul di sini, diurutkan per hari.",
+      "lines": "{count, plural, other {# entri}}"
+    },
+    "facts": {
+      "count": "{count, plural, other {# fakta}}",
+      "search": "Cari fakta",
+      "noMatch": "Tidak ada fakta yang cocok dengan “{query}”.",
+      "empty": "Belum ada fakta",
+      "emptyHint": "Yang disimpan agen sebagai pengetahuan mapan muncul di sini, beserta kepercayaan yang telah diperolehnya.",
+      "trust": "Kepercayaan {value} %",
+      "trustHint": "Dikonfirmasi {confirmations}×, membantu {helpful}×",
+      "contradicted": "kemungkinan bertentangan",
+      "menu": "Aksi untuk fakta ini",
+      "confirm": "Benar",
+      "edit": "Ubah",
+      "remove": "Hapus",
+      "removeTitle": "Hapus fakta?",
+      "removeBody": "“{fact}” disembunyikan dan tidak dipakai lagi.",
+      "save": "Simpan",
+      "cancel": "Batal",
+      "categories": {
+        "general": "Umum",
+        "project": "Proyek",
+        "preference": "Preferensi",
+        "person": "Orang",
+        "decision": "Keputusan",
+        "memory": "Memori"
+      }
+    },
+    "versions": {
+      "title": "Versi memori",
+      "empty": "Belum ada versi",
+      "emptyHint": "Setiap versi memori disimpan di sini, beserta perbedaannya dari versi sebelumnya.",
+      "file": {
+        "memory": "Yang diingat agen",
+        "user": "Yang diketahui agen tentang Anda"
+      },
+      "source": {
+        "agent": "Oleh agen",
+        "owner": "Diubah oleh Anda",
+        "observed": "Ditemukan pada agen"
+      }
+    }
+  },
+  "instructions": {
+    "soul": {
+      "title": "Kepribadian",
+      "hint": "Siapa agen ini dan bagaimana ia menampilkan diri (SOUL). Ini yang pertama dibaca di setiap percakapan.",
+      "placeholder": "Nada, sikap, dan prinsip agen …"
+    },
+    "own": {
+      "title": "Instruksi",
+      "hint": "Apa yang boleh dan tidak boleh dilakukan agen ini. Melengkapi kepribadian.",
+      "placeholder": "Instruksi untuk agen …"
+    },
+    "files": {
+      "title": "Berkas instruksi lainnya",
+      "hint": "Berkas Markdown tambahan yang diterima agen bersama instruksinya.",
+      "none": "Tidak ada berkas lain.",
+      "remove": "Hapus {name}",
+      "name": "Nama berkas baru",
+      "namePlaceholder": "aturan atau tim/aturan",
+      "add": "Tambah berkas",
+      "invalid": "Hanya huruf, angka, titik, tanda hubung, dan garis bawah; pisahkan folder dengan “/”.",
+      "taken": "Berkas ini sudah ada."
+    },
+    "inherited": {
+      "title": "Mewarisi dari",
+      "hint": "Ini juga berlaku untuk agen; di sini hanya bisa dibaca.",
+      "template": "Templat “{name}”",
+      "templateUnknown": "Templat",
+      "follows": "Instruksi mengikuti templat setiap kali templat berubah.",
+      "differs": "Salinan ini berbeda dari templat.",
+      "reset": "Setel ulang ke templat",
+      "project": "Proyek {key} · {name}"
+    }
+  },
+  "learning": {
+    "readOnly": "Hanya anggota yang boleh mengedit agen yang dapat mengubah ini.",
+    "learn": {
+      "title": "Pembelajaran",
+      "hint": "Disimpan bersama agen dan berlaku mulai percakapan berikutnya."
+    },
+    "learning": {
+      "label": "Pelajari skill dari pengalaman",
+      "hint": "Agen menyimpan yang dipelajarinya saat bekerja: skill baru dan entri di memorinya. Biayanya dihitung dalam pemakaiannya. Nonaktif: ia tidak menyimpan hal baru."
+    },
+    "curator": {
+      "label": "Rapikan skill",
+      "hint": "Skill ganda digabungkan dan yang lama tak terpakai diarsipkan. Skill yang disematkan tidak disentuh; tidak ada yang hilang."
+    },
+    "memoryApproval": {
+      "label": "Tampilkan perubahan lebih dulu",
+      "hint": "Skill dan entri memori yang baru atau diubah menunggu persetujuan Anda, bukan langsung berlaku."
+    },
+    "reflection": {
+      "label": "Tinjau kembali setelah run",
+      "hint": "Tepat setelah run, agen mencatat dalam tindak lanjut singkat apa yang dipelajarinya.",
+      "off": "Nonaktif",
+      "failure": "Setelah kegagalan dan pengerjaan ulang",
+      "complex": "Juga setelah run yang panjang"
+    },
+    "chats": {
+      "label": "Tinjau kembali setelah chat",
+      "hint": "Saat sebuah chat diam beberapa saat, agen mencatat apa yang dipelajarinya tentang Anda dan keinginan Anda.",
+      "when": "Kapan",
+      "idle": "setelah beberapa menit tenang",
+      "turns": "paling lambat setelah pesan"
+    },
+    "dream": {
+      "title": "Bermimpi",
+      "hint": "Merapikan di latar belakang, tanpa Anda perlu berbuat apa pun.",
+      "label": "Konsolidasi di malam hari",
+      "text": "Setiap malam agen memindahkan yang bertahan dari catatan harian ke memorinya dan membuang duplikat.",
+      "when": "setiap hari pukul 03.00"
+    },
+    "limits": {
+      "title": "Batas ukuran",
+      "hint": "Seberapa banyak teks yang dapat dimuat tiap bagian konteks. Model hanya melihat sisanya dalam bentuk dipersingkat. Dapat diubah nanti.",
+      "areas": {
+        "memory": "Memori",
+        "user": "Tentang Anda",
+        "note": "Catatan harian",
+        "soul": "Kepribadian",
+        "instructions": "Instruksi",
+        "projectInstructions": "Instruksi proyek"
+      }
+    }
+  }
+}

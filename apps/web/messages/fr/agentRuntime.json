@@ -7,7 +7,8 @@
     "memory": "Mémoire",
     "usage": "Consommation",
     "runtime": "Runtime",
-    "overview": "Aperçu"
+    "overview": "Aperçu",
+    "skills": "Skills"
   },
   "runs": {
     "empty": "Aucune exécution pour l'instant.",

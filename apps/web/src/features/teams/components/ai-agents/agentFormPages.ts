@@ -9,12 +9,14 @@ import type { AiAgent } from '@/lib/api/endpoints/agents';
 
 export type AgentFormPageId =
   | 'general'
+  | 'instructions'
   | 'projects'
   | 'autopilot'
   | 'runtime-policy'
   | 'triggers'
   | 'heartbeat'
   | 'abilities'
+  | 'learning'
   | 'skills'
   | 'tools'
   | 'access'
@@ -27,7 +29,9 @@ export type AgentFormPageGroup = 'basics' | 'work' | 'abilities' | 'technical';
 export type AgentFormPage = { id: AgentFormPageId; group: AgentFormPageGroup };
 
 // The pages an agent has, in their order: a template works in no project and has no
-// Autopilot, environment or runs; skills and tools need their own permissions.
+// Autopilot, environment or runs; tools need their own permission. The skills of an agent
+// are the Skills tab of the dialog; a template has no tabs (it runs nowhere), so its skills
+// are a page of the form.
 export function agentFormPages(
   agent: AiAgent | null,
   can: { skills: boolean; tools: boolean },
@@ -35,13 +39,15 @@ export function agentFormPages(
   const runs = agent != null && !agent.template;
   const pages: (AgentFormPage | false)[] = [
     { id: 'general', group: 'basics' },
+    { id: 'instructions', group: 'basics' },
     !agent?.template && { id: 'projects', group: 'basics' },
     runs && { id: 'autopilot', group: 'work' },
     { id: 'runtime-policy', group: 'work' },
     { id: 'triggers', group: 'work' },
     { id: 'heartbeat', group: 'work' },
     { id: 'abilities', group: 'abilities' },
-    can.skills && { id: 'skills', group: 'abilities' },
+    { id: 'learning', group: 'abilities' },
+    agent?.template === true && can.skills && { id: 'skills', group: 'abilities' },
     can.tools && { id: 'tools', group: 'abilities' },
     { id: 'access', group: 'technical' },
     runs && { id: 'environment', group: 'technical' },

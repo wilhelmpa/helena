@@ -1,7 +1,15 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { Button, MonoLabel, SettingsGroup, SettingsRow, StatusPill } from '@/design-system';
+import {
+  Button,
+  List,
+  ListRow,
+  MonoLabel,
+  SettingsGroup,
+  SettingsRow,
+  StatusPill,
+} from '@/design-system';
 import BudgetBar, { fullestBudget } from '@/components/helena/BudgetBar';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
@@ -9,7 +17,10 @@ import type { Organization, OrganizationAgent } from '@/lib/api/endpoints/organi
 import { useOrganizationQuery } from '@/features/organization/services/organization.service';
 import { useAgentRuns } from '@/services/aiAgents.service';
 import { RunRow } from '@/features/agent-runtime/components/AgentRunsPanel';
+import { useRuntimeSessions } from '@/features/agent-runtime/services/agentRuntime.service';
+import { sessionTitle } from '@/features/agent-runtime/utils/sessionTitle';
 import { formatBudgetAmount } from '@/features/autopilot/utils/autopilotFormat';
+import { useRelativeTime } from '@/context/relativeTimeContext';
 import { useAgentStatus } from '@/utils/helenaStatus';
 
 // The goals an agent works for (the "Warum" of the side panel): the goals its tasks are
@@ -41,17 +52,22 @@ export default function AgentOverview({
   agent,
   onSettings,
   onRun,
+  onTab,
 }: {
   teamId: number;
   agent: AiAgent | null;
   onSettings: () => void;
   onRun: (runId: number) => void;
+  // Opens another tab of the agent (all runs, all sessions).
+  onTab: (tab: string) => void;
 }) {
   const t = useTranslations('teams.agents.overview');
   const tChart = useTranslations('organization.chart');
   const locale = useLocale();
+  const relative = useRelativeTime();
   const organization = useOrganizationQuery(teamId).data;
   const runs = useAgentRuns(teamId, agent?.id ?? null);
+  const sessions = useRuntimeSessions(teamId, agent?.id ?? 0, { q: '', offset: 0 });
   const status = useAgentStatus(agent?.id ?? 0);
   const member = organization?.agents.find((entry) => entry.id === agent?.id) ?? null;
   if (!agent || !organization) return <ListSkeleton rows={6} rowClassName="h-10" />;
@@ -69,6 +85,9 @@ export default function AgentOverview({
   const budget = fullestBudget(member?.budgets);
   const goals = member ? agentGoals(organization, member) : [];
   const latest = (runs.data?.pages.flatMap((page) => page.items) ?? []).slice(0, 5);
+  const recentSessions = agent.runtimeState.capabilities.includes('sessions')
+    ? (sessions.data?.page?.sessions ?? []).slice(0, 4)
+    : [];
   const every = agent.heartbeatIntervalMinutes;
   const next = agent.heartbeatNextAt ? new Date(agent.heartbeatNextAt) : null;
   const time = (date: Date) =>
@@ -160,7 +179,38 @@ export default function AgentOverview({
         )}
       </section>
 
-      <Button onClick={onSettings}>{t('allSettings')}</Button>
+      {recentSessions.length > 0 && (
+        <section className="ds-agent-overview-results">
+          <MonoLabel>{t('latestSessions')}</MonoLabel>
+          <List label={t('latestSessions')}>
+            {recentSessions.map((session) => (
+              <ListRow
+                key={session.id}
+                title={sessionTitle(session, t('sessionUntitled'))}
+                subtitle={t('sessionMessages', { count: session.messageCount })}
+                meta={
+                  (session.lastActiveAt ?? session.startedAt)
+                    ? relative(new Date((session.lastActiveAt ?? session.startedAt)!))
+                    : undefined
+                }
+                onSelect={() => onTab('sessions')}
+              />
+            ))}
+          </List>
+        </section>
+      )}
+
+      <div className="ds-agent-overview-links">
+        <Button onClick={onSettings}>{t('allSettings')}</Button>
+        <Button variant="ghost" onClick={() => onTab('runs')}>
+          {t('allRuns')}
+        </Button>
+        {agent.runtimeState.capabilities.includes('sessions') && (
+          <Button variant="ghost" onClick={() => onTab('sessions')}>
+            {t('allSessions')}
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Sparkles, Wrench } from 'lucide-react';
+import { Wrench } from 'lucide-react';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import { teamSectionPath } from '@/utils/paths';
 import {
@@ -9,11 +9,6 @@ import {
 } from '@/services/aiAgents.service';
 import { useIntegrationCatalogQuery } from '@/services/integrations.service';
 import { useTeamProjectOptionsQuery, useTeamQuery } from '@/services/teams.service';
-import {
-  useSkillOptionsQuery,
-  useAgentSkillsQuery,
-  useSetAgentSkills,
-} from '@/services/agentSkills.service';
 import {
   useConfiguredToolOptionsQuery,
   useAgentToolLinksQuery,
@@ -25,11 +20,14 @@ import {
   useSetAgentMcpServers,
 } from '@/services/agentMcpServers.service';
 import { Button } from '@/components/ui/button';
+import { Box, Text } from '@/design-system';
 import { useAgentSection } from '../../context/agentSection';
 import { AgentCapabilityList } from './AgentCapabilityList';
 import AgentLibraryMcpServers from './AgentLibraryMcpServers';
 import { AgentEmptyNotice } from './AgentEmptyNotice';
 import TeamAiAgentFields, { AGENT_EXPANDED_WIDTH } from './TeamAiAgentFields';
+import { agentSizeLimits } from '@/features/agent-runtime/utils/sizeLimits';
+import { soulOf } from '../../utils/instructionFiles';
 import {
   initialAgentValue,
   isAgentFormValid,
@@ -76,20 +74,17 @@ export function AgentSheetForm({
   // Clearing the username field resumes auto-generation.
   const [usernameEdited, setUsernameEdited] = useState(false);
 
-  // Skills are a separate permission; when the user can't manage them, the Skills
-  // section is hidden and its queries and save are skipped (the backend enforces it
-  // too).
+  // Tools are a separate permission; when the user can't manage them, the Tools section
+  // is hidden and its queries and save are skipped (the backend enforces it too). The
+  // agent's skills are the Skills tab of the agent dialog, which saves on its own.
   const { teamId } = useAgentSection();
   const team = useTeamQuery(teamId).data;
-  const canManageSkills = team?.permissions.agent_skills.edit ?? false;
   const canManageTools = team?.permissions.agent_tools.edit ?? false;
   const canReadTools = team?.permissions.agent_tools.read ?? false;
 
   const projects = useTeamProjectOptionsQuery(teamId).data ?? [];
   const catalog = useIntegrationCatalogQuery(teamId).data ?? [];
   const chatCatalogQuery = useAgentChatCatalogQuery(teamId, agent?.id ?? null);
-  const skillsLibraryQuery = useSkillOptionsQuery(canManageSkills ? teamId : null);
-  const agentSkillsQuery = useAgentSkillsQuery(teamId, agent && canManageSkills ? agent.id : null);
   const toolsLibraryQuery = useConfiguredToolOptionsQuery(canManageTools ? teamId : null);
   const agentToolsQuery = useAgentToolLinksQuery(teamId, agent && canManageTools ? agent.id : null);
   const mcpLibraryQuery = useMcpServersQuery(canReadTools ? teamId : null);
@@ -98,26 +93,21 @@ export function AgentSheetForm({
     agent && canReadTools ? agent.id : null,
   );
 
+  // A text over its limit cannot be saved; the editor says which one and what to do.
+  const limits = agentSizeLimits(agent);
+  const tooLong =
+    (limits.instructions != null && value.instructions.length > limits.instructions.limit) ||
+    (limits.soul != null && soulOf(value.runtimePolicy.files).length > limits.soul.limit);
+
   const createAgent = useCreateAiAgent(teamId);
   const updateAgent = useUpdateAiAgent(teamId);
-  const setAgentSkills = useSetAgentSkills(teamId);
   const setAgentTools = useSetAgentTools(teamId);
   const setAgentMcpServers = useSetAgentMcpServers(teamId);
   const saving =
     createAgent.isPending ||
     updateAgent.isPending ||
-    setAgentSkills.isPending ||
     setAgentTools.isPending ||
     setAgentMcpServers.isPending;
-
-  // The agent's enabled skills, seeded from the server once loaded (edit mode only).
-  const [skillIds, setSkillIds] = useState<number[] | null>(null);
-  useEffect(() => {
-    if (agentSkillsQuery.data && skillIds === null) {
-      setSkillIds(agentSkillsQuery.data.map((s) => s.id));
-    }
-  }, [agentSkillsQuery.data, skillIds]);
-  const selectedSkills = skillIds ?? [];
 
   // The agent's enabled custom tools, seeded from the server once loaded (edit only).
   const [toolIds, setToolIds] = useState<number[] | null>(null);
@@ -147,19 +137,6 @@ export function AgentSheetForm({
     if ('username' in patch) setUsernameEdited((patch.username ?? '').trim() !== '');
   }
 
-  function toggleSkill(id: number, on: boolean) {
-    setSkillIds((prev) => {
-      const base = prev ?? [];
-      return on ? [...new Set([...base, id])] : base.filter((x) => x !== id);
-    });
-  }
-
-  // The server enabled a promoted skill already. The selection only needs it while it is
-  // loaded; one that is not reads the server's links, which include it.
-  function addPromotedSkill(id: number) {
-    setSkillIds((prev) => (prev === null ? null : [...new Set([...prev, id])]));
-  }
-
   function toggleTool(id: number, on: boolean) {
     setToolIds((prev) => {
       const base = prev ?? [];
@@ -175,14 +152,11 @@ export function AgentSheetForm({
   }
 
   async function submit() {
-    if (!isAgentFormValid(value) || saving) return;
+    if (!isAgentFormValid(value) || saving || tooLong) return;
     if (isCreate) {
       const res = await createAgent.mutateAsync(toCreateInput(value));
-      // Link the picked skills/tools against the freshly created agent id (the join
-      // tables need an id, which only exists after the create returns).
-      if (canManageSkills && skillIds && skillIds.length > 0) {
-        await setAgentSkills.mutateAsync({ agentId: res.agent.id, skillIds });
-      }
+      // Link the picked tools against the freshly created agent id (the join tables need
+      // an id, which only exists after the create returns).
       if (canManageTools && toolIds && toolIds.length > 0) {
         await setAgentTools.mutateAsync({ agentId: res.agent.id, agentToolIds: toolIds });
       }
@@ -193,9 +167,6 @@ export function AgentSheetForm({
       onCreated(res.agent);
     } else {
       await updateAgent.mutateAsync({ id: agent.id, patch: toUpdatePatch(value) });
-      if (canManageSkills && skillIds !== null) {
-        await setAgentSkills.mutateAsync({ agentId: agent.id, skillIds });
-      }
       if (canManageTools && toolIds !== null) {
         await setAgentTools.mutateAsync({ agentId: agent.id, agentToolIds: toolIds });
       }
@@ -204,35 +175,6 @@ export function AgentSheetForm({
       }
     }
   }
-
-  const skillsLibrary = skillsLibraryQuery.data ?? [];
-  const showSkills = canManageSkills;
-
-  // The Skills section body (the fields layout wraps it in a section). The configured
-  // skill library the agent may load.
-  const skillsContent = showSkills ? (
-    skillsLibrary.length === 0 ? (
-      <AgentEmptyNotice
-        icon={Sparkles}
-        title={t('noSkills')}
-        hint={t('noSkillsHint')}
-        href={teamSectionPath(teamId, 'agent-skills')}
-        linkLabel={t('goToSkills')}
-      />
-    ) : (
-      <AgentCapabilityList
-        searchPlaceholder={t('searchSkills')}
-        onToggle={toggleSkill}
-        items={skillsLibrary.map((skill) => ({
-          id: skill.id,
-          checked: selectedSkills.includes(skill.id),
-          title: skill.name,
-          subtitle: skill.description || t('noDescription'),
-          search: `${skill.name} ${skill.description ?? ''}`.toLowerCase(),
-        }))}
-      />
-    )
-  ) : null;
 
   const toolsLibrary = toolsLibraryQuery.data ?? [];
   const showTools = canManageTools;
@@ -300,12 +242,9 @@ export function AgentSheetForm({
       localModels={chatCatalogQuery.data?.localModels ?? []}
       chatModelsUnavailable={chatCatalogQuery.data?.unavailable ?? []}
       agent={agent}
-      skillsContent={skillsContent}
-      skillsBadge={countBadge(selectedSkills.length, skillsLibrary.length)}
       toolsContent={toolsContent}
       toolsBadge={countBadge(selectedTools.length, toolsLibrary.length)}
       mcpServersContent={mcpServersContent}
-      onSkillPromoted={addPromotedSkill}
       revealedKey={revealedKey}
       onRevealedKey={setRevealedKey}
       initialOpenSection={initialOpenSection}
@@ -327,12 +266,19 @@ export function AgentSheetForm({
           <div className={`mx-auto w-full space-y-6 ${contentWidth}`}>{fields}</div>
         </div>
       )}
+      {tooLong && (
+        <Box padX={4} padTop={3}>
+          <Text size="xs" tone="danger" role="alert">
+            {t('limitBlocked')}
+          </Text>
+        </Box>
+      )}
       <div className="border-t border-border/60 px-4 py-3">
         <div className={`mx-auto flex w-full ${contentWidth} ${expanded ? 'justify-end' : ''}`}>
           <Button
             type="submit"
             className={expanded ? 'min-w-40' : 'w-full'}
-            disabled={!isAgentFormValid(value) || saving}
+            disabled={!isAgentFormValid(value) || saving || tooLong}
           >
             {saving ? tCommon('saving') : isCreate ? t('create') : t('save')}
           </Button>

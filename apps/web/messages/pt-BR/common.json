@@ -307,5 +307,11 @@
     "overridden": "Alterado para este projeto",
     "reset": "Redefinir"
   },
-  "openAsPage": "Abrir como página"
+  "openAsPage": "Abrir como página",
+  "limit": {
+    "count": "{used, number} / {limit, number} caracteres",
+    "tooLong": "Longo demais – encurte ou peça para consolidar.",
+    "nearlyFull": "Quase cheio: restam {left, number} caracteres.",
+    "truncated": "Encurtado para o modelo."
+  }
 }

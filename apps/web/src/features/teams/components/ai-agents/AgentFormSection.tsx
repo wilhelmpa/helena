@@ -1,6 +1,7 @@
 import { useContext, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import { AgentFormPageModeCtx, useAgentDialog } from './agentFormPages';
+import { AgentPage } from './AgentPage';
 import { ChevronRight, type LucideIcon } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
@@ -38,16 +39,13 @@ export function AgentFormSection({
   if (pageMode) {
     const page = dialog?.page;
     return (
-      <section className="ds-agent-page">
-        <header className="ds-agent-page-head">
-          <div>
-            <h2>{page ? tPages(`items.${page}`) : title}</h2>
-            {page ? <p>{tPages(`hints.${page}`)}</p> : hint && <p>{hint}</p>}
-          </div>
-          {headerRight && <span className="ds-agent-page-count">{headerRight}</span>}
-        </header>
-        <div className="ds-agent-page-body">{children}</div>
-      </section>
+      <AgentPage
+        title={page ? tPages(`items.${page}`) : title}
+        hint={page ? tPages(`hints.${page}`) : hint}
+        count={headerRight}
+      >
+        {children}
+      </AgentPage>
     );
   }
   return (

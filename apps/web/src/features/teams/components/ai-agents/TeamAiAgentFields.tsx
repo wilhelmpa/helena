@@ -1,5 +1,5 @@
 import { type ReactNode, useState } from 'react';
-import { Sparkles, Wrench } from 'lucide-react';
+import { GraduationCap, ScrollText, Wrench } from 'lucide-react';
 import type { TeamProjectOption } from '@/lib/api/endpoints/teams';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import type { AiChatModel, UnavailableChatModel } from '@/lib/api/endpoints/agentChat';
@@ -13,7 +13,13 @@ import AgentEnvironmentSection from './AgentEnvironmentSection';
 import AgentProjectsSection from './AgentProjectsSection';
 import AgentTokenSection from './AgentTokenSection';
 import AgentTriggersSection from './AgentTriggersSection';
-import { AgentInstructionsField } from './AgentInstructionsField';
+import AgentInstructionsBody from './AgentInstructionsBody';
+import AgentLearningSettings from './AgentLearningSettings';
+import AgentChatReflections from './AgentChatReflections';
+import { AgentPage } from './AgentPage';
+import AgentSkillsPanel from '@/features/agent-runtime/components/AgentSkillsPanel';
+import { agentSizeLimits } from '@/features/agent-runtime/utils/sizeLimits';
+import { useAgentCan, useAgentSection } from '../../context/agentSection';
 import AgentRunnerSection from './AgentRunnerSection';
 import AgentRuntimePolicySection from './AgentRuntimePolicySection';
 import AgentAbilitiesSection from './AgentAbilitiesSection';
@@ -52,12 +58,9 @@ export default function TeamAiAgentFields({
   localModels = [],
   chatModelsUnavailable = [],
   agent,
-  skillsContent,
-  skillsBadge,
   toolsContent,
   toolsBadge,
   mcpServersContent,
-  onSkillPromoted,
   revealedKey,
   onRevealedKey,
   initialOpenSection,
@@ -75,20 +78,12 @@ export default function TeamAiAgentFields({
   // The saved agent, for the state only the server knows (its runner's presence).
   // Null while creating.
   agent: AiAgent | null;
-  // The Skills section body, built by the parent (it owns the skill library and
-  // links). Null when Skills does not apply; the section is hidden then.
-  skillsContent?: ReactNode | null;
-  // "enabled / available" for the Skills header and nav entry. Undefined when the
-  // library is empty and there is nothing to count.
-  skillsBadge?: string;
   // The Tools section body (configured custom tools), built the same way.
   toolsContent?: ReactNode | null;
   // "enabled / available" for the Tools header and nav entry.
   toolsBadge?: string;
   // The MCP servers of the team's library, in the Abilities section.
   mcpServersContent?: ReactNode;
-  // A learned skill the Abilities section took into the library, enabled on the agent.
-  onSkillPromoted: (skillId: number) => void;
   // The plaintext key issued in this sheet, shown once in the API key section, and the way to drop it or replace it after a regenerate.
   revealedKey: string | null;
   onRevealedKey: (apiKey: string | null) => void;
@@ -146,11 +141,6 @@ export default function TeamAiAgentFields({
         />
         <p className="text-xs text-muted-foreground">{t('usernameHint')}</p>
       </div>
-
-      <AgentInstructionsField
-        value={value.instructions}
-        onChange={(instructions) => onChange({ instructions })}
-      />
 
       {value.projectId == null && (
         <AgentTemplateField
@@ -231,7 +221,6 @@ export default function TeamAiAgentFields({
       value={value}
       onChange={onChange}
       mcpServersContent={mcpServersContent}
-      onSkillPromoted={onSkillPromoted}
     />
   );
 
@@ -255,20 +244,6 @@ export default function TeamAiAgentFields({
     />
   );
 
-  const skillsSection =
-    skillsContent != null ? (
-      <AgentFormSection
-        key="skills"
-        {...sectionProps('skills')}
-        icon={Sparkles}
-        title={t('skills')}
-        hint={t('skillsHint')}
-        headerRight={skillsBadge}
-      >
-        {skillsContent}
-      </AgentFormSection>
-    ) : null;
-
   const toolsSection =
     toolsContent != null ? (
       <AgentFormSection
@@ -282,6 +257,44 @@ export default function TeamAiAgentFields({
         {toolsContent}
       </AgentFormSection>
     ) : null;
+
+  const { teamId: sectionTeamId } = useAgentSection();
+  const canEditAgent = useAgentCan()('edit');
+  const limits = agentSizeLimits(agent);
+  const isTemplateAgent = agent?.template === true;
+
+  const instructionsSection = (
+    <AgentFormSection
+      key="instructions"
+      {...sectionProps('instructions')}
+      icon={ScrollText}
+      title={t('pages.items.instructions')}
+      hint={t('pages.hints.instructions')}
+    >
+      <AgentInstructionsBody agent={agent} value={value} onChange={onChange} limits={limits} />
+    </AgentFormSection>
+  );
+
+  const learningSection = (
+    <AgentFormSection
+      key="learning"
+      {...sectionProps('learning')}
+      icon={GraduationCap}
+      title={t('pages.items.learning')}
+      hint={t('pages.hints.learning')}
+    >
+      <AgentLearningSettings
+        policy={value.runtimePolicy}
+        canEdit={canEditAgent}
+        onChange={(runtimePolicy) => onChange({ runtimePolicy })}
+        dreams={(value.runtimePolicy.runtime ?? 'hermes') === 'helena'}
+        limits={limits}
+      />
+      {agent && !isTemplateAgent && (
+        <AgentChatReflections teamId={sectionTeamId} agentId={agent.id} />
+      )}
+    </AgentFormSection>
+  );
 
   const runtimeControls = (
     <>
@@ -382,11 +395,12 @@ export default function TeamAiAgentFields({
       {runtimeControls}
     </div>,
     basicsSection,
+    instructionsSection,
     projectsSection,
     autopilotSection,
     runtimePolicySection,
     abilitiesSection,
-    skillsSection,
+    learningSection,
     toolsSection,
     tokenSection,
     accessSection,
@@ -400,68 +414,63 @@ export default function TeamAiAgentFields({
   if (dialog) {
     const pages: Record<AgentFormPageId, ReactNode> = {
       general: (
-        <section className="ds-agent-page">
-          <header className="ds-agent-page-head">
-            <div>
-              <h2>{t('pages.general')}</h2>
-              <p>{t('pages.generalHint')}</p>
-            </div>
-          </header>
-          <div className="ds-agent-page-body">
-            <SettingsGroup>
-              <SettingsRow label={tCommon('name')} htmlFor="agent-name">
-                <Input
-                  id="agent-name"
-                  className="w-64"
-                  placeholder={t('namePlaceholder')}
-                  value={value.name}
-                  onChange={(e) => onChange({ name: e.target.value })}
+        <AgentPage title={t('pages.general')} hint={t('pages.generalHint')}>
+          <SettingsGroup>
+            <SettingsRow label={tCommon('name')} htmlFor="agent-name">
+              <Input
+                id="agent-name"
+                className="w-64"
+                placeholder={t('namePlaceholder')}
+                value={value.name}
+                onChange={(e) => onChange({ name: e.target.value })}
+              />
+            </SettingsRow>
+            <SettingsRow
+              label={t('username')}
+              description={t('usernameHint')}
+              htmlFor="agent-username"
+            >
+              <Input
+                id="agent-username"
+                className="w-64"
+                dir="ltr"
+                placeholder={t('usernamePlaceholder')}
+                value={value.username}
+                onChange={(e) => onChange({ username: e.target.value })}
+              />
+            </SettingsRow>
+            {value.projectId == null && (
+              <SettingsRow label={t('template')} description={t('templateHint')}>
+                <Switch
+                  checked={value.template}
+                  aria-label={t('template')}
+                  onCheckedChange={(template) =>
+                    onChange({
+                      template,
+                      projectScope: template ? 'selected' : value.projectScope,
+                    })
+                  }
                 />
               </SettingsRow>
-              <SettingsRow
-                label={t('username')}
-                description={t('usernameHint')}
-                htmlFor="agent-username"
-              >
-                <Input
-                  id="agent-username"
-                  className="w-64"
-                  dir="ltr"
-                  placeholder={t('usernamePlaceholder')}
-                  value={value.username}
-                  onChange={(e) => onChange({ username: e.target.value })}
-                />
-              </SettingsRow>
-              {value.projectId == null && (
-                <SettingsRow label={t('template')} description={t('templateHint')}>
-                  <Switch
-                    checked={value.template}
-                    aria-label={t('template')}
-                    onCheckedChange={(template) =>
-                      onChange({
-                        template,
-                        projectScope: template ? 'selected' : value.projectScope,
-                      })
-                    }
-                  />
-                </SettingsRow>
-              )}
-            </SettingsGroup>
-            <SettingsGroup title={t('pages.execution')}>
-              <div className="ds-settings-row is-stacked">{runtimeControls}</div>
-            </SettingsGroup>
-            <SettingsGroup>
-              <div className="ds-settings-row is-stacked">
-                <AgentInstructionsField
-                  value={value.instructions}
-                  onChange={(instructions) => onChange({ instructions })}
-                />
-              </div>
-            </SettingsGroup>
-            {agent && <AgentTemplateDriftSection agent={agent} />}
-          </div>
-        </section>
+            )}
+          </SettingsGroup>
+          <SettingsGroup title={t('pages.execution')}>
+            <div className="ds-settings-row is-stacked">{runtimeControls}</div>
+          </SettingsGroup>
+          {agent && <AgentTemplateDriftSection agent={agent} />}
+        </AgentPage>
       ),
+      instructions: instructionsSection,
+      learning: learningSection,
+      skills: agent ? (
+        <AgentSkillsPanel
+          teamId={sectionTeamId}
+          agent={agent}
+          canEdit={canEditAgent}
+          onOpenTab={() => {}}
+          embedded
+        />
+      ) : null,
       projects: projectsSection,
       autopilot: autopilotSection,
       'runtime-policy': (
@@ -475,7 +484,6 @@ export default function TeamAiAgentFields({
       triggers: triggersSection,
       heartbeat: heartbeatSection,
       abilities: abilitiesSection,
-      skills: skillsSection,
       tools: toolsSection,
       access: accessSection,
       environment: environmentSection,

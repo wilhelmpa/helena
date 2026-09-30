@@ -527,11 +527,6 @@
       "count": 1
     }
   },
-  "src/features/agent-runtime/components/AgentMemoryPanel.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 17
-    }
-  },
   "src/features/agent-runtime/components/AgentRunsPanel.tsx": {
     "better-tailwindcss/no-restricted-classes": {
       "count": 17
@@ -4308,35 +4303,9 @@
       "count": 8
     }
   },
-  "src/features/teams/components/ai-agents/AgentInstructionsField.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 27
-    },
-    "jsx-a11y/no-autofocus": {
-      "count": 2
-    }
-  },
   "src/features/teams/components/ai-agents/AgentKeyValue.tsx": {
     "better-tailwindcss/no-restricted-classes": {
       "count": 5
-    }
-  },
-  "src/features/teams/components/ai-agents/AgentLearnedSkillDialog.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 17
-    }
-  },
-  "src/features/teams/components/ai-agents/AgentLearnedSkillRow.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 5
-    },
-    "no-restricted-imports": {
-      "count": 1
-    }
-  },
-  "src/features/teams/components/ai-agents/AgentLearningSettings.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 1
     }
   },
   "src/features/teams/components/ai-agents/AgentLibraryMcpServers.tsx": {
@@ -4347,21 +4316,6 @@
   "src/features/teams/components/ai-agents/AgentListSearch.tsx": {
     "better-tailwindcss/no-restricted-classes": {
       "count": 4
-    }
-  },
-  "src/features/teams/components/ai-agents/AgentMemoryEditDialog.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 4
-    }
-  },
-  "src/features/teams/components/ai-agents/AgentMemoryEntry.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 11
-    }
-  },
-  "src/features/teams/components/ai-agents/AgentMemoryFiles.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 3
     }
   },
   "src/features/teams/components/ai-agents/AgentMetaChip.tsx": {
@@ -4419,7 +4373,7 @@
   },
   "src/features/teams/components/ai-agents/AgentRuntimePolicySection.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 11
+      "count": 3
     }
   },
   "src/features/teams/components/ai-agents/AgentSheetForm.tsx": {
@@ -4427,17 +4381,12 @@
       "count": 6
     },
     "react-hooks/set-state-in-effect": {
-      "count": 3
+      "count": 2
     }
   },
   "src/features/teams/components/ai-agents/AgentSkillClashes.tsx": {
     "better-tailwindcss/no-restricted-classes": {
       "count": 4
-    }
-  },
-  "src/features/teams/components/ai-agents/AgentSkillInventory.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 15
     }
   },
   "src/features/teams/components/ai-agents/AgentTemplateDriftSection.tsx": {

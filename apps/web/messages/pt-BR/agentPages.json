@@ -1,0 +1,278 @@
+{
+  "editor": {
+    "label": "Visualização do editor",
+    "formatted": "Formatado",
+    "source": "Código-fonte",
+    "lossy": "Aberto como código-fonte, porque a formatação alteraria o texto."
+  },
+  "skills": {
+    "title": "Skills",
+    "hint": "Guias reutilizáveis que o agente carrega quando precisa: da biblioteca, já incluídos ou aprendidos por ele mesmo.",
+    "viewsLabel": "Visualização das skills",
+    "views": {
+      "assigned": "Atribuídas",
+      "library": "Biblioteca",
+      "proposals": "Propostas",
+      "archive": "Arquivo"
+    },
+    "search": "Pesquisar skills",
+    "kinds": {
+      "learned": "Aprendida",
+      "library": "Da biblioteca",
+      "installed": "Instalada",
+      "bundled": "Integrada"
+    },
+    "back": "Todas as skills",
+    "proposal": "Proposta",
+    "archived": "Arquivada",
+    "pinned": "Fixada",
+    "version": "Versão {version}",
+    "uses": "{count, plural, one {Usada # vez} other {Usada # vezes}}",
+    "lastUsed": "última: {when}",
+    "loadNameHint": "Como o agente carrega esta skill",
+    "pendingTitle": "Há uma alteração esperando por você",
+    "pendingText": "Em {when}, o agente propôs uma nova versão. Ela só é aplicada quando você aceitar.",
+    "tabs": {
+      "content": "Conteúdo",
+      "history": "Histórico ({count})"
+    },
+    "runtimeSkill": "Esta skill faz parte do equipamento básico do agente. Você pode ativá-la e desativá-la.",
+    "noContent": "O conteúdo desta skill ainda não está disponível.",
+    "empty": {
+      "assigned": "Nenhuma skill atribuída ainda",
+      "library": "A biblioteca está vazia",
+      "proposals": "Nenhuma proposta em aberto",
+      "archive": "Nada arquivado",
+      "search": "Nada encontrado para “{query}”"
+    },
+    "emptyHint": {
+      "assigned": "Adicione skills da biblioteca ou deixe o agente aprender sozinho.",
+      "library": "Você cria novas skills na biblioteca de skills.",
+      "proposals": "As skills novas ou alteradas que o agente propõe aparecem aqui.",
+      "archive": "As skills que você ou a limpeza guardaram podem ser encontradas aqui de novo."
+    },
+    "proposalsTitle": "{count, plural, one {# proposta espera por você} other {# propostas esperam por você}}",
+    "proposalsText": "O agente propôs skills novas ou alteradas.",
+    "proposalsOpen": "Revisar",
+    "libraryHint": "As skills da biblioteca valem para todos os agentes aos quais você as atribuir.",
+    "libraryOpen": "Abrir biblioteca",
+    "switch": "{name} para este agente",
+    "menu": "Ações para {name}",
+    "actions": {
+      "open": "Abrir",
+      "pin": "Fixar",
+      "unpin": "Desafixar",
+      "archive": "Arquivar",
+      "restore": "Restaurar",
+      "promote": "Adicionar à biblioteca",
+      "approve": "Aceitar",
+      "reject": "Rejeitar"
+    },
+    "history": {
+      "title": "Versões da skill",
+      "empty": "Esta skill ainda não tem histórico.",
+      "pending": "Aguardando aprovação",
+      "rejected": "Rejeitada",
+      "versionOf": "Versão {version}",
+      "session": "Ir para a sessão",
+      "sameText": "O texto permaneceu o mesmo."
+    },
+    "actor": {
+      "agent": "Agente",
+      "user": "Você",
+      "curator": "Limpeza",
+      "owner": "A seu pedido",
+      "system": "Sistema"
+    },
+    "action": {
+      "create": "Criada",
+      "update": "Alterada",
+      "pin": "Fixada",
+      "unpin": "Desafixada",
+      "archive": "Arquivada",
+      "restore": "Restaurada",
+      "approve": "Aceita",
+      "reject": "Rejeitada",
+      "merge": "Combinada com uma skill parecida",
+      "archiveUnused": "Arquivada após muito tempo sem uso",
+      "discard-skill": "Arquivada",
+      "pin-skill": "Fixada",
+      "other": "Alterada"
+    },
+    "reviewed": {
+      "approve": "A alteração foi aceita.",
+      "reject": "A alteração foi rejeitada.",
+      "restore": "A skill está ativa de novo."
+    }
+  },
+  "memory": {
+    "title": "Memória",
+    "approvalOn": "As alterações que o agente faz na memória dele esperam pela sua aprovação; até lá, vale a versão aprovada.",
+    "approvalOff": "O agente altera a própria memória. Cada versão fica guardada em “Versões”.",
+    "viewsLabel": "Visualização da memória",
+    "views": {
+      "memory": "Memória",
+      "notes": "Notas diárias",
+      "facts": "Fatos",
+      "proposals": "Propostas",
+      "versions": "Versões"
+    },
+    "pendingTitle": "{count, plural, one {# alteração aguarda aprovação} other {# alterações aguardam aprovação}}",
+    "pendingText": "O agente quer alterar algo na memória dele.",
+    "pendingOpen": "Revisar",
+    "noPending": "Nada aguarda aprovação.",
+    "notEditable": "Este agente apenas informa a memória dele; ele mesmo pode alterá-la.",
+    "files": {
+      "memory": {
+        "title": "O que o agente lembra",
+        "hint": "Experiência, regras e dicas que ele tem à mão em cada conversa."
+      },
+      "user": {
+        "title": "O que o agente sabe sobre você",
+        "hint": "Seu nome, suas preferências e como você gosta de trabalhar."
+      }
+    },
+    "edit": "Editar",
+    "clear": "Limpar",
+    "clearTitle": "Limpar “{title}”?",
+    "clearBody": "O agente perde essas entradas. As versões anteriores ficam guardadas em “Versões”.",
+    "empty": "Nada memorizado ainda.",
+    "truncated": "Só o início do arquivo é exibido.",
+    "size": "{chars, plural, one {# caractere} other {# caracteres}}",
+    "entryLabel": "Entrada {index}",
+    "removeEntry": "Remover a entrada {index}",
+    "addEntry": "Adicionar entrada",
+    "placeholder": "O que o agente deve lembrar …",
+    "notes": {
+      "title": "Notas diárias",
+      "empty": "Nenhuma nota diária ainda",
+      "emptyHint": "O que o agente anota durante o dia aparece aqui, organizado por dia.",
+      "lines": "{count, plural, one {# entrada} other {# entradas}}"
+    },
+    "facts": {
+      "count": "{count, plural, one {# fato} other {# fatos}}",
+      "search": "Pesquisar fatos",
+      "noMatch": "Nenhum fato corresponde a “{query}”.",
+      "empty": "Nenhum fato ainda",
+      "emptyHint": "O que o agente registra como conhecimento estabelecido aparece aqui, com a confiança que conquistou.",
+      "trust": "{value} % de confiança",
+      "trustHint": "Confirmado {confirmations}×, útil {helpful}×",
+      "contradicted": "possível contradição",
+      "menu": "Ações para este fato",
+      "confirm": "Correto",
+      "edit": "Editar",
+      "remove": "Remover",
+      "removeTitle": "Remover o fato?",
+      "removeBody": "“{fact}” fica oculto e deixa de ser usado.",
+      "save": "Salvar",
+      "cancel": "Cancelar",
+      "categories": {
+        "general": "Geral",
+        "project": "Projeto",
+        "preference": "Preferência",
+        "person": "Pessoa",
+        "decision": "Decisão",
+        "memory": "Memória"
+      }
+    },
+    "versions": {
+      "title": "Versões da memória",
+      "empty": "Nenhuma versão ainda",
+      "emptyHint": "Cada versão da memória fica guardada aqui, com a diferença em relação à anterior.",
+      "file": {
+        "memory": "O que o agente lembra",
+        "user": "O que o agente sabe sobre você"
+      },
+      "source": {
+        "agent": "Pelo agente",
+        "owner": "Editada por você",
+        "observed": "Encontrada no agente"
+      }
+    }
+  },
+  "instructions": {
+    "soul": {
+      "title": "Personalidade",
+      "hint": "Quem o agente é e como ele se apresenta (SOUL). Vem primeiro em cada conversa.",
+      "placeholder": "Tom, postura e princípios do agente …"
+    },
+    "own": {
+      "title": "Instruções",
+      "hint": "O que este agente deve e não deve fazer. Elas se somam à personalidade.",
+      "placeholder": "Instruções para o agente …"
+    },
+    "files": {
+      "title": "Mais arquivos de instruções",
+      "hint": "Arquivos Markdown adicionais que o agente recebe junto com as instruções.",
+      "none": "Nenhum outro arquivo.",
+      "remove": "Remover {name}",
+      "name": "Nome do novo arquivo",
+      "namePlaceholder": "regras ou equipe/regras",
+      "add": "Adicionar arquivo",
+      "invalid": "Somente letras, números, ponto, hífen e sublinhado; separe as pastas com “/”.",
+      "taken": "Este arquivo já existe."
+    },
+    "inherited": {
+      "title": "Herda de",
+      "hint": "Isto também vale para o agente; aqui você só pode ler.",
+      "template": "Modelo “{name}”",
+      "templateUnknown": "Modelo",
+      "follows": "As instruções acompanham o modelo sempre que ele muda.",
+      "differs": "Esta cópia difere do modelo.",
+      "reset": "Redefinir para o modelo",
+      "project": "Projeto {key} · {name}"
+    }
+  },
+  "learning": {
+    "readOnly": "Só quem pode editar agentes pode alterar isto.",
+    "learn": {
+      "title": "Aprendizado",
+      "hint": "Salvo com o agente e vale a partir da próxima conversa."
+    },
+    "learning": {
+      "label": "Aprender skills com a experiência",
+      "hint": "O agente guarda o que aprende no trabalho: novas skills e entradas na memória. O custo conta no consumo dele. Desativado: ele não salva nada de novo."
+    },
+    "curator": {
+      "label": "Organizar as skills",
+      "hint": "Skills duplicadas são combinadas e as sem uso há muito tempo são arquivadas. Skills fixadas não são tocadas; nada se perde."
+    },
+    "memoryApproval": {
+      "label": "Mostrar as alterações antes",
+      "hint": "Skills e entradas de memória novas ou alteradas esperam pela sua aprovação em vez de valerem de imediato."
+    },
+    "reflection": {
+      "label": "Refletir após as execuções",
+      "hint": "Logo após uma execução, o agente anota num breve acompanhamento o que aprendeu com ela.",
+      "off": "Desativado",
+      "failure": "Após falhas e retrabalho",
+      "complex": "Também após execuções longas"
+    },
+    "chats": {
+      "label": "Refletir após os chats",
+      "hint": "Quando um chat fica parado por um tempo, o agente anota o que aprendeu sobre você e seus desejos.",
+      "when": "Quando",
+      "idle": "após minutos de silêncio",
+      "turns": "após mensagens, no máximo"
+    },
+    "dream": {
+      "title": "Sonhar",
+      "hint": "Organização em segundo plano, sem você precisar fazer nada.",
+      "label": "Consolidar à noite",
+      "text": "Toda noite o agente passa o que é duradouro das notas diárias para a memória e descarta duplicatas.",
+      "when": "todos os dias às 3h"
+    },
+    "limits": {
+      "title": "Limites de tamanho",
+      "hint": "Quanto texto cada parte do contexto pode conter. O modelo só vê o que passa disso, encurtado. Ajustável depois.",
+      "areas": {
+        "memory": "Memória",
+        "user": "Sobre você",
+        "note": "Nota diária",
+        "soul": "Personalidade",
+        "instructions": "Instruções",
+        "projectInstructions": "Instruções do projeto"
+      }
+    }
+  }
+}

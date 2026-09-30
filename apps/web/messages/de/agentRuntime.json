@@ -7,7 +7,8 @@
     "memory": "Gedächtnis",
     "usage": "Verbrauch",
     "runtime": "Laufzeit",
-    "overview": "Übersicht"
+    "overview": "Übersicht",
+    "skills": "Skills"
   },
   "runs": {
     "empty": "Noch keine Läufe.",

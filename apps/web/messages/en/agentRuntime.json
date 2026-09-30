@@ -7,7 +7,8 @@
     "memory": "Memory",
     "usage": "Usage",
     "runtime": "Runtime",
-    "overview": "Overview"
+    "overview": "Overview",
+    "skills": "Skills"
   },
   "runs": {
     "empty": "No runs yet.",

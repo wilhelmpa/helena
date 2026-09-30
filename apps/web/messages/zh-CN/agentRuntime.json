@@ -7,7 +7,8 @@
     "memory": "记忆",
     "usage": "用量",
     "runtime": "运行时",
-    "overview": "概览"
+    "overview": "概览",
+    "skills": "Skills"
   },
   "runs": {
     "empty": "暂无运行。",
