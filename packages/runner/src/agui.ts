@@ -876,8 +876,10 @@ export class UsageReader {
   }
 }
 
+// The last `limit` characters, the ellipsis that marks the cut included: the API refuses a
+// field one character over its limit, and the whole event with it.
 function tail(text: string, limit: number): string {
-  return text.length <= limit ? text : `…${text.slice(-limit)}`;
+  return text.length <= limit ? text : `…${text.slice(-(limit - 1))}`;
 }
 
 // A tool result is either a string or the block list the model was shown.

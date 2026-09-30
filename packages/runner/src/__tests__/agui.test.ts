@@ -388,6 +388,33 @@ describe('answer stream', () => {
     expect((result as { content: string }).content).toBe('README.md');
   });
 
+  it('cuts a long tool call to the limit the API accepts, the ellipsis included', async () => {
+    const sink = collect();
+    const stream = new AnswerStream('opencode-json', 'chat:1:u:x', '7', sink.send);
+    const long = 'x'.repeat(40_000) + 'END';
+    stream.write(
+      [
+        JSON.stringify({
+          sessionID: 'ses_1',
+          part: {
+            type: 'tool',
+            callID: 'c1',
+            tool: 'bash',
+            state: { status: 'completed', input: { command: long }, output: long },
+          },
+        }),
+        '',
+      ].join('\n'),
+    );
+    await stream.finish('');
+    const result = sink.events.find((e) => e.type === 'TOOL_CALL_RESULT') as { content: string };
+    expect(result.content.length).toBe(32_000);
+    expect(result.content.startsWith('…')).toBe(true);
+    expect(result.content.endsWith('END')).toBe(true);
+    const args = sink.events.find((e) => e.type === 'TOOL_CALL_ARGS') as { delta: string };
+    expect(args.delta.length).toBeLessThanOrEqual(32_000);
+  });
+
   it('reports what a failed opencode tool call said, once', async () => {
     const sink = collect();
     const stream = new AnswerStream('opencode-json', 'chat:1:u:x', '7', sink.send);
