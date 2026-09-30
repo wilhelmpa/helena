@@ -134,7 +134,10 @@ describe('root broker', () => {
     }
   });
   it('uses the chat runtime from the database when the header disagrees or observation is missing', async () => {
-    const { request, messageId } = await setup('codex');
+    const { request, messageId, owner } = await setup('codex');
+    // Home has every right on any runtime while unrestricted is on (owner 30.09.); the
+    // forged-header guard matters for the restricted path, so check it there.
+    await setRootSettings({ enabled: true, directOnly: false, unrestricted: false }, owner.userId);
     const forged = await request(
       '/agent-root',
       { command: 'id', reason: 'Forged runtime' },
