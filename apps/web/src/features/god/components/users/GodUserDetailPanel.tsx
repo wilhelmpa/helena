@@ -16,7 +16,7 @@ import { useProviderList } from '../../hooks/useProviderList';
 import GodUserProjectCard from './GodUserProjectCard';
 import GodUserVerifyButton from './GodUserVerifyButton';
 
-import { Box, Button, Overlay, Stack, Inline, Text } from '@/design-system';
+import { Box, Button, Overlay, Stack, Inline, Text, Card } from '@/design-system';
 
 // One fact in the account grid: a quiet label with the value under it. Reading down
 // a column beats a row of label/value pairs when the values differ in length.
@@ -250,7 +250,7 @@ export default function GodUserDetailPanel({
             </Text>
 
             {soleOwned.length > 0 && (
-              <Stack gap={4} pad={4} className="rounded-md border border-sidebar-border bg-card">
+              <Card gap={4}>
                 <Inline gap={3} align="start" className="flex items-start">
                   <TriangleAlert className="mt-0.5 size-4 shrink-0 text-destructive" />
                   <Stack gap={2} className="min-w-0">
@@ -297,7 +297,7 @@ export default function GodUserDetailPanel({
                     </Text>
                   </Stack>
                 </Inline>
-              </Stack>
+              </Card>
             )}
           </Stack>
         </ConfirmDialog>

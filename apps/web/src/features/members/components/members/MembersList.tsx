@@ -23,7 +23,7 @@ import { useSession } from '@/lib/auth-client';
 import ListPager from '@/components/common/ListPager';
 import { usePaging } from '@/hooks/usePaging';
 import MemberRow from './MemberRow';
-import { ButtonLink, Inline, Stack, Text, Table, Th, Tr } from '@/design-system';
+import { ButtonLink, Inline, Stack, Text, Table, Th, Tr, Card } from '@/design-system';
 import { organizationPath } from '@/utils/paths';
 
 // The project's members, newest membership first, a page at a time. People and AI
@@ -126,7 +126,7 @@ export default function MembersList({
       {members.length === 0 ? (
         <MembersEmptyState kind={kind} searching={term !== undefined} />
       ) : (
-        <div className="overflow-hidden rounded-md border bg-card">
+        <Card pad="none" className="overflow-hidden">
           <Table stack={false} className="table-fixed md:min-w-[720px]">
             <colgroup>
               <col className="md:w-[36%]" />
@@ -159,7 +159,7 @@ export default function MembersList({
               ))}
             </tbody>
           </Table>
-        </div>
+        </Card>
       )}
 
       {total > 0 && <ListPager paging={paging} total={total} />}

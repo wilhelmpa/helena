@@ -1,3 +1,4 @@
+import { Card } from '@/design-system';
 import Link from 'next/link';
 import { Loader2, MessageSquare, RotateCcw, Square } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
@@ -145,7 +146,7 @@ export function LabRunPanel({
       )}
 
       {run.steps.length > 0 && (
-        <ol className="divide-y divide-border/60 rounded-md border border-sidebar-border bg-card">
+        <Card as="ol" pad="none" className="divide-y divide-border/60">
           {run.steps.map((step, index) => (
             <li key={index} className="flex items-start gap-2 px-3 py-2 text-sm">
               <span className="w-5 shrink-0 text-end text-xs text-muted-foreground">
@@ -170,7 +171,7 @@ export function LabRunPanel({
               </span>
             </li>
           ))}
-        </ol>
+        </Card>
       )}
 
       {!active && (run.summary || run.result?.url) && (

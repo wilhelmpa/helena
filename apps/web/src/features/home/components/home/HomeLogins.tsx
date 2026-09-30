@@ -7,7 +7,7 @@ import type { RuntimeLoginsHealth } from '@/lib/api/endpoints/god';
 import { formatDateTime, formatDurationShort } from '@/utils/dates';
 import { KNOWN_PROVIDERS } from '@/features/provider-limits/utils/limitsFormat';
 import { loginRows, staleSince } from '../../utils/runtimeLogins';
-import { Box, Inline, Stack, Text } from '@/design-system';
+import { Box, Inline, Stack, Text, Card } from '@/design-system';
 
 // The model logins agents share (Hermes' Claude and ChatGPT logins), by what the owner has
 // to do (utils/runtimeLogins): "aktiv · erneuert sich automatisch" while the token keeper
@@ -47,7 +47,7 @@ export default function HomeLogins({ health }: { health: RuntimeLoginsHealth | u
 
   return (
     <Box marginTop={2}>
-      <Box as="ul" pad={1} className="rounded-md border bg-card">
+      <Card as="ul" pad="none">
         <Inline as="li" gap={2} padX={2} className="h-8 min-w-0 text-sm">
           <StatusBadge
             status={problems > 0 ? 'danger' : since || failing > 0 ? 'waiting' : 'success'}
@@ -109,7 +109,7 @@ export default function HomeLogins({ health }: { health: RuntimeLoginsHealth | u
             )}
           </li>
         ))}
-      </Box>
+      </Card>
       {since && (
         <Text as="p" size="xs" tone="warning" className="mt-1 px-2">
           {t('stale', { time: formatDurationShort(since) })}

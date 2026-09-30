@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import { useLocale, useTranslations } from 'next-intl';
 import { EmptyState } from '@/components/common/page/EmptyState';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
@@ -162,10 +163,10 @@ export function DecisionLog({
   const items = log.data?.items ?? [];
   if (items.length === 0) return <EmptyState title={t('empty')} description={t('emptyHint')} />;
   return (
-    <div className="divide-y divide-border/60 rounded-md border border-sidebar-border bg-card">
+    <Card pad="none" className="divide-y divide-border/60">
       {items.map((entry) => (
         <Row key={entry.id} entry={entry} teamId={teamId} />
       ))}
-    </div>
+    </Card>
   );
 }

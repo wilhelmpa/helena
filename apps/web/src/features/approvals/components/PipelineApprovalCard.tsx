@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import Link from 'next/link';
 import { ShieldCheck } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -16,7 +17,7 @@ export default function PipelineApprovalCard({ approval }: { approval: PipelineA
   const decide = useDecidePipelineApproval();
 
   return (
-    <article className="space-y-3 rounded-md border bg-card p-4">
+    <Card as="article">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
         <ShieldCheck className="size-4" />
         <span dir="auto">
@@ -47,6 +48,6 @@ export default function PipelineApprovalCard({ approval }: { approval: PipelineA
         pending={decide.isPending}
         onDecide={(decision) => decide.mutate({ runId: approval.runId, decision })}
       />
-    </article>
+    </Card>
   );
 }

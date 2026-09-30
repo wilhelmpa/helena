@@ -1,7 +1,7 @@
 import { useTranslations } from 'next-intl';
 import type { Webhook } from '@/lib/api/endpoints/webhooks';
 import { SettingsWebhookRow } from './SettingsWebhookRow';
-import { Table, Th, Tr } from '@/design-system';
+import { Table, Th, Tr, Card } from '@/design-system';
 
 interface SettingsWebhooksTableProps {
   webhooks: Webhook[];
@@ -20,7 +20,7 @@ export function SettingsWebhooksTable({
   const tCommon = useTranslations('common');
 
   return (
-    <div className="overflow-hidden rounded-md border bg-card">
+    <Card pad="none" className="overflow-hidden">
       <Table stack={false} className="min-w-[820px] table-fixed">
         <colgroup>
           <col className="w-[40%]" />
@@ -46,6 +46,6 @@ export function SettingsWebhooksTable({
           ))}
         </tbody>
       </Table>
-    </div>
+    </Card>
   );
 }

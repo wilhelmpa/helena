@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import { useState } from 'react';
 import { CloudUpload, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -29,7 +30,7 @@ export default function BackupTargetsCard({ targets }: { targets: BackupTarget[]
     secretAccessKey.length >= 8;
 
   return (
-    <section className="min-w-0 space-y-3 rounded-md border border-sidebar-border bg-card p-4">
+    <Card as="section" className="min-w-0">
       <CardHeader title={t('title')} />
       <p className="text-xs text-muted-foreground">{t('explain')}</p>
       {targets.length > 0 && (
@@ -118,6 +119,6 @@ export default function BackupTargetsCard({ targets }: { targets: BackupTarget[]
           </Button>
         </form>
       )}
-    </section>
+    </Card>
   );
 }

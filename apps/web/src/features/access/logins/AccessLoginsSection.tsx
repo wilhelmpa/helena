@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -55,7 +56,7 @@ export function AccessLoginsSection({
       <h2 id="access-logins-title" className="text-md font-medium">
         {t('title')}
       </h2>
-      <ul className="divide-y overflow-hidden rounded-md border border-sidebar-border bg-card">
+      <Card as="ul" pad="none" className="divide-y overflow-hidden">
         {shared.map((login) => (
           <SharedLoginItem key={login.key} login={login} />
         ))}
@@ -73,7 +74,7 @@ export function AccessLoginsSection({
             onAddRuntimeLogin={onAddRuntimeLogin}
           />
         ))}
-      </ul>
+      </Card>
       {confirm && (
         <ConfirmDialog
           title={t('signOutTitle', { name: confirm.name })}

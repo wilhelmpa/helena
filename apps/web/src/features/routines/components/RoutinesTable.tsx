@@ -3,7 +3,7 @@ import type { Routine } from '@/lib/api/endpoints/routines';
 import type { RoutineActions } from './RoutineActionsMenu';
 import { RoutineItem } from './RoutineItem';
 import { RoutineRow } from './RoutineRow';
-import { Table, Th, Tr } from '@/design-system';
+import { Table, Th, Tr, Card } from '@/design-system';
 
 export function RoutinesTable({
   routines,
@@ -18,7 +18,7 @@ export function RoutinesTable({
   const tCommon = useTranslations('common');
   const head = 'h-9 px-3 text-xs font-medium text-muted-foreground';
   return (
-    <div className="overflow-hidden rounded-md border bg-card">
+    <Card pad="none" className="overflow-hidden">
       <ul className="divide-y md:hidden">
         {routines.map((routine) => (
           <RoutineItem
@@ -63,6 +63,6 @@ export function RoutinesTable({
           ))}
         </tbody>
       </Table>
-    </div>
+    </Card>
   );
 }

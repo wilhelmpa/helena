@@ -1,3 +1,4 @@
+import { Card } from '@/design-system';
 import type { ReactNode } from 'react';
 import { FolderKanban, Mail, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -42,7 +43,7 @@ export default function InviteInfo({ invite }: { invite: InviteView }) {
   const projectRoleLabel =
     invite.role === 'owner' ? tCommon('owner') : (invite.roleName ?? tCommon('member'));
   return (
-    <div className="divide-y divide-sidebar-border rounded-md border border-sidebar-border bg-card text-start">
+    <Card pad="none" className="divide-y divide-sidebar-border text-start">
       <InfoRow
         icon={<Users className="size-4" />}
         label={t('teamLabel')}
@@ -58,6 +59,6 @@ export default function InviteInfo({ invite }: { invite: InviteView }) {
         />
       )}
       <InfoRow icon={<Mail className="size-4" />} label={t('emailLabel')} value={invite.email} />
-    </div>
+    </Card>
   );
 }

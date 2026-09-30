@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import Link from 'next/link';
 import { Server } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -42,7 +43,7 @@ export default function ServerHealthLines() {
         <span className="min-w-0 flex-1 truncate">{t('home.title')}</span>
         <StatusBadge status={healthStatus(state)} dotOnly />
       </Link>
-      <ul className="rounded-md border bg-card p-1">
+      <Card as="ul" pad="none">
         {problems.map((item) => (
           <HealthLine key={item.id} item={item} />
         ))}
@@ -54,7 +55,7 @@ export default function ServerHealthLines() {
             </span>
           </li>
         )}
-      </ul>
+      </Card>
     </div>
   );
 }
