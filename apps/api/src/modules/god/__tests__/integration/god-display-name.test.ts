@@ -17,9 +17,12 @@ describe('display name setting', () => {
     await app.handle(new Request('http://localhost/api/auth/get-session'));
     expect((await auth.$context).appName).toBe('Atlas');
     const spec = await app.handle(new Request('http://localhost/docs/json'));
-    const document = await spec.json();
+    const document = (await spec.json()) as {
+      info: { title: string };
+      tags: { name: string; description: string }[];
+    };
     expect(document.info.title).toBe('Atlas API');
-    expect(document.tags.find((tag: { name: string }) => tag.name === 'Routines').description).toBe(
+    expect(document.tags.find((tag) => tag.name === 'Routines')?.description).toBe(
       'Tasks created or reopened for an agent on a schedule, run by the Atlas engine',
     );
     const branded = await normalizeOpenApiResponse(new Request('http://localhost/docs/json'), {
