@@ -100,3 +100,24 @@ describe('root launcher attribution', () => {
     ).toThrow(/launcher unit/);
   });
 });
+
+describe('unrestricted Home root', () => {
+  it('ignores taint and origin only for Home on its native runtime', () => {
+    for (const agentRole of ['home', 'agent'])
+      for (const runtime of ['helena', 'hermes', 'codex', 'unknown'])
+        for (const unrestricted of [true, false]) {
+          expect(
+            rootDecision({
+              origin: 'system',
+              runtime,
+              taintSources: ['mail', 'browser'],
+              directOnly: true,
+              agentRole,
+              unrestricted,
+            }),
+          ).toBe(
+            agentRole === 'home' && runtime === 'helena' && unrestricted ? 'immediate' : 'approval',
+          );
+        }
+  });
+});

@@ -1,3 +1,4 @@
+import { developmentRoutes } from '#modules/development/index';
 import { trashRoutes } from './modules/trash';
 import { rootAccessRoutes } from '#modules/root-access/index';
 import { modelSchemaRoutes } from './modules/model-schemas';
@@ -125,6 +126,7 @@ const plannerOperations = new Elysia({ name: 'planner-operations' })
   .use(modelPriceRoutes)
   .use(autopilotRoutes)
   .use(rootAccessRoutes)
+  .use(developmentRoutes)
   .use(modelSchemaRoutes)
   .use(pipelineRoutes)
   .use(mailAccountRoutes)

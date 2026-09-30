@@ -4,19 +4,25 @@ import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { bootstrapHomeAgent } from '../../../../scripts/bootstrap-home-agent';
 import { setRootSettings } from '../../service';
+import { heldProjects, budgetExhausted } from '#modules/autopilot/budgets';
 import { useHostdTransport } from '#modules/server/hostd';
 
 process.env.AGENT_CHAT_CLAIM_WAIT_MS = '50';
 let calls: string[];
-let state: { enabled: boolean; directOnly: boolean; epoch: number };
+let state: { enabled: boolean; directOnly: boolean; unrestricted: boolean; epoch: number };
 beforeEach(async () => {
   await resetDb();
   calls = [];
-  state = { enabled: true, directOnly: true, epoch: 0 };
+  state = { enabled: true, directOnly: true, unrestricted: true, epoch: 0 };
   useHostdTransport(async (method, input) => {
     calls.push(method);
     if (method === 'SetRootSettings')
-      state = { enabled: !!input.enabled, directOnly: !!input.directOnly, epoch: state.epoch + 1 };
+      state = {
+        enabled: !!input.enabled,
+        directOnly: !!input.directOnly,
+        unrestricted: input.unrestricted == null ? state.unrestricted : !!input.unrestricted,
+        epoch: state.epoch + 1,
+      };
     if (method === 'RunPrivileged') {
       if (!state.enabled || input.epoch !== state.epoch) throw new Error('Revoked');
       return { unit: `volition-root-${input.id}.service`, exitCode: 0, output: '0\n' };
@@ -64,10 +70,115 @@ async function setup(runtime = 'hermes') {
       data: (await response.json()) as { id: string; status: string; approvalId: number | null },
     };
   };
-  return { request, asHome, asOwner, owner, messageId: sent.data!.messageId };
+  return { request, asHome, asOwner, owner, home, project, messageId: sent.data!.messageId };
 }
 
 describe('root broker', () => {
+  it('runs native Home root after web content without a card and keeps source attribution', async () => {
+    const { request, asHome, asOwner, messageId, owner } = await setup('helena');
+    await asHome['agent-policy'].decide.post({ runtime: 'helena', messageId, tool: 'WebFetch' });
+    const result = await request('/agent-root', {
+      command: 'id -u',
+      reason: 'After external content',
+    });
+    expect(result.data).toMatchObject({ status: 'success', approvalId: null });
+    expect((await asOwner.approvals.get()).data?.items).toEqual([]);
+    const audit = await request('/god/root-access/audit', undefined, true);
+    expect(audit.data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          runtime: 'helena',
+          agentId: expect.any(Number),
+          taintSources: expect.arrayContaining(['web', 'tool:WebFetch']),
+        }),
+      ]),
+    );
+    await setRootSettings({ enabled: true, directOnly: true, unrestricted: false }, owner.userId);
+    expect(
+      (await request('/agent-root', { command: 'id -u', reason: 'Restricted mode' })).data.status,
+    ).toBe('pending');
+    await setRootSettings({ enabled: false, directOnly: false, unrestricted: true }, owner.userId);
+    expect((await request('/agent-root', { command: 'id -u', reason: 'Revoked' })).status).toBe(
+      409,
+    );
+    expect(calls.filter((method) => method === 'RunPrivileged')).toHaveLength(1);
+  });
+  it('offers the full native Home tool profile and records Home requests without pending cards', async () => {
+    const { asHome, asOwner, home, project } = await setup('helena');
+    const before = process.env.HELENA_NATIVE_RUNTIME;
+    process.env.HELENA_NATIVE_RUNTIME = 'on';
+    try {
+      const patched = await asOwner
+        .teams({ teamId: project.teamId })
+        ['ai-agents']({ agentId: home.agentId })
+        .patch({
+          runtimePolicy: {
+            runtime: 'helena',
+            reasoningEffort: null,
+            toolAllow: [],
+            toolDeny: [],
+            mcpGrants: [],
+            files: [],
+            helena: { toolProfile: 'recherche' },
+          },
+        });
+      expect(patched.status).toBe(200);
+      expect((await asHome['agent-runtime'].policy.get()).data?.helena).toMatchObject({
+        toolProfile: 'voll',
+        coreTools: ['run_as_root'],
+      });
+      const requested = await asHome
+        .projects({ projectKey: 'ROOT' })
+        .approvals.post({ kind: 'execute', action: 'Instance maintenance', command: 'id -u' });
+      expect(requested.status).toBe(201);
+      expect(requested.data?.status).toBe('approved');
+      expect((await asOwner.approvals.get()).data?.items).toEqual([]);
+    } finally {
+      if (before === undefined) delete process.env.HELENA_NATIVE_RUNTIME;
+      else process.env.HELENA_NATIVE_RUNTIME = before;
+    }
+  });
+  it('keeps reached Home budgets as usage data without stopping work or creating a card', async () => {
+    const { asOwner, asHome, home, project, messageId } = await setup('helena');
+    expect(
+      (
+        await asOwner
+          .teams({ teamId: project.teamId })
+          ['ai-agents']({ agentId: home.agentId })
+          .autopilot.budgets.put({ budgets: [{ metric: 'tokens', period: 'day', limit: 1 }] })
+      ).status,
+    ).toBe(200);
+    expect(
+      (
+        await asHome['agent-chats']({ messageId }).result.post({
+          status: 'success',
+          usage: { inputTokens: 10, outputTokens: 2 },
+          spend: { inputTokens: 10, outputTokens: 2 },
+        })
+      ).status,
+    ).toBe(204);
+    const status = await asOwner
+      .teams({ teamId: project.teamId })
+      ['ai-agents']({ agentId: home.agentId })
+      .autopilot.get();
+    expect(status.data?.budgets[0]).toMatchObject({ reached: true, used: 12 });
+    expect(status.data?.paused).toBe(false);
+    expect(await heldProjects([project.id], home.agentId)).toEqual([]);
+    expect(await budgetExhausted(home.agentId, project.id)).toBeNull();
+    expect((await asOwner.approvals.get()).data?.items).toEqual([]);
+  });
+  it('round-trips unrestricted mode through the owner settings routes', async () => {
+    const { owner } = await setup('helena');
+    const asOwner = authedApi(owner.cookie, { origin: 'http://localhost:3001' });
+    expect((await asOwner.god['root-access'].get()).data?.unrestricted).toBe(true);
+    const changed = await asOwner.god['root-access'].put({
+      enabled: true,
+      directOnly: true,
+      unrestricted: false,
+    });
+    expect(changed.status).toBe(200);
+    expect(changed.data?.unrestricted).toBe(false);
+  });
   it('executes a clean owner chat and records its completion', async () => {
     const { request } = await setup();
     const result = await request('/agent-root', { command: 'id -u', reason: 'Check identity' });
@@ -151,7 +262,12 @@ describe('root broker', () => {
     });
     useHostdTransport(async (method, input) => {
       if (method === 'SetRootSettings') {
-        state = { enabled: false, directOnly: true, epoch: state.epoch + 1 };
+        state = {
+          enabled: false,
+          directOnly: true,
+          unrestricted: input.unrestricted == null ? state.unrestricted : !!input.unrestricted,
+          epoch: state.epoch + 1,
+        };
         finish();
       }
       if (method === 'RunPrivileged') {

@@ -55,7 +55,7 @@ export const rootAccessRoutes = new Elysia({ name: 'volition-root-access' })
       detail: {
         summary: 'Run a root command for the Home agent',
         description:
-          'Run a root command with its reason. Untrusted or unobservable work creates an owner approval; approval executes the stored command. The result is recorded under Administrator / Security.',
+          'Run a root command with its reason. Native Home work runs immediately when unrestricted mode is enabled; other work follows the provenance policy. The result is recorded under Administrator / Security.',
         ...mcpTool('run_as_root', undefined, 'report'),
       },
     },

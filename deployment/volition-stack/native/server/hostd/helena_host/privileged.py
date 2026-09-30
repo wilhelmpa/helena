@@ -21,13 +21,15 @@ def path(config):
 
 
 def state(config):
-    return json_load_file(path(config), {'enabled': True, 'directOnly': True, 'epoch': 0, 'units': {}, 'completed': {}})
+    value = json_load_file(path(config), {'enabled': True, 'directOnly': True, 'epoch': 0, 'units': {}, 'completed': {}})
+    value.setdefault('unrestricted', True)
+    return value
 
 
 def settings(ctx, _):
     with LOCK:
         value = state(ctx.config)
-        return {key: value[key] for key in ('enabled', 'directOnly', 'epoch')}
+        return {key: value[key] for key in ('enabled', 'directOnly', 'unrestricted', 'epoch')}
 
 
 def stop(ctx, unit):
@@ -40,6 +42,8 @@ def configure(ctx, params):
     with LOCK:
         value = state(ctx.config)
         value.update(enabled=params['enabled'], directOnly=params['directOnly'], epoch=value['epoch'] + 1)
+        if params.get('unrestricted') is not None:
+            value['unrestricted'] = params['unrestricted']
         atomic_write_json(path(ctx.config), value)
         units = dict(value['units'])
         active = {unit: ACTIVE.get(unit) for unit in units}
