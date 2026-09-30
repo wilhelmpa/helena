@@ -416,284 +416,288 @@
     "more": "أنواع عمل أخرى ({count})"
   },
   "modelMatrix": {
-    "search": "Search …",
-    "noResults": "Nothing found",
-    "reset": "Reset",
-    "loadFailed": "The model matrix could not be loaded",
+    "search": "بحث …",
+    "noResults": "لا توجد نتائج",
+    "reset": "إعادة التعيين",
+    "loadFailed": "تعذّر تحميل مصفوفة النماذج",
     "mark": {
-      "own": "Own setting",
-      "changed": "Changed, not applied yet"
+      "own": "إعداد خاص",
+      "changed": "تم التغيير، لم يُطبَّق بعد"
     },
     "note": {
-      "own": "This agent's own setting",
-      "staged": "Changed, not applied yet",
-      "schema": "Inherits from the schema “{schema}”",
-      "project": "Inherits from the project schema “{schema}”"
+      "own": "إعداد خاص بهذا الوكيل",
+      "staged": "تم التغيير، لم يُطبَّق بعد",
+      "schema": "يرث من المخطط «{schema}»",
+      "project": "يرث من مخطط المشروع «{schema}»"
     },
     "columns": {
-      "runtime": "Runtime",
-      "model": "Model",
-      "reasoning": "Thinking depth",
-      "escalation": "Escalation",
-      "browser": "Browser control",
-      "decision": "Decider",
-      "device": "Device"
+      "runtime": "بيئة التشغيل",
+      "model": "النموذج",
+      "reasoning": "عمق الاستدلال",
+      "escalation": "التصعيد",
+      "browser": "التحكم في المتصفح",
+      "decision": "متخذ القرار",
+      "device": "الجهاز"
     },
     "runtime": {
-      "helena": "{appName} runtime",
+      "helena": "بيئة تشغيل {appName}",
       "claude": "Claude Code",
       "codex": "Codex",
-      "hermes": "Hermes (cloud)",
-      "command": "Command",
+      "hermes": "Hermes (سحابة)",
+      "command": "أمر",
       "webhook": "Webhook"
     },
     "reasoning": {
-      "low": "Low",
-      "medium": "Medium",
-      "high": "High",
-      "xhigh": "Very high"
+      "low": "منخفض",
+      "medium": "متوسط",
+      "high": "عالٍ",
+      "xhigh": "عالٍ جدًا"
     },
     "browser": {
-      "standard": "Standard",
+      "standard": "قياسي",
       "jev": "Jev",
-      "combined": "Combined"
+      "combined": "مدمج"
     },
     "browserHint": {
-      "standard": "{appName} browser",
-      "jev": "fast, cloud",
-      "combined": "Jev, then standard"
+      "standard": "متصفح {appName}",
+      "jev": "سريع، سحابة",
+      "combined": "Jev ثم القياسي"
     },
     "device": {
       "gpu": "GPU",
       "npu": "NPU",
-      "cloud": "Cloud",
+      "cloud": "سحابة",
       "cpu": "CPU",
-      "npuNote": "The NPU only carries small task classes, never agent runs."
+      "npuNote": "تتولى NPU أنواع المهام الصغيرة فقط، ولا تشغّل الوكلاء أبدًا."
     },
     "model": {
-      "localDefault": "Local default model",
-      "local": "local",
-      "none": "No model"
+      "localDefault": "النموذج المحلي الافتراضي",
+      "local": "محلي",
+      "none": "بلا نموذج"
     },
     "decision": {
       "backends": {
-        "jev": "Jev (cloud)",
-        "jev-local": "Jev, then local",
-        "local-jev": "Local, then Jev",
-        "gpu": "Local (GPU)",
+        "jev": "Jev (سحابة)",
+        "jev-local": "Jev ثم محلي",
+        "local-jev": "محلي ثم Jev",
+        "gpu": "محلي (GPU)",
         "npu": "NPU"
       },
-      "from": "from {percent} %",
-      "backend": "Decider",
-      "threshold": "Confidence from (%)",
-      "thresholdHint": "Below it the fallback takes over.",
-      "fallback": "Fallback",
+      "from": "من {percent} %",
+      "backend": "متخذ القرار",
+      "threshold": "الثقة من (%)",
+      "thresholdHint": "دون هذا الحد يتولى البديل.",
+      "fallback": "البديل",
       "fallbacks": {
-        "gpu": "Local",
-        "coordinator": "Coordinator",
-        "none": "None"
+        "gpu": "محلي",
+        "coordinator": "المنسّق",
+        "none": "لا شيء"
       },
-      "privateData": "Contains private content",
-      "npuNote": "The NPU did not pass the decider evaluation."
+      "privateData": "يحتوي على محتوى خاص",
+      "npuNote": "لم تجتز NPU تقييم متخذ القرار."
     },
     "escalation": {
-      "off": "Off",
-      "to": "to {target}",
-      "toAgent": "to an agent",
+      "off": "متوقف",
+      "to": "إلى {target}",
+      "toAgent": "إلى وكيل",
       "targets": {
         "codex": "Codex",
         "claude": "Claude"
       },
       "triggers": {
-        "failures": "after {count, plural, one {# failure} other {# failures}}",
-        "stalled": "when stuck",
-        "request": "on request"
+        "failures": "بعد {count, plural, zero {# إخفاق} one {إخفاق واحد} two {إخفاقين} few {# إخفاقات} many {# إخفاقًا} other {# إخفاق}}",
+        "stalled": "عند التعثر",
+        "request": "عند الطلب"
       },
-      "enable": "Escalation",
-      "target": "Target",
-      "model": "Model",
-      "afterFailures": "After failures",
-      "never": "never",
-      "onResumeLimit": "When stuck (resume limit)",
-      "onRequest": "On the agent's request",
-      "toAgentNote": "This agent escalates to another agent. The matrix does not change that."
+      "enable": "التصعيد",
+      "target": "الهدف",
+      "model": "النموذج",
+      "afterFailures": "بعد إخفاقات",
+      "never": "أبدًا",
+      "onResumeLimit": "عند التعثر (حد الاستئناف)",
+      "onRequest": "بطلب من الوكيل",
+      "toAgentNote": "يصعّد هذا الوكيل إلى وكيل آخر. المصفوفة لا تغيّر ذلك."
     },
     "roles": {
       "home": "Home",
-      "coordinator": "Coordinator",
-      "coder": "Coder",
-      "reviewer": "Reviewer",
-      "planning": "Planning",
-      "research": "Research",
-      "content": "Content",
-      "assistant": "Assistant",
-      "finance": "Finance",
-      "trading": "Trading",
-      "browser": "Browser",
-      "support": "Support",
+      "coordinator": "منسّق",
+      "coder": "مبرمج",
+      "reviewer": "مراجع",
+      "planning": "تخطيط",
+      "research": "بحث",
+      "content": "محتوى",
+      "assistant": "مساعد",
+      "finance": "مالية",
+      "trading": "تداول",
+      "browser": "متصفح",
+      "support": "دعم",
       "devops": "DevOps",
-      "general": "General"
+      "general": "عام"
     },
     "groups": {
       "home": "Home",
-      "coordinator": "Coordinators",
-      "specialist": "Specialists"
+      "coordinator": "المنسّقون",
+      "specialist": "المتخصصون"
     },
     "agents": {
-      "title": "Agents",
-      "description": "Runtime, model and more per agent. A click on a value changes it; nothing is applied before the preview.",
-      "agent": "Agent",
-      "roleOf": "Role of {name}",
-      "allProjects": "All projects",
-      "emptyTitle": "No agents",
-      "empty": "There are no agents for this filter."
+      "title": "الوكلاء",
+      "description": "بيئة التشغيل والنموذج وغيرهما لكل وكيل. النقر على قيمة يغيّرها؛ ولا يُطبَّق شيء قبل المعاينة.",
+      "agent": "الوكيل",
+      "roleOf": "دور {name}",
+      "allProjects": "كل المشاريع",
+      "emptyTitle": "لا وكلاء",
+      "empty": "لا يوجد وكلاء لهذا المرشّح."
     },
     "select": {
-      "all": "Select all",
-      "agent": "Select {name}"
+      "all": "تحديد الكل",
+      "agent": "تحديد {name}"
     },
     "bulk": {
-      "title": "Change several",
-      "selected": "{count, plural, one {# agent selected} other {# agents selected}}",
-      "set": "Change {column}",
-      "note": "Applies to {count} selected agents",
-      "reset": "Reset to schema",
-      "clear": "Clear selection"
+      "title": "تغيير عدة وكلاء",
+      "selected": "{count, plural, zero {لم يُحدَّد أي وكيل} one {تم تحديد وكيل واحد} two {تم تحديد وكيلين} few {تم تحديد # وكلاء} many {تم تحديد # وكيلًا} other {تم تحديد # وكيل}}",
+      "set": "تغيير: {column}",
+      "note": "ينطبق على {count} من الوكلاء المحددين",
+      "reset": "الرجوع إلى المخطط",
+      "clear": "إلغاء التحديد"
     },
     "legend": {
-      "own": "own setting",
-      "changed": "changed, not applied yet",
-      "inherited": "no dot: inherits from the schema or project"
+      "own": "إعداد خاص",
+      "changed": "تم التغيير، لم يُطبَّق بعد",
+      "inherited": "بلا نقطة: يرث من المخطط أو المشروع"
     },
     "bar": {
-      "changes": "{count, plural, one {# change} other {# changes}} not applied",
-      "agents": "{count, plural, one {# agent} other {# agents}}",
-      "schema": "schema or profile",
-      "discard": "Discard",
-      "review": "Preview and apply"
+      "changes": "{count, plural, zero {لا تغييرات غير مطبّقة} one {تغيير واحد غير مطبّق} two {تغييران غير مطبّقين} few {# تغييرات غير مطبّقة} many {# تغييرًا غير مطبّق} other {# تغيير غير مطبّق}}",
+      "agents": "{count, plural, zero {بلا وكلاء} one {وكيل واحد} two {وكيلان} few {# وكلاء} many {# وكيلًا} other {# وكيل}}",
+      "schema": "المخطط أو الملف التعريفي",
+      "discard": "تجاهل",
+      "review": "معاينة وتطبيق"
     },
     "preview": {
-      "title": "Review changes",
-      "loading": "Checking what changes …",
-      "affects": "{count, plural, one {Affects one agent} other {Affects # agents}}",
-      "nobody": "No agent changes. Only the schema or the profile changes.",
-      "failed": "The check failed",
-      "cancel": "Cancel",
-      "apply": "Apply",
+      "title": "مراجعة التغييرات",
+      "loading": "جارٍ التحقق مما سيتغيّر …",
+      "affects": "{count, plural, zero {لا يؤثر على أي وكيل} one {يؤثر على وكيل واحد} two {يؤثر على وكيلين} few {يؤثر على # وكلاء} many {يؤثر على # وكيلًا} other {يؤثر على # وكيل}}",
+      "nobody": "لن يتغير أي وكيل. يتغير المخطط أو الملف التعريفي فقط.",
+      "failed": "فشل التحقق",
+      "cancel": "إلغاء",
+      "apply": "تطبيق",
       "source": {
-        "schema": "schema",
-        "project": "project",
-        "own": "own"
+        "schema": "المخطط",
+        "project": "المشروع",
+        "own": "خاص"
       }
     },
     "conflict": {
-      "title": "Changed in the meantime",
-      "text": "The model settings changed while you were working. Reload and review the changes again; your selection is kept.",
-      "reload": "Reload"
+      "title": "تم التغيير في الأثناء",
+      "text": "تغيّرت إعدادات النماذج أثناء عملك. أعد التحميل وراجع التغييرات مرة أخرى؛ يبقى تحديدك محفوظًا.",
+      "reload": "إعادة التحميل"
     },
     "apply": {
-      "done": "Changes applied. “Undo” takes them back.",
-      "partial": "Only part of the changes was applied. The view is reloading."
+      "done": "تم تطبيق التغييرات. «تراجع» يعيدها.",
+      "partial": "تم تطبيق جزء فقط من التغييرات. يجري إعادة تحميل العرض."
     },
     "undo": {
-      "button": "Undo",
-      "title": "Undo the last change",
-      "done": "Undone"
+      "button": "تراجع",
+      "title": "التراجع عن آخر تغيير",
+      "done": "تم التراجع",
+      "tooltip": "يتراجع عن آخر تغيير مطبَّق (حتى {depth} خطوات)",
+      "none": "لا شيء للتراجع عنه بعد",
+      "note": "يتراجع عن آخر تغيير مطبَّق: المخطط والملف التعريفي ومخططات المشاريع وإعدادات الوكلاء التي غيّرها. وبعد ذلك يمكن التراجع عن الذي قبله (حتى {depth} خطوات).",
+      "legacy": "طُبِّق هذا التغيير قبل حفظ تاريخ الوكلاء: تُعاد المخططات والملف التعريفي ومخططات المشاريع فقط، لا إعدادات الوكلاء الفرديين."
     },
     "header": {
-      "title": "Profile and schema",
-      "description": "The local profile decides which devices are available for local models. The schema decides which runtime, model and thinking depth each role gets.",
-      "profile": "Local profile",
-      "status": "State",
-      "switching": "Switching …",
-      "ready": "Ready · local model: {model}",
-      "noModel": "none",
-      "switchDevices": "Switch devices",
-      "switchFailed": "Switch failed",
-      "switchFailedText": "The last switch ended with an error. You can resume or revert it in the Local AI settings.",
-      "schema": "Schema",
-      "projectSchema": "Schema for {project}",
-      "projectInherits": "Follows the active schema",
-      "inherit": "Like the active schema"
+      "title": "الملف التعريفي والمخطط",
+      "description": "يحدد الملف التعريفي المحلي الأجهزة المتاحة للنماذج المحلية. ويحدد المخطط بيئة التشغيل والنموذج وعمق الاستدلال لكل دور.",
+      "profile": "الملف التعريفي المحلي",
+      "status": "الحالة",
+      "switching": "جارٍ التبديل …",
+      "ready": "جاهز · النموذج المحلي: {model}",
+      "noModel": "لا يوجد",
+      "switchDevices": "تبديل الأجهزة",
+      "switchFailed": "فشل التبديل",
+      "switchFailedText": "انتهى آخر تبديل بخطأ. يمكنك استئنافه أو التراجع عنه في إعدادات الذكاء الاصطناعي المحلي.",
+      "schema": "المخطط",
+      "projectSchema": "مخطط {project}",
+      "projectInherits": "يتبع المخطط النشط",
+      "inherit": "مثل المخطط النشط"
     },
     "profiles": {
-      "local-halogen": "GPU only with Flash, NPU off",
-      "local-27b-npu": "GPU with Qwen3.8-27B, NPU for small tasks"
+      "local-halogen": "GPU فقط مع Flash، وNPU متوقفة",
+      "local-27b-npu": "GPU مع Qwen3.8-27B، وNPU للمهام الصغيرة"
     },
     "schemas": {
-      "nur-lokal": "All agents run locally; Codex takes over on failures, when stuck or on request.",
-      "gemischt": "Routine work local, Codex for coding, Claude for planning and texts.",
-      "nur-codex": "All agents run on Codex.",
-      "nur-claude": "All agents run on Claude."
+      "nur-lokal": "يعمل كل الوكلاء محليًا؛ ويتولى Codex عند الإخفاق أو التعثر أو عند الطلب.",
+      "gemischt": "العمل الروتيني محليًا، وCodex للبرمجة، وClaude للتخطيط والنصوص.",
+      "nur-codex": "يعمل كل الوكلاء على Codex.",
+      "nur-claude": "يعمل كل الوكلاء على Claude."
     },
     "classes": {
-      "title": "Task classes",
-      "description": "Which device and model carries which kind of work, and whether its evaluation passed. It is changed under Local AI and Deciders.",
-      "openLocal": "Open Local AI",
-      "openDecisions": "Open deciders",
-      "class": "Task class",
-      "device": "Device",
-      "model": "Model",
-      "eval": "Evaluation",
-      "also": "Also tested",
+      "title": "أنواع المهام",
+      "description": "أي جهاز ونموذج يتولى أي نوع من العمل، وهل نجح تقييمه. يُغيَّر ذلك ضمن الذكاء الاصطناعي المحلي ومتخذي القرار.",
+      "openLocal": "فتح الذكاء الاصطناعي المحلي",
+      "openDecisions": "فتح متخذي القرار",
+      "class": "نوع المهمة",
+      "device": "الجهاز",
+      "model": "النموذج",
+      "eval": "التقييم",
+      "also": "اختُبر أيضًا",
       "groups": {
-        "chat": "Chat tasks",
-        "decision": "Decisions",
-        "other": "Speech and search"
+        "chat": "مهام المحادثة",
+        "decision": "القرارات",
+        "other": "الكلام والبحث"
       },
       "devices": {
         "gpu": "GPU",
         "npu": "NPU",
         "cpu": "CPU",
-        "cloud": "Cloud",
+        "cloud": "سحابة",
         "vulkan": "GPU (Vulkan)"
       },
       "evals": {
-        "passed": "passed",
-        "failed": "failed",
-        "untested": "open"
+        "passed": "ناجح",
+        "failed": "راسب",
+        "untested": "مفتوح"
       },
-      "configuredVoice": "configured voice",
+      "configuredVoice": "الصوت المُعدّ",
       "names": {
-        "triage": "Triage and assignment",
-        "routines": "Routine agents",
-        "hermes-helpers": "Runtime helper calls",
-        "summaries": "Summaries",
-        "reflection": "Reflection after runs",
-        "voice-reply": "Voice quick reply",
-        "coordinator-triage": "Coordinator triage",
-        "embeddings": "Search (embeddings)",
-        "tts": "Read aloud",
-        "stt": "Dictation",
-        "helena_model-router": "Model choice",
-        "helena_mail": "Sort mail",
-        "helena_receipts": "Match receipts",
-        "helena_general": "General decisions",
-        "helena_browser": "Browser first stage",
-        "tasks_triage": "Sort tasks",
-        "agents_routing": "Assign agents",
-        "helena_trading_news": "Trading: rate news",
-        "helena_trading_rules": "Trading: rule check",
-        "helena_trading_routing": "Trading: routing",
-        "helena_routine_gate": "Routine gate",
-        "routines_precheck": "Heartbeat pre-check"
+        "triage": "الفرز والإسناد",
+        "routines": "وكلاء الروتين",
+        "hermes-helpers": "استدعاءات مساعدة لبيئة التشغيل",
+        "summaries": "الملخصات",
+        "reflection": "التأمل بعد التشغيل",
+        "voice-reply": "رد صوتي سريع",
+        "coordinator-triage": "فرز المنسّق",
+        "embeddings": "البحث (التضمينات)",
+        "tts": "القراءة بصوت عالٍ",
+        "stt": "الإملاء",
+        "helena_model-router": "اختيار النموذج",
+        "helena_mail": "تصنيف البريد",
+        "helena_receipts": "مطابقة الإيصالات",
+        "helena_general": "قرارات عامة",
+        "helena_browser": "المرحلة الأولى للمتصفح",
+        "tasks_triage": "تصنيف المهام",
+        "agents_routing": "إسناد الوكلاء",
+        "helena_trading_news": "التداول: تقييم الأخبار",
+        "helena_trading_rules": "التداول: فحص القواعد",
+        "helena_trading_routing": "التداول: الإسناد",
+        "helena_routine_gate": "إجازة الروتين",
+        "routines_precheck": "فحص مسبق لنبض الوكيل"
       }
     },
     "errors": {
-      "npuClass": "The NPU only takes this task class after a passed evaluation.",
-      "npuDecision": "The NPU did not pass the decider evaluation.",
-      "unknown": "An agent, project or schema no longer exists. Reload the page.",
-      "invalid": "A value is not allowed. Check the settings of the changed cells.",
-      "rejected": "The server refused the change. Nothing was changed."
+      "npuClass": "لا تتولى NPU هذا النوع من المهام إلا بعد تقييم ناجح.",
+      "npuDecision": "لم تجتز NPU تقييم متخذ القرار.",
+      "unknown": "لم يعد هناك وكيل أو مشروع أو مخطط. أعد تحميل الصفحة.",
+      "invalid": "قيمة غير مسموح بها. تحقق من إعدادات الخلايا المتغيّرة.",
+      "rejected": "رفض الخادم التغيير. لم يتغيّر شيء."
     },
     "columnsShort": {
-      "runtime": "Runtime",
-      "model": "Model",
-      "reasoning": "Thinking",
-      "escalation": "Escalation",
-      "browser": "Browser",
-      "decision": "Decider",
-      "device": "Device"
+      "runtime": "البيئة",
+      "model": "النموذج",
+      "reasoning": "الاستدلال",
+      "escalation": "التصعيد",
+      "browser": "المتصفح",
+      "decision": "القرار",
+      "device": "الجهاز"
     }
   }
 }

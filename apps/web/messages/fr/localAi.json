@@ -416,230 +416,234 @@
     "more": "Autres types de travail ({count})"
   },
   "modelMatrix": {
-    "search": "Search …",
-    "noResults": "Nothing found",
-    "reset": "Reset",
-    "loadFailed": "The model matrix could not be loaded",
+    "search": "Rechercher …",
+    "noResults": "Aucun résultat",
+    "reset": "Réinitialiser",
+    "loadFailed": "La matrice des modèles n’a pas pu être chargée",
     "mark": {
-      "own": "Own setting",
-      "changed": "Changed, not applied yet"
+      "own": "Réglage propre",
+      "changed": "Modifié, pas encore appliqué"
     },
     "note": {
-      "own": "This agent's own setting",
-      "staged": "Changed, not applied yet",
-      "schema": "Inherits from the schema “{schema}”",
-      "project": "Inherits from the project schema “{schema}”"
+      "own": "Réglage propre de cet agent",
+      "staged": "Modifié, pas encore appliqué",
+      "schema": "Hérite du schéma « {schema} »",
+      "project": "Hérite du schéma du projet « {schema} »"
     },
     "columns": {
       "runtime": "Runtime",
-      "model": "Model",
-      "reasoning": "Thinking depth",
-      "escalation": "Escalation",
-      "browser": "Browser control",
-      "decision": "Decider",
-      "device": "Device"
+      "model": "Modèle",
+      "reasoning": "Niveau de raisonnement",
+      "escalation": "Escalade",
+      "browser": "Pilotage du navigateur",
+      "decision": "Décideur",
+      "device": "Appareil"
     },
     "runtime": {
-      "helena": "{appName} runtime",
+      "helena": "Runtime {appName}",
       "claude": "Claude Code",
       "codex": "Codex",
       "hermes": "Hermes (cloud)",
-      "command": "Command",
+      "command": "Commande",
       "webhook": "Webhook"
     },
     "reasoning": {
-      "low": "Low",
-      "medium": "Medium",
-      "high": "High",
-      "xhigh": "Very high"
+      "low": "Faible",
+      "medium": "Moyen",
+      "high": "Élevé",
+      "xhigh": "Très élevé"
     },
     "browser": {
       "standard": "Standard",
       "jev": "Jev",
-      "combined": "Combined"
+      "combined": "Combiné"
     },
     "browserHint": {
-      "standard": "{appName} browser",
-      "jev": "fast, cloud",
-      "combined": "Jev, then standard"
+      "standard": "Navigateur {appName}",
+      "jev": "rapide, cloud",
+      "combined": "Jev, puis standard"
     },
     "device": {
       "gpu": "GPU",
       "npu": "NPU",
       "cloud": "Cloud",
       "cpu": "CPU",
-      "npuNote": "The NPU only carries small task classes, never agent runs."
+      "npuNote": "Le NPU ne prend en charge que de petits types de tâches, jamais les exécutions d’agents."
     },
     "model": {
-      "localDefault": "Local default model",
+      "localDefault": "Modèle local par défaut",
       "local": "local",
-      "none": "No model"
+      "none": "Aucun modèle"
     },
     "decision": {
       "backends": {
         "jev": "Jev (cloud)",
-        "jev-local": "Jev, then local",
-        "local-jev": "Local, then Jev",
+        "jev-local": "Jev, puis local",
+        "local-jev": "Local, puis Jev",
         "gpu": "Local (GPU)",
         "npu": "NPU"
       },
-      "from": "from {percent} %",
-      "backend": "Decider",
-      "threshold": "Confidence from (%)",
-      "thresholdHint": "Below it the fallback takes over.",
-      "fallback": "Fallback",
+      "from": "à partir de {percent} %",
+      "backend": "Décideur",
+      "threshold": "Confiance à partir de (%)",
+      "thresholdHint": "En dessous, le repli prend le relais.",
+      "fallback": "Repli",
       "fallbacks": {
         "gpu": "Local",
-        "coordinator": "Coordinator",
-        "none": "None"
+        "coordinator": "Coordinateur",
+        "none": "Aucun"
       },
-      "privateData": "Contains private content",
-      "npuNote": "The NPU did not pass the decider evaluation."
+      "privateData": "Contient des contenus privés",
+      "npuNote": "Le NPU n’a pas réussi l’évaluation du décideur."
     },
     "escalation": {
-      "off": "Off",
-      "to": "to {target}",
-      "toAgent": "to an agent",
+      "off": "Désactivée",
+      "to": "vers {target}",
+      "toAgent": "vers un agent",
       "targets": {
         "codex": "Codex",
         "claude": "Claude"
       },
       "triggers": {
-        "failures": "after {count, plural, one {# failure} other {# failures}}",
-        "stalled": "when stuck",
-        "request": "on request"
+        "failures": "après {count, plural, one {# échec} other {# échecs}}",
+        "stalled": "en cas de blocage",
+        "request": "sur demande"
       },
-      "enable": "Escalation",
-      "target": "Target",
-      "model": "Model",
-      "afterFailures": "After failures",
-      "never": "never",
-      "onResumeLimit": "When stuck (resume limit)",
-      "onRequest": "On the agent's request",
-      "toAgentNote": "This agent escalates to another agent. The matrix does not change that."
+      "enable": "Escalade",
+      "target": "Cible",
+      "model": "Modèle",
+      "afterFailures": "Après des échecs",
+      "never": "jamais",
+      "onResumeLimit": "En cas de blocage (limite de reprises)",
+      "onRequest": "Sur demande de l’agent",
+      "toAgentNote": "Cet agent escalade vers un autre agent. La matrice n’y change rien."
     },
     "roles": {
       "home": "Home",
-      "coordinator": "Coordinator",
-      "coder": "Coder",
-      "reviewer": "Reviewer",
-      "planning": "Planning",
-      "research": "Research",
-      "content": "Content",
+      "coordinator": "Coordinateur",
+      "coder": "Développeur",
+      "reviewer": "Relecteur",
+      "planning": "Planification",
+      "research": "Recherche",
+      "content": "Contenu",
       "assistant": "Assistant",
       "finance": "Finance",
       "trading": "Trading",
-      "browser": "Browser",
+      "browser": "Navigateur",
       "support": "Support",
       "devops": "DevOps",
-      "general": "General"
+      "general": "Général"
     },
     "groups": {
       "home": "Home",
-      "coordinator": "Coordinators",
-      "specialist": "Specialists"
+      "coordinator": "Coordinateurs",
+      "specialist": "Spécialistes"
     },
     "agents": {
       "title": "Agents",
-      "description": "Runtime, model and more per agent. A click on a value changes it; nothing is applied before the preview.",
+      "description": "Runtime, modèle et plus encore par agent. Un clic sur une valeur la modifie ; rien n’est appliqué avant l’aperçu.",
       "agent": "Agent",
-      "roleOf": "Role of {name}",
-      "allProjects": "All projects",
-      "emptyTitle": "No agents",
-      "empty": "There are no agents for this filter."
+      "roleOf": "Rôle de {name}",
+      "allProjects": "Tous les projets",
+      "emptyTitle": "Aucun agent",
+      "empty": "Aucun agent ne correspond à ce filtre."
     },
     "select": {
-      "all": "Select all",
-      "agent": "Select {name}"
+      "all": "Tout sélectionner",
+      "agent": "Sélectionner {name}"
     },
     "bulk": {
-      "title": "Change several",
-      "selected": "{count, plural, one {# agent selected} other {# agents selected}}",
-      "set": "Change {column}",
-      "note": "Applies to {count} selected agents",
-      "reset": "Reset to schema",
-      "clear": "Clear selection"
+      "title": "Modifier plusieurs agents",
+      "selected": "{count, plural, one {# agent sélectionné} other {# agents sélectionnés}}",
+      "set": "Modifier : {column}",
+      "note": "S’applique aux {count} agents sélectionnés",
+      "reset": "Revenir au schéma",
+      "clear": "Effacer la sélection"
     },
     "legend": {
-      "own": "own setting",
-      "changed": "changed, not applied yet",
-      "inherited": "no dot: inherits from the schema or project"
+      "own": "réglage propre",
+      "changed": "modifié, pas encore appliqué",
+      "inherited": "sans point : hérite du schéma ou du projet"
     },
     "bar": {
-      "changes": "{count, plural, one {# change} other {# changes}} not applied",
+      "changes": "{count, plural, one {# modification non appliquée} other {# modifications non appliquées}}",
       "agents": "{count, plural, one {# agent} other {# agents}}",
-      "schema": "schema or profile",
-      "discard": "Discard",
-      "review": "Preview and apply"
+      "schema": "schéma ou profil",
+      "discard": "Annuler",
+      "review": "Aperçu et appliquer"
     },
     "preview": {
-      "title": "Review changes",
-      "loading": "Checking what changes …",
-      "affects": "{count, plural, one {Affects one agent} other {Affects # agents}}",
-      "nobody": "No agent changes. Only the schema or the profile changes.",
-      "failed": "The check failed",
-      "cancel": "Cancel",
-      "apply": "Apply",
+      "title": "Vérifier les modifications",
+      "loading": "Vérification des changements …",
+      "affects": "{count, plural, one {Concerne un agent} other {Concerne # agents}}",
+      "nobody": "Aucun agent ne change. Seuls le schéma ou le profil changent.",
+      "failed": "La vérification a échoué",
+      "cancel": "Annuler",
+      "apply": "Appliquer",
       "source": {
-        "schema": "schema",
-        "project": "project",
-        "own": "own"
+        "schema": "schéma",
+        "project": "projet",
+        "own": "propre"
       }
     },
     "conflict": {
-      "title": "Changed in the meantime",
-      "text": "The model settings changed while you were working. Reload and review the changes again; your selection is kept.",
-      "reload": "Reload"
+      "title": "Modifié entre-temps",
+      "text": "Les réglages des modèles ont changé pendant que vous travailliez. Rechargez et vérifiez à nouveau les modifications ; votre sélection est conservée.",
+      "reload": "Recharger"
     },
     "apply": {
-      "done": "Changes applied. “Undo” takes them back.",
-      "partial": "Only part of the changes was applied. The view is reloading."
+      "done": "Modifications appliquées. « Annuler » les reprend.",
+      "partial": "Seule une partie des modifications a été appliquée. La vue se recharge."
     },
     "undo": {
-      "button": "Undo",
-      "title": "Undo the last change",
-      "done": "Undone"
+      "button": "Annuler",
+      "title": "Annuler la dernière modification",
+      "done": "Annulé",
+      "tooltip": "Annule la dernière modification appliquée (jusqu’à {depth} étapes)",
+      "none": "Rien à annuler pour l’instant",
+      "note": "Annule la dernière modification appliquée : schéma, profil, schémas de projet et réglages des agents qu’elle a modifiés. Ensuite, la précédente peut être annulée à son tour (jusqu’à {depth} étapes).",
+      "legacy": "Cette modification date d’avant l’historique des agents : seuls le schéma, le profil et les schémas de projet sont rétablis, pas les réglages des agents individuels."
     },
     "header": {
-      "title": "Profile and schema",
-      "description": "The local profile decides which devices are available for local models. The schema decides which runtime, model and thinking depth each role gets.",
-      "profile": "Local profile",
-      "status": "State",
-      "switching": "Switching …",
-      "ready": "Ready · local model: {model}",
-      "noModel": "none",
-      "switchDevices": "Switch devices",
-      "switchFailed": "Switch failed",
-      "switchFailedText": "The last switch ended with an error. You can resume or revert it in the Local AI settings.",
-      "schema": "Schema",
-      "projectSchema": "Schema for {project}",
-      "projectInherits": "Follows the active schema",
-      "inherit": "Like the active schema"
+      "title": "Profil et schéma",
+      "description": "Le profil local détermine quels appareils sont disponibles pour les modèles locaux. Le schéma détermine quel runtime, quel modèle et quel niveau de raisonnement chaque rôle reçoit.",
+      "profile": "Profil local",
+      "status": "État",
+      "switching": "Basculement en cours …",
+      "ready": "Prêt · modèle local : {model}",
+      "noModel": "aucun",
+      "switchDevices": "Changer d’appareils",
+      "switchFailed": "Échec du basculement",
+      "switchFailedText": "Le dernier basculement s’est terminé par une erreur. Vous pouvez le reprendre ou l’annuler dans les réglages de l’IA locale.",
+      "schema": "Schéma",
+      "projectSchema": "Schéma pour {project}",
+      "projectInherits": "Suit le schéma actif",
+      "inherit": "Comme le schéma actif"
     },
     "profiles": {
-      "local-halogen": "GPU only with Flash, NPU off",
-      "local-27b-npu": "GPU with Qwen3.8-27B, NPU for small tasks"
+      "local-halogen": "GPU seul avec Flash, NPU désactivé",
+      "local-27b-npu": "GPU avec Qwen3.8-27B, NPU pour les petites tâches"
     },
     "schemas": {
-      "nur-lokal": "All agents run locally; Codex takes over on failures, when stuck or on request.",
-      "gemischt": "Routine work local, Codex for coding, Claude for planning and texts.",
-      "nur-codex": "All agents run on Codex.",
-      "nur-claude": "All agents run on Claude."
+      "nur-lokal": "Tous les agents tournent en local ; Codex prend le relais en cas d’échec, de blocage ou sur demande.",
+      "gemischt": "Travail courant en local, Codex pour la programmation, Claude pour la planification et les textes.",
+      "nur-codex": "Tous les agents tournent sur Codex.",
+      "nur-claude": "Tous les agents tournent sur Claude."
     },
     "classes": {
-      "title": "Task classes",
-      "description": "Which device and model carries which kind of work, and whether its evaluation passed. It is changed under Local AI and Deciders.",
-      "openLocal": "Open Local AI",
-      "openDecisions": "Open deciders",
-      "class": "Task class",
-      "device": "Device",
-      "model": "Model",
-      "eval": "Evaluation",
-      "also": "Also tested",
+      "title": "Types de tâches",
+      "description": "Quel appareil et quel modèle portent quel type de travail, et si son évaluation est réussie. Cela se modifie sous IA locale et Décideurs.",
+      "openLocal": "Ouvrir l’IA locale",
+      "openDecisions": "Ouvrir les décideurs",
+      "class": "Type de tâche",
+      "device": "Appareil",
+      "model": "Modèle",
+      "eval": "Évaluation",
+      "also": "Aussi testés",
       "groups": {
-        "chat": "Chat tasks",
-        "decision": "Decisions",
-        "other": "Speech and search"
+        "chat": "Tâches de chat",
+        "decision": "Décisions",
+        "other": "Voix et recherche"
       },
       "devices": {
         "gpu": "GPU",
@@ -649,51 +653,51 @@
         "vulkan": "GPU (Vulkan)"
       },
       "evals": {
-        "passed": "passed",
-        "failed": "failed",
-        "untested": "open"
+        "passed": "réussie",
+        "failed": "échouée",
+        "untested": "ouverte"
       },
-      "configuredVoice": "configured voice",
+      "configuredVoice": "voix configurée",
       "names": {
-        "triage": "Triage and assignment",
-        "routines": "Routine agents",
-        "hermes-helpers": "Runtime helper calls",
-        "summaries": "Summaries",
-        "reflection": "Reflection after runs",
-        "voice-reply": "Voice quick reply",
-        "coordinator-triage": "Coordinator triage",
-        "embeddings": "Search (embeddings)",
-        "tts": "Read aloud",
-        "stt": "Dictation",
-        "helena_model-router": "Model choice",
-        "helena_mail": "Sort mail",
-        "helena_receipts": "Match receipts",
-        "helena_general": "General decisions",
-        "helena_browser": "Browser first stage",
-        "tasks_triage": "Sort tasks",
-        "agents_routing": "Assign agents",
-        "helena_trading_news": "Trading: rate news",
-        "helena_trading_rules": "Trading: rule check",
-        "helena_trading_routing": "Trading: routing",
-        "helena_routine_gate": "Routine gate",
-        "routines_precheck": "Heartbeat pre-check"
+        "triage": "Tri et affectation",
+        "routines": "Agents de routines",
+        "hermes-helpers": "Appels auxiliaires du runtime",
+        "summaries": "Résumés",
+        "reflection": "Réflexion après les exécutions",
+        "voice-reply": "Réponse vocale rapide",
+        "coordinator-triage": "Tri du coordinateur",
+        "embeddings": "Recherche (embeddings)",
+        "tts": "Lecture à voix haute",
+        "stt": "Dictée",
+        "helena_model-router": "Choix du modèle",
+        "helena_mail": "Classer les e-mails",
+        "helena_receipts": "Rapprocher les justificatifs",
+        "helena_general": "Décisions générales",
+        "helena_browser": "Première étape du navigateur",
+        "tasks_triage": "Classer les tâches",
+        "agents_routing": "Affecter les agents",
+        "helena_trading_news": "Trading : évaluer les actualités",
+        "helena_trading_rules": "Trading : contrôle des règles",
+        "helena_trading_routing": "Trading : affectation",
+        "helena_routine_gate": "Validation des routines",
+        "routines_precheck": "Pré-contrôle du heartbeat"
       }
     },
     "errors": {
-      "npuClass": "The NPU only takes this task class after a passed evaluation.",
-      "npuDecision": "The NPU did not pass the decider evaluation.",
-      "unknown": "An agent, project or schema no longer exists. Reload the page.",
-      "invalid": "A value is not allowed. Check the settings of the changed cells.",
-      "rejected": "The server refused the change. Nothing was changed."
+      "npuClass": "Le NPU ne prend ce type de tâche qu’après une évaluation réussie.",
+      "npuDecision": "Le NPU n’a pas réussi l’évaluation du décideur.",
+      "unknown": "Un agent, un projet ou un schéma n’existe plus. Rechargez la page.",
+      "invalid": "Une valeur n’est pas autorisée. Vérifiez les réglages des cellules modifiées.",
+      "rejected": "Le serveur a refusé la modification. Rien n’a été modifié."
     },
     "columnsShort": {
       "runtime": "Runtime",
-      "model": "Model",
-      "reasoning": "Thinking",
-      "escalation": "Escalation",
-      "browser": "Browser",
-      "decision": "Decider",
-      "device": "Device"
+      "model": "Modèle",
+      "reasoning": "Raisonnement",
+      "escalation": "Escalade",
+      "browser": "Navigateur",
+      "decision": "Décideur",
+      "device": "Appareil"
     }
   }
 }

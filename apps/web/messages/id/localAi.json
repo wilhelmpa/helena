@@ -416,230 +416,234 @@
     "more": "Jenis pekerjaan lain ({count})"
   },
   "modelMatrix": {
-    "search": "Search …",
-    "noResults": "Nothing found",
-    "reset": "Reset",
-    "loadFailed": "The model matrix could not be loaded",
+    "search": "Cari …",
+    "noResults": "Tidak ditemukan",
+    "reset": "Setel ulang",
+    "loadFailed": "Matriks model tidak dapat dimuat",
     "mark": {
-      "own": "Own setting",
-      "changed": "Changed, not applied yet"
+      "own": "Pengaturan sendiri",
+      "changed": "Diubah, belum diterapkan"
     },
     "note": {
-      "own": "This agent's own setting",
-      "staged": "Changed, not applied yet",
-      "schema": "Inherits from the schema “{schema}”",
-      "project": "Inherits from the project schema “{schema}”"
+      "own": "Pengaturan sendiri agen ini",
+      "staged": "Diubah, belum diterapkan",
+      "schema": "Mewarisi dari skema “{schema}”",
+      "project": "Mewarisi dari skema proyek “{schema}”"
     },
     "columns": {
       "runtime": "Runtime",
       "model": "Model",
-      "reasoning": "Thinking depth",
-      "escalation": "Escalation",
-      "browser": "Browser control",
-      "decision": "Decider",
-      "device": "Device"
+      "reasoning": "Tingkat penalaran",
+      "escalation": "Eskalasi",
+      "browser": "Kontrol browser",
+      "decision": "Pengambil keputusan",
+      "device": "Perangkat"
     },
     "runtime": {
-      "helena": "{appName} runtime",
+      "helena": "Runtime {appName}",
       "claude": "Claude Code",
       "codex": "Codex",
       "hermes": "Hermes (cloud)",
-      "command": "Command",
+      "command": "Perintah",
       "webhook": "Webhook"
     },
     "reasoning": {
-      "low": "Low",
-      "medium": "Medium",
-      "high": "High",
-      "xhigh": "Very high"
+      "low": "Rendah",
+      "medium": "Sedang",
+      "high": "Tinggi",
+      "xhigh": "Sangat tinggi"
     },
     "browser": {
-      "standard": "Standard",
+      "standard": "Standar",
       "jev": "Jev",
-      "combined": "Combined"
+      "combined": "Gabungan"
     },
     "browserHint": {
-      "standard": "{appName} browser",
-      "jev": "fast, cloud",
-      "combined": "Jev, then standard"
+      "standard": "Browser {appName}",
+      "jev": "cepat, cloud",
+      "combined": "Jev, lalu standar"
     },
     "device": {
       "gpu": "GPU",
       "npu": "NPU",
       "cloud": "Cloud",
       "cpu": "CPU",
-      "npuNote": "The NPU only carries small task classes, never agent runs."
+      "npuNote": "NPU hanya menangani jenis tugas kecil, tidak pernah menjalankan agen."
     },
     "model": {
-      "localDefault": "Local default model",
-      "local": "local",
-      "none": "No model"
+      "localDefault": "Model lokal bawaan",
+      "local": "lokal",
+      "none": "Tanpa model"
     },
     "decision": {
       "backends": {
         "jev": "Jev (cloud)",
-        "jev-local": "Jev, then local",
-        "local-jev": "Local, then Jev",
-        "gpu": "Local (GPU)",
+        "jev-local": "Jev, lalu lokal",
+        "local-jev": "Lokal, lalu Jev",
+        "gpu": "Lokal (GPU)",
         "npu": "NPU"
       },
-      "from": "from {percent} %",
-      "backend": "Decider",
-      "threshold": "Confidence from (%)",
-      "thresholdHint": "Below it the fallback takes over.",
-      "fallback": "Fallback",
+      "from": "mulai {percent} %",
+      "backend": "Pengambil keputusan",
+      "threshold": "Keyakinan mulai (%)",
+      "thresholdHint": "Di bawahnya, cadangan yang mengambil alih.",
+      "fallback": "Cadangan",
       "fallbacks": {
-        "gpu": "Local",
-        "coordinator": "Coordinator",
-        "none": "None"
+        "gpu": "Lokal",
+        "coordinator": "Koordinator",
+        "none": "Tidak ada"
       },
-      "privateData": "Contains private content",
-      "npuNote": "The NPU did not pass the decider evaluation."
+      "privateData": "Berisi konten pribadi",
+      "npuNote": "NPU tidak lulus evaluasi pengambil keputusan."
     },
     "escalation": {
-      "off": "Off",
-      "to": "to {target}",
-      "toAgent": "to an agent",
+      "off": "Mati",
+      "to": "ke {target}",
+      "toAgent": "ke agen",
       "targets": {
         "codex": "Codex",
         "claude": "Claude"
       },
       "triggers": {
-        "failures": "after {count, plural, one {# failure} other {# failures}}",
-        "stalled": "when stuck",
-        "request": "on request"
+        "failures": "setelah {count, plural, other {# kegagalan}}",
+        "stalled": "saat macet",
+        "request": "atas permintaan"
       },
-      "enable": "Escalation",
-      "target": "Target",
+      "enable": "Eskalasi",
+      "target": "Tujuan",
       "model": "Model",
-      "afterFailures": "After failures",
-      "never": "never",
-      "onResumeLimit": "When stuck (resume limit)",
-      "onRequest": "On the agent's request",
-      "toAgentNote": "This agent escalates to another agent. The matrix does not change that."
+      "afterFailures": "Setelah kegagalan",
+      "never": "tidak pernah",
+      "onResumeLimit": "Saat macet (batas pelanjutan)",
+      "onRequest": "Atas permintaan agen",
+      "toAgentNote": "Agen ini mengeskalasi ke agen lain. Matriks tidak mengubahnya."
     },
     "roles": {
       "home": "Home",
-      "coordinator": "Coordinator",
-      "coder": "Coder",
-      "reviewer": "Reviewer",
-      "planning": "Planning",
-      "research": "Research",
-      "content": "Content",
-      "assistant": "Assistant",
-      "finance": "Finance",
+      "coordinator": "Koordinator",
+      "coder": "Pemrogram",
+      "reviewer": "Peninjau",
+      "planning": "Perencanaan",
+      "research": "Riset",
+      "content": "Konten",
+      "assistant": "Asisten",
+      "finance": "Keuangan",
       "trading": "Trading",
       "browser": "Browser",
-      "support": "Support",
+      "support": "Dukungan",
       "devops": "DevOps",
-      "general": "General"
+      "general": "Umum"
     },
     "groups": {
       "home": "Home",
-      "coordinator": "Coordinators",
-      "specialist": "Specialists"
+      "coordinator": "Koordinator",
+      "specialist": "Spesialis"
     },
     "agents": {
-      "title": "Agents",
-      "description": "Runtime, model and more per agent. A click on a value changes it; nothing is applied before the preview.",
-      "agent": "Agent",
-      "roleOf": "Role of {name}",
-      "allProjects": "All projects",
-      "emptyTitle": "No agents",
-      "empty": "There are no agents for this filter."
+      "title": "Agen",
+      "description": "Runtime, model, dan lainnya per agen. Klik pada nilai untuk mengubahnya; tidak ada yang diterapkan sebelum pratinjau.",
+      "agent": "Agen",
+      "roleOf": "Peran {name}",
+      "allProjects": "Semua proyek",
+      "emptyTitle": "Tidak ada agen",
+      "empty": "Tidak ada agen untuk filter ini."
     },
     "select": {
-      "all": "Select all",
-      "agent": "Select {name}"
+      "all": "Pilih semua",
+      "agent": "Pilih {name}"
     },
     "bulk": {
-      "title": "Change several",
-      "selected": "{count, plural, one {# agent selected} other {# agents selected}}",
-      "set": "Change {column}",
-      "note": "Applies to {count} selected agents",
-      "reset": "Reset to schema",
-      "clear": "Clear selection"
+      "title": "Ubah beberapa sekaligus",
+      "selected": "{count, plural, other {# agen dipilih}}",
+      "set": "Ubah {column}",
+      "note": "Berlaku untuk {count} agen yang dipilih",
+      "reset": "Kembalikan ke skema",
+      "clear": "Hapus pilihan"
     },
     "legend": {
-      "own": "own setting",
-      "changed": "changed, not applied yet",
-      "inherited": "no dot: inherits from the schema or project"
+      "own": "pengaturan sendiri",
+      "changed": "diubah, belum diterapkan",
+      "inherited": "tanpa titik: mewarisi dari skema atau proyek"
     },
     "bar": {
-      "changes": "{count, plural, one {# change} other {# changes}} not applied",
-      "agents": "{count, plural, one {# agent} other {# agents}}",
-      "schema": "schema or profile",
-      "discard": "Discard",
-      "review": "Preview and apply"
+      "changes": "{count, plural, other {# perubahan belum diterapkan}}",
+      "agents": "{count, plural, other {# agen}}",
+      "schema": "skema atau profil",
+      "discard": "Buang",
+      "review": "Pratinjau dan terapkan"
     },
     "preview": {
-      "title": "Review changes",
-      "loading": "Checking what changes …",
-      "affects": "{count, plural, one {Affects one agent} other {Affects # agents}}",
-      "nobody": "No agent changes. Only the schema or the profile changes.",
-      "failed": "The check failed",
-      "cancel": "Cancel",
-      "apply": "Apply",
+      "title": "Tinjau perubahan",
+      "loading": "Memeriksa apa yang berubah …",
+      "affects": "{count, plural, other {Memengaruhi # agen}}",
+      "nobody": "Tidak ada agen yang berubah. Hanya skema atau profil yang berubah.",
+      "failed": "Pemeriksaan gagal",
+      "cancel": "Batal",
+      "apply": "Terapkan",
       "source": {
-        "schema": "schema",
-        "project": "project",
-        "own": "own"
+        "schema": "skema",
+        "project": "proyek",
+        "own": "sendiri"
       }
     },
     "conflict": {
-      "title": "Changed in the meantime",
-      "text": "The model settings changed while you were working. Reload and review the changes again; your selection is kept.",
-      "reload": "Reload"
+      "title": "Berubah sementara itu",
+      "text": "Pengaturan model berubah saat Anda bekerja. Muat ulang dan tinjau perubahan lagi; pilihan Anda tetap tersimpan.",
+      "reload": "Muat ulang"
     },
     "apply": {
-      "done": "Changes applied. “Undo” takes them back.",
-      "partial": "Only part of the changes was applied. The view is reloading."
+      "done": "Perubahan diterapkan. “Urungkan” membatalkannya.",
+      "partial": "Hanya sebagian perubahan yang diterapkan. Tampilan dimuat ulang."
     },
     "undo": {
-      "button": "Undo",
-      "title": "Undo the last change",
-      "done": "Undone"
+      "button": "Urungkan",
+      "title": "Urungkan perubahan terakhir",
+      "done": "Diurungkan",
+      "tooltip": "Membatalkan perubahan terakhir yang diterapkan (hingga {depth} langkah)",
+      "none": "Belum ada yang bisa diurungkan",
+      "note": "Membatalkan perubahan terakhir yang diterapkan: skema, profil, skema proyek, dan pengaturan agen yang diubahnya. Setelah itu yang sebelumnya bisa dibatalkan (hingga {depth} langkah).",
+      "legacy": "Perubahan ini diterapkan sebelum riwayat agen disimpan: hanya skema, profil, dan skema proyek yang dikembalikan, bukan pengaturan agen tertentu."
     },
     "header": {
-      "title": "Profile and schema",
-      "description": "The local profile decides which devices are available for local models. The schema decides which runtime, model and thinking depth each role gets.",
-      "profile": "Local profile",
-      "status": "State",
-      "switching": "Switching …",
-      "ready": "Ready · local model: {model}",
-      "noModel": "none",
-      "switchDevices": "Switch devices",
-      "switchFailed": "Switch failed",
-      "switchFailedText": "The last switch ended with an error. You can resume or revert it in the Local AI settings.",
-      "schema": "Schema",
-      "projectSchema": "Schema for {project}",
-      "projectInherits": "Follows the active schema",
-      "inherit": "Like the active schema"
+      "title": "Profil dan skema",
+      "description": "Profil lokal menentukan perangkat mana yang tersedia untuk model lokal. Skema menentukan runtime, model, dan tingkat penalaran yang didapat setiap peran.",
+      "profile": "Profil lokal",
+      "status": "Status",
+      "switching": "Sedang beralih …",
+      "ready": "Siap · model lokal: {model}",
+      "noModel": "tidak ada",
+      "switchDevices": "Alihkan perangkat",
+      "switchFailed": "Peralihan gagal",
+      "switchFailedText": "Peralihan terakhir berakhir dengan kesalahan. Anda dapat melanjutkan atau membatalkannya di pengaturan AI lokal.",
+      "schema": "Skema",
+      "projectSchema": "Skema untuk {project}",
+      "projectInherits": "Mengikuti skema aktif",
+      "inherit": "Seperti skema aktif"
     },
     "profiles": {
-      "local-halogen": "GPU only with Flash, NPU off",
-      "local-27b-npu": "GPU with Qwen3.8-27B, NPU for small tasks"
+      "local-halogen": "Hanya GPU dengan Flash, NPU mati",
+      "local-27b-npu": "GPU dengan Qwen3.8-27B, NPU untuk tugas kecil"
     },
     "schemas": {
-      "nur-lokal": "All agents run locally; Codex takes over on failures, when stuck or on request.",
-      "gemischt": "Routine work local, Codex for coding, Claude for planning and texts.",
-      "nur-codex": "All agents run on Codex.",
-      "nur-claude": "All agents run on Claude."
+      "nur-lokal": "Semua agen berjalan secara lokal; Codex mengambil alih saat gagal, macet, atau atas permintaan.",
+      "gemischt": "Pekerjaan rutin lokal, Codex untuk pemrograman, Claude untuk perencanaan dan teks.",
+      "nur-codex": "Semua agen berjalan di Codex.",
+      "nur-claude": "Semua agen berjalan di Claude."
     },
     "classes": {
-      "title": "Task classes",
-      "description": "Which device and model carries which kind of work, and whether its evaluation passed. It is changed under Local AI and Deciders.",
-      "openLocal": "Open Local AI",
-      "openDecisions": "Open deciders",
-      "class": "Task class",
-      "device": "Device",
+      "title": "Jenis tugas",
+      "description": "Perangkat dan model mana yang menjalankan jenis pekerjaan apa, dan apakah evaluasinya lulus. Diubah di AI lokal dan Pengambil keputusan.",
+      "openLocal": "Buka AI lokal",
+      "openDecisions": "Buka pengambil keputusan",
+      "class": "Jenis tugas",
+      "device": "Perangkat",
       "model": "Model",
-      "eval": "Evaluation",
-      "also": "Also tested",
+      "eval": "Evaluasi",
+      "also": "Juga diuji",
       "groups": {
-        "chat": "Chat tasks",
-        "decision": "Decisions",
-        "other": "Speech and search"
+        "chat": "Tugas obrolan",
+        "decision": "Keputusan",
+        "other": "Suara dan pencarian"
       },
       "devices": {
         "gpu": "GPU",
@@ -649,51 +653,51 @@
         "vulkan": "GPU (Vulkan)"
       },
       "evals": {
-        "passed": "passed",
-        "failed": "failed",
-        "untested": "open"
+        "passed": "lulus",
+        "failed": "gagal",
+        "untested": "terbuka"
       },
-      "configuredVoice": "configured voice",
+      "configuredVoice": "suara yang dikonfigurasi",
       "names": {
-        "triage": "Triage and assignment",
-        "routines": "Routine agents",
-        "hermes-helpers": "Runtime helper calls",
-        "summaries": "Summaries",
-        "reflection": "Reflection after runs",
-        "voice-reply": "Voice quick reply",
-        "coordinator-triage": "Coordinator triage",
-        "embeddings": "Search (embeddings)",
-        "tts": "Read aloud",
-        "stt": "Dictation",
-        "helena_model-router": "Model choice",
-        "helena_mail": "Sort mail",
-        "helena_receipts": "Match receipts",
-        "helena_general": "General decisions",
-        "helena_browser": "Browser first stage",
-        "tasks_triage": "Sort tasks",
-        "agents_routing": "Assign agents",
-        "helena_trading_news": "Trading: rate news",
-        "helena_trading_rules": "Trading: rule check",
-        "helena_trading_routing": "Trading: routing",
-        "helena_routine_gate": "Routine gate",
-        "routines_precheck": "Heartbeat pre-check"
+        "triage": "Triase dan penugasan",
+        "routines": "Agen rutin",
+        "hermes-helpers": "Panggilan bantu runtime",
+        "summaries": "Ringkasan",
+        "reflection": "Refleksi setelah eksekusi",
+        "voice-reply": "Balasan suara cepat",
+        "coordinator-triage": "Triase koordinator",
+        "embeddings": "Pencarian (embedding)",
+        "tts": "Bacakan",
+        "stt": "Dikte",
+        "helena_model-router": "Pemilihan model",
+        "helena_mail": "Kelompokkan email",
+        "helena_receipts": "Cocokkan bukti",
+        "helena_general": "Keputusan umum",
+        "helena_browser": "Tahap awal browser",
+        "tasks_triage": "Kelompokkan tugas",
+        "agents_routing": "Tetapkan agen",
+        "helena_trading_news": "Trading: menilai berita",
+        "helena_trading_rules": "Trading: pemeriksaan aturan",
+        "helena_trading_routing": "Trading: penugasan",
+        "helena_routine_gate": "Persetujuan rutin",
+        "routines_precheck": "Pemeriksaan awal heartbeat"
       }
     },
     "errors": {
-      "npuClass": "The NPU only takes this task class after a passed evaluation.",
-      "npuDecision": "The NPU did not pass the decider evaluation.",
-      "unknown": "An agent, project or schema no longer exists. Reload the page.",
-      "invalid": "A value is not allowed. Check the settings of the changed cells.",
-      "rejected": "The server refused the change. Nothing was changed."
+      "npuClass": "NPU hanya menangani jenis tugas ini setelah evaluasi lulus.",
+      "npuDecision": "NPU tidak lulus evaluasi pengambil keputusan.",
+      "unknown": "Agen, proyek, atau skema sudah tidak ada. Muat ulang halaman.",
+      "invalid": "Ada nilai yang tidak diizinkan. Periksa pengaturan sel yang diubah.",
+      "rejected": "Server menolak perubahan. Tidak ada yang diubah."
     },
     "columnsShort": {
       "runtime": "Runtime",
       "model": "Model",
-      "reasoning": "Thinking",
-      "escalation": "Escalation",
+      "reasoning": "Penalaran",
+      "escalation": "Eskalasi",
       "browser": "Browser",
-      "decision": "Decider",
-      "device": "Device"
+      "decision": "Keputusan",
+      "device": "Perangkat"
     }
   }
 }

@@ -17,6 +17,7 @@ import { useMatrixLabels } from '../utils/labels';
 import { EMPTY_PENDING, setAgentValue } from '../utils/pending';
 import { AgentMatrix } from './AgentMatrix';
 import { ClassMatrix } from './ClassMatrix';
+import { MatrixHeader } from './MatrixHeader';
 
 const wrap = (node: React.ReactNode) =>
   renderToStaticMarkup(
@@ -80,6 +81,7 @@ const matrix: ModelMatrix = {
   classes: [],
   local: { model: null, maintenance: null, job: null },
   browser: null,
+  undo: { depth: 0, steps: [] },
 };
 const agent = (id: number, name: string, role: string | null, isHome = false) =>
   ({ id, name, role, isHome }) as OrganizationAgent;
@@ -207,5 +209,40 @@ describe('Matrix der Aufgabenklassen', () => {
     assert.match(html, /Qwen3\.5 4B/);
     assert.match(html, /href="\/settings\/local-ai"/);
     assert.match(html, /href="\/settings\/decisions"/);
+  });
+});
+
+describe('Kopf: Rückgängig über die Historie des Servers', () => {
+  const header = (undoSteps: number) =>
+    wrap(
+      <Harness>
+        {(labels) => (
+          <MatrixHeader
+            matrix={{
+              ...matrix,
+              profiles: [{ id: 'local-halogen', name: 'Lokal Halogen' } as MatrixProfile],
+            }}
+            pending={EMPTY_PENDING}
+            project={null}
+            labels={labels}
+            onProfile={noop}
+            onSchema={noop}
+            onProjectSchema={noop}
+            onUndo={noop}
+            undoSteps={undoSteps}
+          />
+        )}
+      </Harness>,
+    );
+
+  it('nennt, wie viele Schritte der Server zurücknehmen kann', () => {
+    assert.match(header(4), /bis zu 4 Schritte/);
+    assert.doesNotMatch(header(4), /Noch nichts zum Rückgängigmachen/);
+  });
+
+  it('ist ausgegraut, solange nichts zurückzunehmen ist', () => {
+    const html = header(0);
+    assert.match(html, /Noch nichts zum Rückgängigmachen/);
+    assert.match(html, /disabled=""/);
   });
 });

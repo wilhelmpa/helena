@@ -598,7 +598,11 @@
     "undo": {
       "button": "Rückgängig",
       "title": "Letzte Änderung rückgängig machen",
-      "done": "Rückgängig gemacht"
+      "done": "Rückgängig gemacht",
+      "tooltip": "Nimmt die letzte Übernahme zurück (bis zu {depth} Schritte)",
+      "none": "Noch nichts zum Rückgängigmachen",
+      "note": "Nimmt die letzte Übernahme zurück: Schema, Profil, Projekt-Schemata und die Einstellungen der Agenten, die sie geändert hat. Danach lässt sich die davor zurücknehmen (bis zu {depth} Schritte).",
+      "legacy": "Diese Übernahme stammt aus der Zeit vor der Agenten-Historie: zurückgesetzt werden nur Schema, Profil und Projekt-Schemata, nicht die Einstellungen einzelner Agenten."
     },
     "header": {
       "title": "Profil und Schema",

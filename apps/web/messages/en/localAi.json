@@ -598,7 +598,11 @@
     "undo": {
       "button": "Undo",
       "title": "Undo the last change",
-      "done": "Undone"
+      "done": "Undone",
+      "tooltip": "Takes back the last applied change (up to {depth} steps)",
+      "none": "Nothing to undo yet",
+      "note": "Takes back the last applied change: schema, profile, project schemas and the settings of the agents it changed. After that the one before it can be taken back (up to {depth} steps).",
+      "legacy": "This change was applied before agent changes were kept: only the schema, profile and project schemas are reset, not the settings of single agents."
     },
     "header": {
       "title": "Profile and schema",

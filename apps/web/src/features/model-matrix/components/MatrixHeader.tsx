@@ -31,7 +31,7 @@ export function MatrixHeader({
   onSchema,
   onProjectSchema,
   onUndo,
-  canUndo,
+  undoSteps,
 }: {
   matrix: ModelMatrix;
   pending: Pending;
@@ -42,7 +42,8 @@ export function MatrixHeader({
   onSchema: (id: string) => void;
   onProjectSchema: (schemaId: string | null) => void;
   onUndo: () => void;
-  canUndo: boolean;
+  // How many applies the server can take back (0: none).
+  undoSteps: number;
 }) {
   const { t } = labels;
   const schemaId = targetSchemaId(matrix, pending);
@@ -131,7 +132,8 @@ export function MatrixHeader({
             variant="ghost"
             size="small"
             icon={<RotateCcw size={14} />}
-            disabled={!canUndo}
+            disabled={undoSteps === 0}
+            title={undoSteps === 0 ? t('undo.none') : t('undo.tooltip', { depth: undoSteps })}
             onClick={onUndo}
           >
             {t('undo.button')}

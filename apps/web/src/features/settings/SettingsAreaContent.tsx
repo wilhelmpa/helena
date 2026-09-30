@@ -3,6 +3,8 @@
 import dynamic from 'next/dynamic';
 import type { ComponentType } from 'react';
 import { isAccessTab } from '@/utils/paths';
+import { useGodSectionText } from '@/hooks/useSectionLabels';
+import { LocalChrome, Section } from '@/design-system';
 import type { SettingsLocation } from './settingsModalCatalog';
 
 // The sections of the global settings modal (Mein Konto, Helena, Administrator; see
@@ -40,6 +42,18 @@ const God = {
   email: page(() => import('@/features/god/GodEmailPage')),
   authProvider: page(() => import('@/features/god/GodAuthProviderPage')),
   scim: page(() => import('@/features/god/GodScimPage')),
+};
+// The price table keeps its search and its two actions in its own section instead of the
+// page's header row, where they would sit above the matrix they do not belong to.
+const PricesInPlace: ComponentType<Props> = (props) => {
+  const text = useGodSectionText().section('model-prices');
+  return (
+    <LocalChrome>
+      <Section title={text.label} description={text.description}>
+        <God.prices {...props} />
+      </Section>
+    </LocalChrome>
+  );
 };
 // The escalation rules, central in Agenten und Modelle (owner 28.09.).
 const ModelMatrix = page(() => import('@/features/model-matrix/components/ModelMatrixPage'));
@@ -106,7 +120,7 @@ export default function SettingsAreaContent({
     case 'defaults':
       return <Stack parts={[HomeDefaultsPage, God.general]} props={props} />;
     case 'agents':
-      return <Stack parts={[ModelMatrix, God.runtime, Escalation, God.prices]} props={props} />;
+      return <Stack parts={[ModelMatrix, God.runtime, Escalation, PricesInPlace]} props={props} />;
     case 'local-ai':
       return <God.localAi {...props} />;
     case 'browser':

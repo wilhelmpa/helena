@@ -15,7 +15,6 @@ import {
   pendingCount,
   setAgentRole,
   setAgentValue,
-  undoPlan,
 } from './pending';
 
 const values = {
@@ -118,20 +117,6 @@ describe('Vorgemerkte Änderungen der Matrix', () => {
       { projectId: 2, schemaId: 'gemischt' },
       { projectId: 3, schemaId: null },
     ]);
-  });
-
-  test('Rückgängig: eigener Wert kehrt zurück, geerbter wird zurückgesetzt, Schema über den Server', () => {
-    const before = matrix([row(5, ['model']), row(6)]);
-    let pending = setAgentValue(EMPTY_PENDING, 5, 'model', 'claude-opus-5-5');
-    pending = setAgentValue(pending, 6, 'reasoning', 'low');
-    pending = setAgentRole(pending, 6, 'reviewer');
-    const plan = undoPlan(before, { ...pending, active: 'gemischt' });
-    assert.equal(plan.schemaLevel, true);
-    assert.deepEqual(plan.agents, [
-      { agentId: 5, values: { model: 'gpt-6-sol' } },
-      { agentId: 6, role: 'coder', values: { reasoning: null } },
-    ]);
-    assert.equal(undoPlan(before, pending).schemaLevel, false);
   });
 
   test('Gruppen: Home, Koordinatoren, Spezialisten', () => {

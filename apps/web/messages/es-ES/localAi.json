@@ -416,284 +416,288 @@
     "more": "Más tipos de trabajo ({count})"
   },
   "modelMatrix": {
-    "search": "Search …",
-    "noResults": "Nothing found",
-    "reset": "Reset",
-    "loadFailed": "The model matrix could not be loaded",
+    "search": "Buscar …",
+    "noResults": "Sin resultados",
+    "reset": "Restablecer",
+    "loadFailed": "No se pudo cargar la matriz de modelos",
     "mark": {
-      "own": "Own setting",
-      "changed": "Changed, not applied yet"
+      "own": "Ajuste propio",
+      "changed": "Cambiado, aún sin aplicar"
     },
     "note": {
-      "own": "This agent's own setting",
-      "staged": "Changed, not applied yet",
-      "schema": "Inherits from the schema “{schema}”",
-      "project": "Inherits from the project schema “{schema}”"
+      "own": "Ajuste propio de este agente",
+      "staged": "Cambiado, aún sin aplicar",
+      "schema": "Hereda del esquema «{schema}»",
+      "project": "Hereda del esquema del proyecto «{schema}»"
     },
     "columns": {
-      "runtime": "Runtime",
-      "model": "Model",
-      "reasoning": "Thinking depth",
-      "escalation": "Escalation",
-      "browser": "Browser control",
-      "decision": "Decider",
-      "device": "Device"
+      "runtime": "Entorno de ejecución",
+      "model": "Modelo",
+      "reasoning": "Nivel de razonamiento",
+      "escalation": "Escalado",
+      "browser": "Control del navegador",
+      "decision": "Decisor",
+      "device": "Dispositivo"
     },
     "runtime": {
-      "helena": "{appName} runtime",
+      "helena": "Entorno de {appName}",
       "claude": "Claude Code",
       "codex": "Codex",
-      "hermes": "Hermes (cloud)",
-      "command": "Command",
+      "hermes": "Hermes (nube)",
+      "command": "Comando",
       "webhook": "Webhook"
     },
     "reasoning": {
-      "low": "Low",
-      "medium": "Medium",
-      "high": "High",
-      "xhigh": "Very high"
+      "low": "Bajo",
+      "medium": "Medio",
+      "high": "Alto",
+      "xhigh": "Muy alto"
     },
     "browser": {
-      "standard": "Standard",
+      "standard": "Estándar",
       "jev": "Jev",
-      "combined": "Combined"
+      "combined": "Combinado"
     },
     "browserHint": {
-      "standard": "{appName} browser",
-      "jev": "fast, cloud",
-      "combined": "Jev, then standard"
+      "standard": "Navegador de {appName}",
+      "jev": "rápido, nube",
+      "combined": "Jev y luego estándar"
     },
     "device": {
       "gpu": "GPU",
       "npu": "NPU",
-      "cloud": "Cloud",
+      "cloud": "Nube",
       "cpu": "CPU",
-      "npuNote": "The NPU only carries small task classes, never agent runs."
+      "npuNote": "La NPU solo lleva tipos de tareas pequeños, nunca las ejecuciones de agentes."
     },
     "model": {
-      "localDefault": "Local default model",
+      "localDefault": "Modelo local por defecto",
       "local": "local",
-      "none": "No model"
+      "none": "Sin modelo"
     },
     "decision": {
       "backends": {
-        "jev": "Jev (cloud)",
-        "jev-local": "Jev, then local",
-        "local-jev": "Local, then Jev",
+        "jev": "Jev (nube)",
+        "jev-local": "Jev y luego local",
+        "local-jev": "Local y luego Jev",
         "gpu": "Local (GPU)",
         "npu": "NPU"
       },
-      "from": "from {percent} %",
-      "backend": "Decider",
-      "threshold": "Confidence from (%)",
-      "thresholdHint": "Below it the fallback takes over.",
-      "fallback": "Fallback",
+      "from": "desde {percent} %",
+      "backend": "Decisor",
+      "threshold": "Confianza desde (%)",
+      "thresholdHint": "Por debajo entra la alternativa.",
+      "fallback": "Alternativa",
       "fallbacks": {
         "gpu": "Local",
-        "coordinator": "Coordinator",
-        "none": "None"
+        "coordinator": "Coordinador",
+        "none": "Ninguna"
       },
-      "privateData": "Contains private content",
-      "npuNote": "The NPU did not pass the decider evaluation."
+      "privateData": "Contiene contenido privado",
+      "npuNote": "La NPU no superó la evaluación del decisor."
     },
     "escalation": {
-      "off": "Off",
-      "to": "to {target}",
-      "toAgent": "to an agent",
+      "off": "Desactivado",
+      "to": "a {target}",
+      "toAgent": "a un agente",
       "targets": {
         "codex": "Codex",
         "claude": "Claude"
       },
       "triggers": {
-        "failures": "after {count, plural, one {# failure} other {# failures}}",
-        "stalled": "when stuck",
-        "request": "on request"
+        "failures": "tras {count, plural, one {# fallo} other {# fallos}}",
+        "stalled": "si se atasca",
+        "request": "a petición"
       },
-      "enable": "Escalation",
-      "target": "Target",
-      "model": "Model",
-      "afterFailures": "After failures",
-      "never": "never",
-      "onResumeLimit": "When stuck (resume limit)",
-      "onRequest": "On the agent's request",
-      "toAgentNote": "This agent escalates to another agent. The matrix does not change that."
+      "enable": "Escalado",
+      "target": "Destino",
+      "model": "Modelo",
+      "afterFailures": "Tras fallos",
+      "never": "nunca",
+      "onResumeLimit": "Si se atasca (límite de reanudaciones)",
+      "onRequest": "A petición del agente",
+      "toAgentNote": "Este agente escala a otro agente. La matriz no lo cambia."
     },
     "roles": {
       "home": "Home",
-      "coordinator": "Coordinator",
-      "coder": "Coder",
-      "reviewer": "Reviewer",
-      "planning": "Planning",
-      "research": "Research",
-      "content": "Content",
-      "assistant": "Assistant",
-      "finance": "Finance",
+      "coordinator": "Coordinador",
+      "coder": "Programador",
+      "reviewer": "Revisor",
+      "planning": "Planificación",
+      "research": "Investigación",
+      "content": "Contenido",
+      "assistant": "Asistente",
+      "finance": "Finanzas",
       "trading": "Trading",
-      "browser": "Browser",
-      "support": "Support",
+      "browser": "Navegador",
+      "support": "Soporte",
       "devops": "DevOps",
       "general": "General"
     },
     "groups": {
       "home": "Home",
-      "coordinator": "Coordinators",
-      "specialist": "Specialists"
+      "coordinator": "Coordinadores",
+      "specialist": "Especialistas"
     },
     "agents": {
-      "title": "Agents",
-      "description": "Runtime, model and more per agent. A click on a value changes it; nothing is applied before the preview.",
-      "agent": "Agent",
-      "roleOf": "Role of {name}",
-      "allProjects": "All projects",
-      "emptyTitle": "No agents",
-      "empty": "There are no agents for this filter."
+      "title": "Agentes",
+      "description": "Entorno de ejecución, modelo y más por agente. Un clic en un valor lo cambia; no se aplica nada antes de la vista previa.",
+      "agent": "Agente",
+      "roleOf": "Rol de {name}",
+      "allProjects": "Todos los proyectos",
+      "emptyTitle": "Sin agentes",
+      "empty": "No hay agentes para este filtro."
     },
     "select": {
-      "all": "Select all",
-      "agent": "Select {name}"
+      "all": "Seleccionar todo",
+      "agent": "Seleccionar {name}"
     },
     "bulk": {
-      "title": "Change several",
-      "selected": "{count, plural, one {# agent selected} other {# agents selected}}",
-      "set": "Change {column}",
-      "note": "Applies to {count} selected agents",
-      "reset": "Reset to schema",
-      "clear": "Clear selection"
+      "title": "Cambiar varios",
+      "selected": "{count, plural, one {# agente seleccionado} other {# agentes seleccionados}}",
+      "set": "Cambiar {column}",
+      "note": "Se aplica a los {count} agentes seleccionados",
+      "reset": "Volver al esquema",
+      "clear": "Quitar la selección"
     },
     "legend": {
-      "own": "own setting",
-      "changed": "changed, not applied yet",
-      "inherited": "no dot: inherits from the schema or project"
+      "own": "ajuste propio",
+      "changed": "cambiado, aún sin aplicar",
+      "inherited": "sin punto: hereda del esquema o del proyecto"
     },
     "bar": {
-      "changes": "{count, plural, one {# change} other {# changes}} not applied",
-      "agents": "{count, plural, one {# agent} other {# agents}}",
-      "schema": "schema or profile",
-      "discard": "Discard",
-      "review": "Preview and apply"
+      "changes": "{count, plural, one {# cambio sin aplicar} other {# cambios sin aplicar}}",
+      "agents": "{count, plural, one {# agente} other {# agentes}}",
+      "schema": "esquema o perfil",
+      "discard": "Descartar",
+      "review": "Vista previa y aplicar"
     },
     "preview": {
-      "title": "Review changes",
-      "loading": "Checking what changes …",
-      "affects": "{count, plural, one {Affects one agent} other {Affects # agents}}",
-      "nobody": "No agent changes. Only the schema or the profile changes.",
-      "failed": "The check failed",
-      "cancel": "Cancel",
-      "apply": "Apply",
+      "title": "Revisar los cambios",
+      "loading": "Comprobando qué cambia …",
+      "affects": "{count, plural, one {Afecta a un agente} other {Afecta a # agentes}}",
+      "nobody": "Ningún agente cambia. Solo cambia el esquema o el perfil.",
+      "failed": "La comprobación ha fallado",
+      "cancel": "Cancelar",
+      "apply": "Aplicar",
       "source": {
-        "schema": "schema",
-        "project": "project",
-        "own": "own"
+        "schema": "esquema",
+        "project": "proyecto",
+        "own": "propio"
       }
     },
     "conflict": {
-      "title": "Changed in the meantime",
-      "text": "The model settings changed while you were working. Reload and review the changes again; your selection is kept.",
-      "reload": "Reload"
+      "title": "Cambiado entretanto",
+      "text": "Los ajustes de modelos han cambiado mientras trabajabas. Recarga y revisa los cambios de nuevo; tu selección se conserva.",
+      "reload": "Recargar"
     },
     "apply": {
-      "done": "Changes applied. “Undo” takes them back.",
-      "partial": "Only part of the changes was applied. The view is reloading."
+      "done": "Cambios aplicados. «Deshacer» los revierte.",
+      "partial": "Solo se aplicó una parte de los cambios. La vista se está recargando."
     },
     "undo": {
-      "button": "Undo",
-      "title": "Undo the last change",
-      "done": "Undone"
+      "button": "Deshacer",
+      "title": "Deshacer el último cambio",
+      "done": "Deshecho",
+      "tooltip": "Revierte el último cambio aplicado (hasta {depth} pasos)",
+      "none": "Todavía nada que deshacer",
+      "note": "Revierte el último cambio aplicado: esquema, perfil, esquemas de proyecto y los ajustes de los agentes que modificó. Después se puede revertir el anterior (hasta {depth} pasos).",
+      "legacy": "Este cambio se aplicó antes del historial de agentes: solo se restablecen el esquema, el perfil y los esquemas de proyecto, no los ajustes de agentes individuales."
     },
     "header": {
-      "title": "Profile and schema",
-      "description": "The local profile decides which devices are available for local models. The schema decides which runtime, model and thinking depth each role gets.",
-      "profile": "Local profile",
-      "status": "State",
-      "switching": "Switching …",
-      "ready": "Ready · local model: {model}",
-      "noModel": "none",
-      "switchDevices": "Switch devices",
-      "switchFailed": "Switch failed",
-      "switchFailedText": "The last switch ended with an error. You can resume or revert it in the Local AI settings.",
-      "schema": "Schema",
-      "projectSchema": "Schema for {project}",
-      "projectInherits": "Follows the active schema",
-      "inherit": "Like the active schema"
+      "title": "Perfil y esquema",
+      "description": "El perfil local decide qué dispositivos están disponibles para los modelos locales. El esquema decide qué entorno de ejecución, modelo y nivel de razonamiento recibe cada rol.",
+      "profile": "Perfil local",
+      "status": "Estado",
+      "switching": "Cambiando …",
+      "ready": "Listo · modelo local: {model}",
+      "noModel": "ninguno",
+      "switchDevices": "Cambiar dispositivos",
+      "switchFailed": "El cambio ha fallado",
+      "switchFailedText": "El último cambio terminó con un error. Puedes reanudarlo o revertirlo en los ajustes de IA local.",
+      "schema": "Esquema",
+      "projectSchema": "Esquema para {project}",
+      "projectInherits": "Sigue el esquema activo",
+      "inherit": "Como el esquema activo"
     },
     "profiles": {
-      "local-halogen": "GPU only with Flash, NPU off",
-      "local-27b-npu": "GPU with Qwen3.8-27B, NPU for small tasks"
+      "local-halogen": "Solo GPU con Flash, NPU desactivada",
+      "local-27b-npu": "GPU con Qwen3.8-27B, NPU para tareas pequeñas"
     },
     "schemas": {
-      "nur-lokal": "All agents run locally; Codex takes over on failures, when stuck or on request.",
-      "gemischt": "Routine work local, Codex for coding, Claude for planning and texts.",
-      "nur-codex": "All agents run on Codex.",
-      "nur-claude": "All agents run on Claude."
+      "nur-lokal": "Todos los agentes funcionan en local; Codex toma el relevo si hay fallos, si se atasca o a petición.",
+      "gemischt": "Trabajo rutinario en local, Codex para programar, Claude para planificar y redactar.",
+      "nur-codex": "Todos los agentes funcionan con Codex.",
+      "nur-claude": "Todos los agentes funcionan con Claude."
     },
     "classes": {
-      "title": "Task classes",
-      "description": "Which device and model carries which kind of work, and whether its evaluation passed. It is changed under Local AI and Deciders.",
-      "openLocal": "Open Local AI",
-      "openDecisions": "Open deciders",
-      "class": "Task class",
-      "device": "Device",
-      "model": "Model",
-      "eval": "Evaluation",
-      "also": "Also tested",
+      "title": "Tipos de tareas",
+      "description": "Qué dispositivo y modelo lleva cada tipo de trabajo y si su evaluación está superada. Se cambia en IA local y Decisores.",
+      "openLocal": "Abrir IA local",
+      "openDecisions": "Abrir decisores",
+      "class": "Tipo de tarea",
+      "device": "Dispositivo",
+      "model": "Modelo",
+      "eval": "Evaluación",
+      "also": "También probados",
       "groups": {
-        "chat": "Chat tasks",
-        "decision": "Decisions",
-        "other": "Speech and search"
+        "chat": "Tareas de chat",
+        "decision": "Decisiones",
+        "other": "Voz y búsqueda"
       },
       "devices": {
         "gpu": "GPU",
         "npu": "NPU",
         "cpu": "CPU",
-        "cloud": "Cloud",
+        "cloud": "Nube",
         "vulkan": "GPU (Vulkan)"
       },
       "evals": {
-        "passed": "passed",
-        "failed": "failed",
-        "untested": "open"
+        "passed": "superada",
+        "failed": "suspendida",
+        "untested": "pendiente"
       },
-      "configuredVoice": "configured voice",
+      "configuredVoice": "voz configurada",
       "names": {
-        "triage": "Triage and assignment",
-        "routines": "Routine agents",
-        "hermes-helpers": "Runtime helper calls",
-        "summaries": "Summaries",
-        "reflection": "Reflection after runs",
-        "voice-reply": "Voice quick reply",
-        "coordinator-triage": "Coordinator triage",
-        "embeddings": "Search (embeddings)",
-        "tts": "Read aloud",
-        "stt": "Dictation",
-        "helena_model-router": "Model choice",
-        "helena_mail": "Sort mail",
-        "helena_receipts": "Match receipts",
-        "helena_general": "General decisions",
-        "helena_browser": "Browser first stage",
-        "tasks_triage": "Sort tasks",
-        "agents_routing": "Assign agents",
-        "helena_trading_news": "Trading: rate news",
-        "helena_trading_rules": "Trading: rule check",
-        "helena_trading_routing": "Trading: routing",
-        "helena_routine_gate": "Routine gate",
-        "routines_precheck": "Heartbeat pre-check"
+        "triage": "Triaje y asignación",
+        "routines": "Agentes de rutinas",
+        "hermes-helpers": "Llamadas auxiliares del entorno",
+        "summaries": "Resúmenes",
+        "reflection": "Reflexión tras las ejecuciones",
+        "voice-reply": "Respuesta rápida por voz",
+        "coordinator-triage": "Triaje del coordinador",
+        "embeddings": "Búsqueda (embeddings)",
+        "tts": "Lectura en voz alta",
+        "stt": "Dictado",
+        "helena_model-router": "Elección de modelo",
+        "helena_mail": "Clasificar correo",
+        "helena_receipts": "Asignar justificantes",
+        "helena_general": "Decisiones generales",
+        "helena_browser": "Primera etapa del navegador",
+        "tasks_triage": "Clasificar tareas",
+        "agents_routing": "Asignar agentes",
+        "helena_trading_news": "Trading: valorar noticias",
+        "helena_trading_rules": "Trading: control de reglas",
+        "helena_trading_routing": "Trading: asignación",
+        "helena_routine_gate": "Autorización de rutinas",
+        "routines_precheck": "Comprobación previa del heartbeat"
       }
     },
     "errors": {
-      "npuClass": "The NPU only takes this task class after a passed evaluation.",
-      "npuDecision": "The NPU did not pass the decider evaluation.",
-      "unknown": "An agent, project or schema no longer exists. Reload the page.",
-      "invalid": "A value is not allowed. Check the settings of the changed cells.",
-      "rejected": "The server refused the change. Nothing was changed."
+      "npuClass": "La NPU solo asume este tipo de tarea tras una evaluación superada.",
+      "npuDecision": "La NPU no superó la evaluación del decisor.",
+      "unknown": "Un agente, proyecto o esquema ya no existe. Recarga la página.",
+      "invalid": "Un valor no está permitido. Revisa los ajustes de las celdas cambiadas.",
+      "rejected": "El servidor rechazó el cambio. No se ha modificado nada."
     },
     "columnsShort": {
-      "runtime": "Runtime",
-      "model": "Model",
-      "reasoning": "Thinking",
-      "escalation": "Escalation",
-      "browser": "Browser",
-      "decision": "Decider",
-      "device": "Device"
+      "runtime": "Entorno",
+      "model": "Modelo",
+      "reasoning": "Razonamiento",
+      "escalation": "Escalado",
+      "browser": "Navegador",
+      "decision": "Decisor",
+      "device": "Dispositivo"
     }
   }
 }

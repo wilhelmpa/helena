@@ -109,36 +109,6 @@ export function buildPatch(matrix: ModelMatrix, pending: Pending): MatrixPatch {
   return patch;
 }
 
-// What takes back an applied change (read from the matrix before it was applied). The
-// schema level goes back through the server's own `undo`; the agents' own settings are
-// written back one by one — an own value returns as it was, an inherited one is reset.
-export interface UndoPlan {
-  schemaLevel: boolean;
-  agents: AgentChange[];
-}
-export function undoPlan(before: ModelMatrix, applied: Pending): UndoPlan {
-  const schemaLevel =
-    applied.active !== undefined ||
-    applied.profile !== undefined ||
-    Object.keys(applied.projects).length > 0;
-  const agents: AgentChange[] = [];
-  for (const [id, entry] of Object.entries(applied.agents)) {
-    const row = before.agents.find((agent) => agent.id === Number(id));
-    if (!row) continue;
-    const values: AgentChange['values'] = {};
-    for (const column of Object.keys(entry.values) as MatrixColumn[]) {
-      const cell = row.cells[column];
-      values[column] = cell.source === 'own' ? (cell.value as never) : null;
-    }
-    agents.push({
-      agentId: row.id,
-      ...(entry.role !== undefined ? { role: row.role } : {}),
-      values,
-    });
-  }
-  return { schemaLevel, agents };
-}
-
 // The role groups of the matrix: Home, the coordinators, everyone else.
 export type AgentGroup = 'home' | 'coordinator' | 'specialist';
 export function agentGroup(role: string, organizationRole?: string | null, isHome?: boolean) {

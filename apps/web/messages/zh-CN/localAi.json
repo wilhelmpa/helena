@@ -416,284 +416,288 @@
     "more": "更多工作类型（{count}）"
   },
   "modelMatrix": {
-    "search": "Search …",
-    "noResults": "Nothing found",
-    "reset": "Reset",
-    "loadFailed": "The model matrix could not be loaded",
+    "search": "搜索 …",
+    "noResults": "未找到任何内容",
+    "reset": "重置",
+    "loadFailed": "无法加载模型矩阵",
     "mark": {
-      "own": "Own setting",
-      "changed": "Changed, not applied yet"
+      "own": "自有设置",
+      "changed": "已更改，尚未应用"
     },
     "note": {
-      "own": "This agent's own setting",
-      "staged": "Changed, not applied yet",
-      "schema": "Inherits from the schema “{schema}”",
-      "project": "Inherits from the project schema “{schema}”"
+      "own": "此智能体的自有设置",
+      "staged": "已更改，尚未应用",
+      "schema": "继承自方案“{schema}”",
+      "project": "继承自项目方案“{schema}”"
     },
     "columns": {
-      "runtime": "Runtime",
-      "model": "Model",
-      "reasoning": "Thinking depth",
-      "escalation": "Escalation",
-      "browser": "Browser control",
-      "decision": "Decider",
-      "device": "Device"
+      "runtime": "运行时",
+      "model": "模型",
+      "reasoning": "推理深度",
+      "escalation": "升级",
+      "browser": "浏览器控制",
+      "decision": "决策器",
+      "device": "设备"
     },
     "runtime": {
-      "helena": "{appName} runtime",
+      "helena": "{appName} 运行时",
       "claude": "Claude Code",
       "codex": "Codex",
-      "hermes": "Hermes (cloud)",
-      "command": "Command",
+      "hermes": "Hermes（云端）",
+      "command": "命令",
       "webhook": "Webhook"
     },
     "reasoning": {
-      "low": "Low",
-      "medium": "Medium",
-      "high": "High",
-      "xhigh": "Very high"
+      "low": "低",
+      "medium": "中",
+      "high": "高",
+      "xhigh": "极高"
     },
     "browser": {
-      "standard": "Standard",
+      "standard": "标准",
       "jev": "Jev",
-      "combined": "Combined"
+      "combined": "组合"
     },
     "browserHint": {
-      "standard": "{appName} browser",
-      "jev": "fast, cloud",
-      "combined": "Jev, then standard"
+      "standard": "{appName} 浏览器",
+      "jev": "快速，云端",
+      "combined": "先 Jev，后标准"
     },
     "device": {
       "gpu": "GPU",
       "npu": "NPU",
-      "cloud": "Cloud",
+      "cloud": "云端",
       "cpu": "CPU",
-      "npuNote": "The NPU only carries small task classes, never agent runs."
+      "npuNote": "NPU 只承担小型任务类型，不运行智能体。"
     },
     "model": {
-      "localDefault": "Local default model",
-      "local": "local",
-      "none": "No model"
+      "localDefault": "本地默认模型",
+      "local": "本地",
+      "none": "无模型"
     },
     "decision": {
       "backends": {
-        "jev": "Jev (cloud)",
-        "jev-local": "Jev, then local",
-        "local-jev": "Local, then Jev",
-        "gpu": "Local (GPU)",
+        "jev": "Jev（云端）",
+        "jev-local": "先 Jev，后本地",
+        "local-jev": "先本地，后 Jev",
+        "gpu": "本地（GPU）",
         "npu": "NPU"
       },
-      "from": "from {percent} %",
-      "backend": "Decider",
-      "threshold": "Confidence from (%)",
-      "thresholdHint": "Below it the fallback takes over.",
-      "fallback": "Fallback",
+      "from": "自 {percent} %",
+      "backend": "决策器",
+      "threshold": "置信度起点（%）",
+      "thresholdHint": "低于此值时由备用方案接手。",
+      "fallback": "备用方案",
       "fallbacks": {
-        "gpu": "Local",
-        "coordinator": "Coordinator",
-        "none": "None"
+        "gpu": "本地",
+        "coordinator": "协调员",
+        "none": "无"
       },
-      "privateData": "Contains private content",
-      "npuNote": "The NPU did not pass the decider evaluation."
+      "privateData": "含私密内容",
+      "npuNote": "NPU 未通过决策器评估。"
     },
     "escalation": {
-      "off": "Off",
-      "to": "to {target}",
-      "toAgent": "to an agent",
+      "off": "关闭",
+      "to": "升级到 {target}",
+      "toAgent": "升级到其他智能体",
       "targets": {
         "codex": "Codex",
         "claude": "Claude"
       },
       "triggers": {
-        "failures": "after {count, plural, one {# failure} other {# failures}}",
-        "stalled": "when stuck",
-        "request": "on request"
+        "failures": "失败 {count, plural, other {# 次}}后",
+        "stalled": "卡住时",
+        "request": "按请求"
       },
-      "enable": "Escalation",
-      "target": "Target",
-      "model": "Model",
-      "afterFailures": "After failures",
-      "never": "never",
-      "onResumeLimit": "When stuck (resume limit)",
-      "onRequest": "On the agent's request",
-      "toAgentNote": "This agent escalates to another agent. The matrix does not change that."
+      "enable": "升级",
+      "target": "目标",
+      "model": "模型",
+      "afterFailures": "失败次数",
+      "never": "从不",
+      "onResumeLimit": "卡住时（恢复次数上限）",
+      "onRequest": "按智能体请求",
+      "toAgentNote": "此智能体升级到另一个智能体，矩阵不会更改这一点。"
     },
     "roles": {
       "home": "Home",
-      "coordinator": "Coordinator",
-      "coder": "Coder",
-      "reviewer": "Reviewer",
-      "planning": "Planning",
-      "research": "Research",
-      "content": "Content",
-      "assistant": "Assistant",
-      "finance": "Finance",
-      "trading": "Trading",
-      "browser": "Browser",
-      "support": "Support",
+      "coordinator": "协调员",
+      "coder": "开发者",
+      "reviewer": "审阅者",
+      "planning": "规划",
+      "research": "研究",
+      "content": "内容",
+      "assistant": "助理",
+      "finance": "财务",
+      "trading": "交易",
+      "browser": "浏览器",
+      "support": "支持",
       "devops": "DevOps",
-      "general": "General"
+      "general": "通用"
     },
     "groups": {
       "home": "Home",
-      "coordinator": "Coordinators",
-      "specialist": "Specialists"
+      "coordinator": "协调员",
+      "specialist": "专员"
     },
     "agents": {
-      "title": "Agents",
-      "description": "Runtime, model and more per agent. A click on a value changes it; nothing is applied before the preview.",
-      "agent": "Agent",
-      "roleOf": "Role of {name}",
-      "allProjects": "All projects",
-      "emptyTitle": "No agents",
-      "empty": "There are no agents for this filter."
+      "title": "智能体",
+      "description": "每个智能体的运行时、模型等。点击某个值即可更改；预览之前不会应用任何内容。",
+      "agent": "智能体",
+      "roleOf": "{name} 的角色",
+      "allProjects": "所有项目",
+      "emptyTitle": "没有智能体",
+      "empty": "此筛选条件下没有智能体。"
     },
     "select": {
-      "all": "Select all",
-      "agent": "Select {name}"
+      "all": "全选",
+      "agent": "选择 {name}"
     },
     "bulk": {
-      "title": "Change several",
-      "selected": "{count, plural, one {# agent selected} other {# agents selected}}",
-      "set": "Change {column}",
-      "note": "Applies to {count} selected agents",
-      "reset": "Reset to schema",
-      "clear": "Clear selection"
+      "title": "批量更改",
+      "selected": "{count, plural, other {已选择 # 个智能体}}",
+      "set": "更改{column}",
+      "note": "适用于所选的 {count} 个智能体",
+      "reset": "恢复为方案",
+      "clear": "清除选择"
     },
     "legend": {
-      "own": "own setting",
-      "changed": "changed, not applied yet",
-      "inherited": "no dot: inherits from the schema or project"
+      "own": "自有设置",
+      "changed": "已更改，尚未应用",
+      "inherited": "无圆点：继承自方案或项目"
     },
     "bar": {
-      "changes": "{count, plural, one {# change} other {# changes}} not applied",
-      "agents": "{count, plural, one {# agent} other {# agents}}",
-      "schema": "schema or profile",
-      "discard": "Discard",
-      "review": "Preview and apply"
+      "changes": "{count, plural, other {# 项更改尚未应用}}",
+      "agents": "{count, plural, other {# 个智能体}}",
+      "schema": "方案或配置",
+      "discard": "放弃",
+      "review": "预览并应用"
     },
     "preview": {
-      "title": "Review changes",
-      "loading": "Checking what changes …",
-      "affects": "{count, plural, one {Affects one agent} other {Affects # agents}}",
-      "nobody": "No agent changes. Only the schema or the profile changes.",
-      "failed": "The check failed",
-      "cancel": "Cancel",
-      "apply": "Apply",
+      "title": "检查更改",
+      "loading": "正在检查会发生什么变化 …",
+      "affects": "{count, plural, other {影响 # 个智能体}}",
+      "nobody": "没有智能体会改变，只有方案或配置会改变。",
+      "failed": "检查失败",
+      "cancel": "取消",
+      "apply": "应用",
       "source": {
-        "schema": "schema",
-        "project": "project",
-        "own": "own"
+        "schema": "方案",
+        "project": "项目",
+        "own": "自有"
       }
     },
     "conflict": {
-      "title": "Changed in the meantime",
-      "text": "The model settings changed while you were working. Reload and review the changes again; your selection is kept.",
-      "reload": "Reload"
+      "title": "期间已被更改",
+      "text": "在你操作期间，模型设置已发生变化。请重新加载并再次检查更改；你的选择会保留。",
+      "reload": "重新加载"
     },
     "apply": {
-      "done": "Changes applied. “Undo” takes them back.",
-      "partial": "Only part of the changes was applied. The view is reloading."
+      "done": "更改已应用。点击“撤销”可恢复。",
+      "partial": "只应用了部分更改，视图正在重新加载。"
     },
     "undo": {
-      "button": "Undo",
-      "title": "Undo the last change",
-      "done": "Undone"
+      "button": "撤销",
+      "title": "撤销上一次更改",
+      "done": "已撤销",
+      "tooltip": "撤销上一次已应用的更改（最多 {depth} 步）",
+      "none": "暂无可撤销的内容",
+      "note": "撤销上一次已应用的更改：方案、配置、项目方案，以及它所更改的智能体的设置。之后还可以撤销更早的一次（最多 {depth} 步）。",
+      "legacy": "此更改是在保存智能体历史之前应用的：只会恢复方案、配置和项目方案，不会恢复单个智能体的设置。"
     },
     "header": {
-      "title": "Profile and schema",
-      "description": "The local profile decides which devices are available for local models. The schema decides which runtime, model and thinking depth each role gets.",
-      "profile": "Local profile",
-      "status": "State",
-      "switching": "Switching …",
-      "ready": "Ready · local model: {model}",
-      "noModel": "none",
-      "switchDevices": "Switch devices",
-      "switchFailed": "Switch failed",
-      "switchFailedText": "The last switch ended with an error. You can resume or revert it in the Local AI settings.",
-      "schema": "Schema",
-      "projectSchema": "Schema for {project}",
-      "projectInherits": "Follows the active schema",
-      "inherit": "Like the active schema"
+      "title": "配置与方案",
+      "description": "本地配置决定哪些设备可用于本地模型。方案决定每个角色使用的运行时、模型和推理深度。",
+      "profile": "本地配置",
+      "status": "状态",
+      "switching": "正在切换 …",
+      "ready": "就绪 · 本地模型：{model}",
+      "noModel": "无",
+      "switchDevices": "切换设备",
+      "switchFailed": "切换失败",
+      "switchFailedText": "上一次切换以错误结束。你可以在本地 AI 设置中继续或回退。",
+      "schema": "方案",
+      "projectSchema": "{project} 的方案",
+      "projectInherits": "跟随当前方案",
+      "inherit": "与当前方案相同"
     },
     "profiles": {
-      "local-halogen": "GPU only with Flash, NPU off",
-      "local-27b-npu": "GPU with Qwen3.8-27B, NPU for small tasks"
+      "local-halogen": "仅 GPU 运行 Flash，NPU 关闭",
+      "local-27b-npu": "GPU 运行 Qwen3.8-27B，NPU 处理小任务"
     },
     "schemas": {
-      "nur-lokal": "All agents run locally; Codex takes over on failures, when stuck or on request.",
-      "gemischt": "Routine work local, Codex for coding, Claude for planning and texts.",
-      "nur-codex": "All agents run on Codex.",
-      "nur-claude": "All agents run on Claude."
+      "nur-lokal": "所有智能体在本地运行；失败、卡住或按请求时由 Codex 接手。",
+      "gemischt": "日常工作在本地，编程用 Codex，规划和文本用 Claude。",
+      "nur-codex": "所有智能体都在 Codex 上运行。",
+      "nur-claude": "所有智能体都在 Claude 上运行。"
     },
     "classes": {
-      "title": "Task classes",
-      "description": "Which device and model carries which kind of work, and whether its evaluation passed. It is changed under Local AI and Deciders.",
-      "openLocal": "Open Local AI",
-      "openDecisions": "Open deciders",
-      "class": "Task class",
-      "device": "Device",
-      "model": "Model",
-      "eval": "Evaluation",
-      "also": "Also tested",
+      "title": "任务类型",
+      "description": "哪个设备和模型承担哪类工作，以及评估是否通过。可在“本地 AI”和“决策器”中更改。",
+      "openLocal": "打开本地 AI",
+      "openDecisions": "打开决策器",
+      "class": "任务类型",
+      "device": "设备",
+      "model": "模型",
+      "eval": "评估",
+      "also": "另测过",
       "groups": {
-        "chat": "Chat tasks",
-        "decision": "Decisions",
-        "other": "Speech and search"
+        "chat": "聊天任务",
+        "decision": "决策",
+        "other": "语音与搜索"
       },
       "devices": {
         "gpu": "GPU",
         "npu": "NPU",
         "cpu": "CPU",
-        "cloud": "Cloud",
-        "vulkan": "GPU (Vulkan)"
+        "cloud": "云端",
+        "vulkan": "GPU（Vulkan）"
       },
       "evals": {
-        "passed": "passed",
-        "failed": "failed",
-        "untested": "open"
+        "passed": "已通过",
+        "failed": "未通过",
+        "untested": "未评估"
       },
-      "configuredVoice": "configured voice",
+      "configuredVoice": "已设置的语音",
       "names": {
-        "triage": "Triage and assignment",
-        "routines": "Routine agents",
-        "hermes-helpers": "Runtime helper calls",
-        "summaries": "Summaries",
-        "reflection": "Reflection after runs",
-        "voice-reply": "Voice quick reply",
-        "coordinator-triage": "Coordinator triage",
-        "embeddings": "Search (embeddings)",
-        "tts": "Read aloud",
-        "stt": "Dictation",
-        "helena_model-router": "Model choice",
-        "helena_mail": "Sort mail",
-        "helena_receipts": "Match receipts",
-        "helena_general": "General decisions",
-        "helena_browser": "Browser first stage",
-        "tasks_triage": "Sort tasks",
-        "agents_routing": "Assign agents",
-        "helena_trading_news": "Trading: rate news",
-        "helena_trading_rules": "Trading: rule check",
-        "helena_trading_routing": "Trading: routing",
-        "helena_routine_gate": "Routine gate",
-        "routines_precheck": "Heartbeat pre-check"
+        "triage": "分诊与分配",
+        "routines": "例行任务智能体",
+        "hermes-helpers": "运行时辅助调用",
+        "summaries": "摘要",
+        "reflection": "运行后的反思",
+        "voice-reply": "语音快速回复",
+        "coordinator-triage": "协调员分诊",
+        "embeddings": "搜索（嵌入）",
+        "tts": "朗读",
+        "stt": "听写",
+        "helena_model-router": "模型选择",
+        "helena_mail": "邮件分类",
+        "helena_receipts": "票据匹配",
+        "helena_general": "通用决策",
+        "helena_browser": "浏览器前置阶段",
+        "tasks_triage": "任务分类",
+        "agents_routing": "分配智能体",
+        "helena_trading_news": "交易：新闻评估",
+        "helena_trading_rules": "交易：规则检查",
+        "helena_trading_routing": "交易：分配",
+        "helena_routine_gate": "例行任务放行",
+        "routines_precheck": "心跳预检"
       }
     },
     "errors": {
-      "npuClass": "The NPU only takes this task class after a passed evaluation.",
-      "npuDecision": "The NPU did not pass the decider evaluation.",
-      "unknown": "An agent, project or schema no longer exists. Reload the page.",
-      "invalid": "A value is not allowed. Check the settings of the changed cells.",
-      "rejected": "The server refused the change. Nothing was changed."
+      "npuClass": "只有评估通过后，NPU 才会承担此任务类型。",
+      "npuDecision": "NPU 未通过决策器评估。",
+      "unknown": "某个智能体、项目或方案已不存在。请重新加载页面。",
+      "invalid": "某个值不被允许。请检查已更改单元格的设置。",
+      "rejected": "服务器拒绝了此更改，未做任何更改。"
     },
     "columnsShort": {
-      "runtime": "Runtime",
-      "model": "Model",
-      "reasoning": "Thinking",
-      "escalation": "Escalation",
-      "browser": "Browser",
-      "decision": "Decider",
-      "device": "Device"
+      "runtime": "运行时",
+      "model": "模型",
+      "reasoning": "推理",
+      "escalation": "升级",
+      "browser": "浏览器",
+      "decision": "决策器",
+      "device": "设备"
     }
   }
 }

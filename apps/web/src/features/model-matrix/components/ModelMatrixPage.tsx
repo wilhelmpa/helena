@@ -45,9 +45,7 @@ import {
   setAgentRole,
   setAgentValue,
   targetSchemaId,
-  undoPlan,
   type Pending,
-  type UndoPlan,
 } from '../utils/pending';
 import { AgentMatrix, effectiveCell, modelForRuntime } from './AgentMatrix';
 import { ChangePreviewDialog, type PreviewState } from './ChangePreviewDialog';
@@ -95,7 +93,6 @@ export default function ModelMatrixPage({ teamId }: { teamId: number }) {
   const [pending, setPending] = useState<Pending>(EMPTY_PENDING);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [dialog, setDialog] = useState<{ plan: Plan; state: PreviewState } | null>(null);
-  const [undo, setUndo] = useState<{ revision: number; plan: UndoPlan } | null>(null);
 
   const agentNames = useMemo(
     () => new Map((organization?.agents ?? []).map((agent) => [agent.id, agent.name])),
@@ -229,20 +226,16 @@ export default function ModelMatrixPage({ teamId }: { teamId: number }) {
     const { expectedRevision: _revision, ...patch } = buildPatch(matrix, pending);
     void preflight({ kind: 'apply', steps: [patch] });
   };
+  // The server keeps the last applies (schema, profile, project schemas and the values of
+  // the agents each changed), so this works after a reload as well, one step at a time.
   const openUndo = () => {
-    if (!undo) return;
-    const steps: Plan['steps'] = [
-      ...(undo.plan.schemaLevel ? [{ undo: true }] : []),
-      ...(undo.plan.agents.length ? [{ agents: undo.plan.agents }] : []),
-    ];
-    if (steps.length) void preflight({ kind: 'undo', steps });
+    if (matrix && matrix.undo.depth > 0) void preflight({ kind: 'undo', steps: [{ undo: true }] });
   };
 
   const applyPlan = async () => {
     if (!matrix || !dialog) return;
     const { plan } = dialog;
     const before = matrix;
-    const applied = pending;
     let done = 0;
     try {
       for (const [index, step] of plan.steps.entries()) {
@@ -257,14 +250,10 @@ export default function ModelMatrixPage({ teamId }: { teamId: number }) {
     setDialog(null);
     void client.invalidateQueries({ queryKey: ['organization'] });
     if (plan.kind === 'apply') {
-      setUndo({ revision: before.revision + plan.steps.length, plan: undoPlan(before, applied) });
       setPending(EMPTY_PENDING);
       setSelected(new Set());
       toast.success(t('apply.done'));
-    } else {
-      setUndo(null);
-      toast.success(t('undo.done'));
-    }
+    } else toast.success(t('undo.done'));
   };
 
   const reload = () => {
@@ -328,7 +317,7 @@ export default function ModelMatrixPage({ teamId }: { teamId: number }) {
         onSchema={header.onSchema}
         onProjectSchema={header.onProjectSchema}
         onUndo={openUndo}
-        canUndo={undo !== null && undo.revision === matrix.revision}
+        undoSteps={matrix.undo.depth}
       />
 
       <Section
@@ -454,6 +443,13 @@ export default function ModelMatrixPage({ teamId }: { teamId: number }) {
         <ChangePreviewDialog
           state={dialog.state}
           title={dialog.plan.kind === 'undo' ? t('undo.title') : t('preview.title')}
+          note={
+            dialog.plan.kind === 'undo'
+              ? matrix.undo.steps.at(-1)?.agents === null
+                ? t('undo.legacy')
+                : t('undo.note', { depth: matrix.undo.depth })
+              : undefined
+          }
           labels={labels}
           names={agentNames}
           applying={apply.isPending}

@@ -416,284 +416,288 @@
     "more": "Другие виды работы ({count})"
   },
   "modelMatrix": {
-    "search": "Search …",
-    "noResults": "Nothing found",
-    "reset": "Reset",
-    "loadFailed": "The model matrix could not be loaded",
+    "search": "Поиск …",
+    "noResults": "Ничего не найдено",
+    "reset": "Сбросить",
+    "loadFailed": "Не удалось загрузить матрицу моделей",
     "mark": {
-      "own": "Own setting",
-      "changed": "Changed, not applied yet"
+      "own": "Собственная настройка",
+      "changed": "Изменено, ещё не применено"
     },
     "note": {
-      "own": "This agent's own setting",
-      "staged": "Changed, not applied yet",
-      "schema": "Inherits from the schema “{schema}”",
-      "project": "Inherits from the project schema “{schema}”"
+      "own": "Собственная настройка этого агента",
+      "staged": "Изменено, ещё не применено",
+      "schema": "Наследует от схемы «{schema}»",
+      "project": "Наследует от схемы проекта «{schema}»"
     },
     "columns": {
-      "runtime": "Runtime",
-      "model": "Model",
-      "reasoning": "Thinking depth",
-      "escalation": "Escalation",
-      "browser": "Browser control",
-      "decision": "Decider",
-      "device": "Device"
+      "runtime": "Среда выполнения",
+      "model": "Модель",
+      "reasoning": "Глубина рассуждения",
+      "escalation": "Эскалация",
+      "browser": "Управление браузером",
+      "decision": "Решающая модель",
+      "device": "Устройство"
     },
     "runtime": {
-      "helena": "{appName} runtime",
+      "helena": "Среда {appName}",
       "claude": "Claude Code",
       "codex": "Codex",
-      "hermes": "Hermes (cloud)",
-      "command": "Command",
+      "hermes": "Hermes (облако)",
+      "command": "Команда",
       "webhook": "Webhook"
     },
     "reasoning": {
-      "low": "Low",
-      "medium": "Medium",
-      "high": "High",
-      "xhigh": "Very high"
+      "low": "Низкая",
+      "medium": "Средняя",
+      "high": "Высокая",
+      "xhigh": "Очень высокая"
     },
     "browser": {
-      "standard": "Standard",
+      "standard": "Стандартное",
       "jev": "Jev",
-      "combined": "Combined"
+      "combined": "Комбинированное"
     },
     "browserHint": {
-      "standard": "{appName} browser",
-      "jev": "fast, cloud",
-      "combined": "Jev, then standard"
+      "standard": "Браузер {appName}",
+      "jev": "быстро, облако",
+      "combined": "Jev, затем стандартное"
     },
     "device": {
       "gpu": "GPU",
       "npu": "NPU",
-      "cloud": "Cloud",
+      "cloud": "Облако",
       "cpu": "CPU",
-      "npuNote": "The NPU only carries small task classes, never agent runs."
+      "npuNote": "NPU берёт только небольшие виды задач, но не запуски агентов."
     },
     "model": {
-      "localDefault": "Local default model",
-      "local": "local",
-      "none": "No model"
+      "localDefault": "Локальная модель по умолчанию",
+      "local": "локально",
+      "none": "Без модели"
     },
     "decision": {
       "backends": {
-        "jev": "Jev (cloud)",
-        "jev-local": "Jev, then local",
-        "local-jev": "Local, then Jev",
-        "gpu": "Local (GPU)",
+        "jev": "Jev (облако)",
+        "jev-local": "Jev, затем локально",
+        "local-jev": "Локально, затем Jev",
+        "gpu": "Локально (GPU)",
         "npu": "NPU"
       },
-      "from": "from {percent} %",
-      "backend": "Decider",
-      "threshold": "Confidence from (%)",
-      "thresholdHint": "Below it the fallback takes over.",
-      "fallback": "Fallback",
+      "from": "от {percent} %",
+      "backend": "Решающая модель",
+      "threshold": "Уверенность от (%)",
+      "thresholdHint": "Ниже этого порога включается запасной вариант.",
+      "fallback": "Запасной вариант",
       "fallbacks": {
-        "gpu": "Local",
-        "coordinator": "Coordinator",
-        "none": "None"
+        "gpu": "Локально",
+        "coordinator": "Координатор",
+        "none": "Нет"
       },
-      "privateData": "Contains private content",
-      "npuNote": "The NPU did not pass the decider evaluation."
+      "privateData": "Содержит приватные данные",
+      "npuNote": "NPU не прошла оценку решающей модели."
     },
     "escalation": {
-      "off": "Off",
-      "to": "to {target}",
-      "toAgent": "to an agent",
+      "off": "Выкл.",
+      "to": "в {target}",
+      "toAgent": "другому агенту",
       "targets": {
         "codex": "Codex",
         "claude": "Claude"
       },
       "triggers": {
-        "failures": "after {count, plural, one {# failure} other {# failures}}",
-        "stalled": "when stuck",
-        "request": "on request"
+        "failures": "после {count, plural, one {# сбоя} few {# сбоев} many {# сбоев} other {# сбоя}}",
+        "stalled": "при зависании",
+        "request": "по запросу"
       },
-      "enable": "Escalation",
-      "target": "Target",
-      "model": "Model",
-      "afterFailures": "After failures",
-      "never": "never",
-      "onResumeLimit": "When stuck (resume limit)",
-      "onRequest": "On the agent's request",
-      "toAgentNote": "This agent escalates to another agent. The matrix does not change that."
+      "enable": "Эскалация",
+      "target": "Цель",
+      "model": "Модель",
+      "afterFailures": "После сбоев",
+      "never": "никогда",
+      "onResumeLimit": "При зависании (лимит возобновлений)",
+      "onRequest": "По запросу агента",
+      "toAgentNote": "Этот агент передаёт задачи другому агенту. Матрица этого не меняет."
     },
     "roles": {
       "home": "Home",
-      "coordinator": "Coordinator",
-      "coder": "Coder",
-      "reviewer": "Reviewer",
-      "planning": "Planning",
-      "research": "Research",
-      "content": "Content",
-      "assistant": "Assistant",
-      "finance": "Finance",
-      "trading": "Trading",
-      "browser": "Browser",
-      "support": "Support",
+      "coordinator": "Координатор",
+      "coder": "Разработчик",
+      "reviewer": "Рецензент",
+      "planning": "Планирование",
+      "research": "Исследование",
+      "content": "Контент",
+      "assistant": "Ассистент",
+      "finance": "Финансы",
+      "trading": "Трейдинг",
+      "browser": "Браузер",
+      "support": "Поддержка",
       "devops": "DevOps",
-      "general": "General"
+      "general": "Общая"
     },
     "groups": {
       "home": "Home",
-      "coordinator": "Coordinators",
-      "specialist": "Specialists"
+      "coordinator": "Координаторы",
+      "specialist": "Специалисты"
     },
     "agents": {
-      "title": "Agents",
-      "description": "Runtime, model and more per agent. A click on a value changes it; nothing is applied before the preview.",
-      "agent": "Agent",
-      "roleOf": "Role of {name}",
-      "allProjects": "All projects",
-      "emptyTitle": "No agents",
-      "empty": "There are no agents for this filter."
+      "title": "Агенты",
+      "description": "Среда выполнения, модель и другое для каждого агента. Щелчок по значению меняет его; до предпросмотра ничего не применяется.",
+      "agent": "Агент",
+      "roleOf": "Роль: {name}",
+      "allProjects": "Все проекты",
+      "emptyTitle": "Нет агентов",
+      "empty": "Для этого фильтра нет агентов."
     },
     "select": {
-      "all": "Select all",
-      "agent": "Select {name}"
+      "all": "Выбрать все",
+      "agent": "Выбрать: {name}"
     },
     "bulk": {
-      "title": "Change several",
-      "selected": "{count, plural, one {# agent selected} other {# agents selected}}",
-      "set": "Change {column}",
-      "note": "Applies to {count} selected agents",
-      "reset": "Reset to schema",
-      "clear": "Clear selection"
+      "title": "Изменить несколько",
+      "selected": "{count, plural, one {Выбран # агент} few {Выбрано # агента} many {Выбрано # агентов} other {Выбрано # агента}}",
+      "set": "Изменить: {column}",
+      "note": "Действует для выбранных агентов: {count}",
+      "reset": "Вернуть к схеме",
+      "clear": "Снять выбор"
     },
     "legend": {
-      "own": "own setting",
-      "changed": "changed, not applied yet",
-      "inherited": "no dot: inherits from the schema or project"
+      "own": "собственная настройка",
+      "changed": "изменено, ещё не применено",
+      "inherited": "без точки: наследуется от схемы или проекта"
     },
     "bar": {
-      "changes": "{count, plural, one {# change} other {# changes}} not applied",
-      "agents": "{count, plural, one {# agent} other {# agents}}",
-      "schema": "schema or profile",
-      "discard": "Discard",
-      "review": "Preview and apply"
+      "changes": "{count, plural, one {# изменение не применено} few {# изменения не применены} many {# изменений не применено} other {# изменения не применено}}",
+      "agents": "{count, plural, one {# агент} few {# агента} many {# агентов} other {# агента}}",
+      "schema": "схема или профиль",
+      "discard": "Отменить",
+      "review": "Предпросмотр и применить"
     },
     "preview": {
-      "title": "Review changes",
-      "loading": "Checking what changes …",
-      "affects": "{count, plural, one {Affects one agent} other {Affects # agents}}",
-      "nobody": "No agent changes. Only the schema or the profile changes.",
-      "failed": "The check failed",
-      "cancel": "Cancel",
-      "apply": "Apply",
+      "title": "Проверка изменений",
+      "loading": "Проверяем, что изменится …",
+      "affects": "{count, plural, one {Затрагивает # агента} few {Затрагивает # агентов} many {Затрагивает # агентов} other {Затрагивает # агента}}",
+      "nobody": "Ни один агент не меняется. Меняется только схема или профиль.",
+      "failed": "Проверка не удалась",
+      "cancel": "Отмена",
+      "apply": "Применить",
       "source": {
-        "schema": "schema",
-        "project": "project",
-        "own": "own"
+        "schema": "схема",
+        "project": "проект",
+        "own": "собственная"
       }
     },
     "conflict": {
-      "title": "Changed in the meantime",
-      "text": "The model settings changed while you were working. Reload and review the changes again; your selection is kept.",
-      "reload": "Reload"
+      "title": "Изменено за это время",
+      "text": "Настройки моделей изменились, пока вы работали. Перезагрузите и проверьте изменения ещё раз; ваш выбор сохранён.",
+      "reload": "Перезагрузить"
     },
     "apply": {
-      "done": "Changes applied. “Undo” takes them back.",
-      "partial": "Only part of the changes was applied. The view is reloading."
+      "done": "Изменения применены. «Отменить» вернёт их назад.",
+      "partial": "Применена только часть изменений. Вид перезагружается."
     },
     "undo": {
-      "button": "Undo",
-      "title": "Undo the last change",
-      "done": "Undone"
+      "button": "Отменить",
+      "title": "Отменить последнее изменение",
+      "done": "Отменено",
+      "tooltip": "Отменяет последнее применённое изменение (до {depth} шагов)",
+      "none": "Пока нечего отменять",
+      "note": "Отменяет последнее применённое изменение: схему, профиль, схемы проектов и настройки агентов, которые оно изменило. После этого можно отменить и предыдущее (до {depth} шагов).",
+      "legacy": "Это изменение применено до появления истории агентов: сбрасываются только схема, профиль и схемы проектов, но не настройки отдельных агентов."
     },
     "header": {
-      "title": "Profile and schema",
-      "description": "The local profile decides which devices are available for local models. The schema decides which runtime, model and thinking depth each role gets.",
-      "profile": "Local profile",
-      "status": "State",
-      "switching": "Switching …",
-      "ready": "Ready · local model: {model}",
-      "noModel": "none",
-      "switchDevices": "Switch devices",
-      "switchFailed": "Switch failed",
-      "switchFailedText": "The last switch ended with an error. You can resume or revert it in the Local AI settings.",
-      "schema": "Schema",
-      "projectSchema": "Schema for {project}",
-      "projectInherits": "Follows the active schema",
-      "inherit": "Like the active schema"
+      "title": "Профиль и схема",
+      "description": "Локальный профиль определяет, какие устройства доступны для локальных моделей. Схема определяет, какую среду выполнения, модель и глубину рассуждения получает каждая роль.",
+      "profile": "Локальный профиль",
+      "status": "Состояние",
+      "switching": "Переключение …",
+      "ready": "Готово · локальная модель: {model}",
+      "noModel": "нет",
+      "switchDevices": "Переключить устройства",
+      "switchFailed": "Переключение не удалось",
+      "switchFailedText": "Последнее переключение завершилось ошибкой. Его можно продолжить или откатить в настройках локального ИИ.",
+      "schema": "Схема",
+      "projectSchema": "Схема для {project}",
+      "projectInherits": "Следует активной схеме",
+      "inherit": "Как активная схема"
     },
     "profiles": {
-      "local-halogen": "GPU only with Flash, NPU off",
-      "local-27b-npu": "GPU with Qwen3.8-27B, NPU for small tasks"
+      "local-halogen": "Только GPU с Flash, NPU выключена",
+      "local-27b-npu": "GPU с Qwen3.8-27B, NPU для небольших задач"
     },
     "schemas": {
-      "nur-lokal": "All agents run locally; Codex takes over on failures, when stuck or on request.",
-      "gemischt": "Routine work local, Codex for coding, Claude for planning and texts.",
-      "nur-codex": "All agents run on Codex.",
-      "nur-claude": "All agents run on Claude."
+      "nur-lokal": "Все агенты работают локально; при сбоях, зависании или по запросу подключается Codex.",
+      "gemischt": "Рутина локально, Codex для программирования, Claude для планирования и текстов.",
+      "nur-codex": "Все агенты работают на Codex.",
+      "nur-claude": "Все агенты работают на Claude."
     },
     "classes": {
-      "title": "Task classes",
-      "description": "Which device and model carries which kind of work, and whether its evaluation passed. It is changed under Local AI and Deciders.",
-      "openLocal": "Open Local AI",
-      "openDecisions": "Open deciders",
-      "class": "Task class",
-      "device": "Device",
-      "model": "Model",
-      "eval": "Evaluation",
-      "also": "Also tested",
+      "title": "Виды задач",
+      "description": "Какое устройство и какая модель выполняют какой вид работы и пройдена ли оценка. Меняется в разделах «Локальный ИИ» и «Решающие модели».",
+      "openLocal": "Открыть локальный ИИ",
+      "openDecisions": "Открыть решающие модели",
+      "class": "Вид задачи",
+      "device": "Устройство",
+      "model": "Модель",
+      "eval": "Оценка",
+      "also": "Также проверены",
       "groups": {
-        "chat": "Chat tasks",
-        "decision": "Decisions",
-        "other": "Speech and search"
+        "chat": "Задачи чата",
+        "decision": "Решения",
+        "other": "Речь и поиск"
       },
       "devices": {
         "gpu": "GPU",
         "npu": "NPU",
         "cpu": "CPU",
-        "cloud": "Cloud",
+        "cloud": "Облако",
         "vulkan": "GPU (Vulkan)"
       },
       "evals": {
-        "passed": "passed",
-        "failed": "failed",
-        "untested": "open"
+        "passed": "пройдена",
+        "failed": "не пройдена",
+        "untested": "открыта"
       },
-      "configuredVoice": "configured voice",
+      "configuredVoice": "выбранный голос",
       "names": {
-        "triage": "Triage and assignment",
-        "routines": "Routine agents",
-        "hermes-helpers": "Runtime helper calls",
-        "summaries": "Summaries",
-        "reflection": "Reflection after runs",
-        "voice-reply": "Voice quick reply",
-        "coordinator-triage": "Coordinator triage",
-        "embeddings": "Search (embeddings)",
-        "tts": "Read aloud",
-        "stt": "Dictation",
-        "helena_model-router": "Model choice",
-        "helena_mail": "Sort mail",
-        "helena_receipts": "Match receipts",
-        "helena_general": "General decisions",
-        "helena_browser": "Browser first stage",
-        "tasks_triage": "Sort tasks",
-        "agents_routing": "Assign agents",
-        "helena_trading_news": "Trading: rate news",
-        "helena_trading_rules": "Trading: rule check",
-        "helena_trading_routing": "Trading: routing",
-        "helena_routine_gate": "Routine gate",
-        "routines_precheck": "Heartbeat pre-check"
+        "triage": "Сортировка и назначение",
+        "routines": "Агенты рутин",
+        "hermes-helpers": "Вспомогательные вызовы среды",
+        "summaries": "Сводки",
+        "reflection": "Рефлексия после запусков",
+        "voice-reply": "Быстрый голосовой ответ",
+        "coordinator-triage": "Сортировка координатора",
+        "embeddings": "Поиск (эмбеддинги)",
+        "tts": "Озвучивание",
+        "stt": "Диктовка",
+        "helena_model-router": "Выбор модели",
+        "helena_mail": "Сортировка почты",
+        "helena_receipts": "Сопоставление чеков",
+        "helena_general": "Общие решения",
+        "helena_browser": "Первая ступень браузера",
+        "tasks_triage": "Сортировка задач",
+        "agents_routing": "Назначение агентов",
+        "helena_trading_news": "Трейдинг: оценка новостей",
+        "helena_trading_rules": "Трейдинг: проверка правил",
+        "helena_trading_routing": "Трейдинг: назначение",
+        "helena_routine_gate": "Допуск рутин",
+        "routines_precheck": "Предпроверка heartbeat"
       }
     },
     "errors": {
-      "npuClass": "The NPU only takes this task class after a passed evaluation.",
-      "npuDecision": "The NPU did not pass the decider evaluation.",
-      "unknown": "An agent, project or schema no longer exists. Reload the page.",
-      "invalid": "A value is not allowed. Check the settings of the changed cells.",
-      "rejected": "The server refused the change. Nothing was changed."
+      "npuClass": "NPU берёт этот вид задач только после пройденной оценки.",
+      "npuDecision": "NPU не прошла оценку решающей модели.",
+      "unknown": "Агент, проект или схема больше не существует. Перезагрузите страницу.",
+      "invalid": "Недопустимое значение. Проверьте настройки изменённых ячеек.",
+      "rejected": "Сервер отклонил изменение. Ничего не изменено."
     },
     "columnsShort": {
-      "runtime": "Runtime",
-      "model": "Model",
-      "reasoning": "Thinking",
-      "escalation": "Escalation",
-      "browser": "Browser",
-      "decision": "Decider",
-      "device": "Device"
+      "runtime": "Среда",
+      "model": "Модель",
+      "reasoning": "Рассуждение",
+      "escalation": "Эскалация",
+      "browser": "Браузер",
+      "decision": "Решение",
+      "device": "Устройство"
     }
   }
 }

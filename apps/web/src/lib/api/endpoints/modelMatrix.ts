@@ -98,8 +98,16 @@ export interface MatrixProfile {
   speechRecognition: 'cpu' | 'npu';
 }
 
+// What an undo can take back: the last applies (at most ten), newest last, with how many agents
+// each changed; null for one written before agent changes were kept (only the schemas return).
+export interface MatrixUndo {
+  depth: number;
+  steps: { revision: number; agents: number | null }[];
+}
+
 export interface ModelMatrix {
   revision: number;
+  undo: MatrixUndo;
   active: string;
   schemas: Record<string, MatrixSchema>;
   profiles: MatrixProfile[];

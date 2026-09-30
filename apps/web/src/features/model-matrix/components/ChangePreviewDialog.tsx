@@ -17,6 +17,7 @@ export type PreviewState =
 export function ChangePreviewDialog({
   state,
   title,
+  note,
   labels,
   names,
   applying,
@@ -26,6 +27,8 @@ export function ChangePreviewDialog({
 }: {
   state: PreviewState;
   title: string;
+  // What the change does in general (an undo: which steps it takes back).
+  note?: string;
   labels: MatrixLabels;
   names: ReadonlyMap<number, string>;
   applying: boolean;
@@ -53,6 +56,7 @@ export function ChangePreviewDialog({
   return (
     <Dialog title={title} onClose={onClose} wide>
       <Stack gap={4}>
+        {note && <Text tone="muted">{note}</Text>}
         {state.status === 'loading' && (
           <Inline gap={2}>
             <LoaderCircle className="animate-spin" size={16} />
