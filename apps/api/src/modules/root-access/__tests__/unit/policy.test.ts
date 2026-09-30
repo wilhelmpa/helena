@@ -31,6 +31,8 @@ describe('root provenance matrix', () => {
     }
     expect(toolsFullyObserved('central')).toBe(true);
     expect(toolsFullyObserved('hermes')).toBe(true);
+    // Ava's own runtime runs every tool call through the Helena loop, so it is observed.
+    expect(toolsFullyObserved('helena')).toBe(true);
   });
   it('tracks all external sources, including read-only MCP and code execution', () => {
     for (const [tool, source] of [

@@ -466,7 +466,7 @@ class LauncherRequestTest(unittest.TestCase):
 
     def test_home_sees_all_project_vaults_but_project_only_its_own(self):
         self.assertEqual(self.worker.vault_binds('home', None),
-                         ([str(self.dir / 'vault/Home'), str(self.dir / 'vault/Projects/ALPHA'),
+                         ([str(self.dir / 'vault/Home'), str(self.dir / 'vault/Private'), str(self.dir / 'vault/Projects/ALPHA'),
                            str(self.dir / 'workspaces/alpha')], []))
         self.assertEqual(self.worker.vault_binds('alpha', 'ALPHA'),
                          ([str(self.dir / 'vault/Projects/ALPHA')], []))

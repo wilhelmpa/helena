@@ -25,6 +25,7 @@ export type RuntimeId = 'hermes' | 'claude' | 'codex' | (string & {});
 export const runtimeToolObservation: Readonly<Record<string, boolean>> = {
   hermes: true,
   central: true,
+  helena: true,
   claude: false,
   codex: false,
 };
