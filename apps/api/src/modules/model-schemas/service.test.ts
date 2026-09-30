@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'bun:test';
 import { changedRows, defaultState, nextState, resolveRow } from './service';
 import { inferModelRole } from '../../scripts/model-schema-migrate';
-import { escalationReason } from './templates';
+import { failureDecision } from '#modules/agents/runner/escalation';
+import { migrateEscalationValue, migrateSchemaEscalations } from './migration';
 import { npuClassModel } from '#modules/local-ai/npu-profile';
 
 const agent = {
@@ -73,29 +74,127 @@ describe('model schema resolution', () => {
     expect(resolveRow(agent, [], restored).cells.runtime.value).toBe('helena');
   });
 
-  it('queues escalation only for configured failures, stalls or requests', () => {
-    const setting = {
-      target: 'runtime:codex/gpt-6-sol',
-      failures: 2,
-      stalledSteps: 12,
-      onRequest: true,
+  it('previews the canonical policy and uses it for the runner decision', () => {
+    const before = defaultState();
+    const policy = {
+      target: 'claude' as const,
+      model: 'claude-opus-5-5',
+      afterFailures: 2,
+      onResumeLimit: true,
+      onRequest: false,
+      maxDepth: 1,
     };
-    expect(escalationReason(setting, { attempts: 1, toolCalls: 0, failure: 'error' })).toBeNull();
-    expect(escalationReason(setting, { attempts: 2, toolCalls: 0, failure: 'error' })).toBe(
-      'repeated failure',
+    const changes = [{ agentId: 1, values: { escalation: policy } }];
+    const preview = changedRows([agent], [], before, before, changes);
+    expect(preview[0]?.after.cells.escalation).toEqual({ value: policy, source: 'own' });
+    expect(preview[0]?.changes).toContainEqual({
+      column: 'escalation',
+      before: resolveRow(agent, [], before).cells.escalation,
+      after: { value: policy, source: 'own' },
+    });
+    const run = {
+      trigger: 'manual',
+      continuedFromRunId: null,
+      agentId: 1,
+      projectId: 1,
+      issueId: null,
+      attempts: 1,
+      failures: 1,
+      error: 'Tests failed',
+    };
+    expect(failureDecision(policy, run)).toBeNull();
+    expect(failureDecision(policy, { ...run, failures: 2 })?.model).toBe('claude-opus-5-5');
+    expect(failureDecision(policy, { ...run, error: 'Reached resume limit' })?.reason).toBe(
+      'resume-limit',
     );
-    expect(escalationReason(setting, { attempts: 1, toolCalls: 12, failure: 'loop' })).toBe(
-      'stalled',
+    expect(failureDecision({ ...policy, maxDepth: 0 }, { ...run, failures: 2 })).toBeNull();
+  });
+
+  it('uses schema and project policies and rejects old or invalid fields', () => {
+    const state = defaultState();
+    expect(resolveRow(agent, [], state).cells.escalation).toEqual({
+      source: 'schema',
+      value: {
+        target: 'codex',
+        model: 'gpt-6.1-sol',
+        afterFailures: 2,
+        onResumeLimit: true,
+        onRequest: true,
+        maxDepth: 1,
+      },
+    });
+    state.projects[1] = 'nur-claude';
+    const cloud = resolveRow(agent, [membership(1)], state).cells.escalation;
+    expect(cloud).toEqual({
+      source: 'project',
+      value: {
+        target: 'claude',
+        model: 'claude-opus-5-5',
+        afterFailures: 0,
+        onResumeLimit: false,
+        onRequest: false,
+        maxDepth: 0,
+      },
+    });
+    for (const patch of [
+      { afterFailures: 6 },
+      { afterFailures: -1 },
+      { afterFailures: 1.5 },
+      { maxDepth: 2 },
+      { target: 'agent:1' },
+      { model: 'bad model' },
+      { stalledSteps: 12 },
+    ]) {
+      expect(() =>
+        changedRows([agent], [], state, state, [
+          {
+            agentId: 1,
+            values: { escalation: { ...cloud.value, ...patch } as typeof cloud.value },
+          },
+        ]),
+      ).toThrow();
+    }
+    for (const afterFailures of [0, 5])
+      expect(
+        changedRows([agent], [], state, state, [
+          { agentId: 1, values: { escalation: { ...cloud.value, afterFailures } } },
+        ]),
+      ).toHaveLength(1);
+  });
+
+  it('migrates stored schemas, history and owner values without retaining the old triggers', () => {
+    const old = {
+      target: 'runtime:claude/claude-opus-5-5',
+      failures: 3,
+      stalledSteps: 12,
+      onRequest: false,
+    };
+    const expected = {
+      target: 'claude',
+      model: 'claude-opus-5-5',
+      afterFailures: 3,
+      onResumeLimit: true,
+      onRequest: false,
+      maxDepth: 1,
+    };
+    expect(migrateEscalationValue(old)).toEqual(expected);
+    expect(migrateEscalationValue(old, { ...expected, afterFailures: 1 })).toEqual({
+      ...expected,
+      afterFailures: 1,
+    });
+    expect(() => migrateEscalationValue({ ...old, target: 'agent:7' })).toThrow(
+      'explicit Claude or Codex policy',
     );
-    expect(escalationReason(setting, { attempts: 0, toolCalls: 0, failure: 'request' })).toBe(
-      'requested',
-    );
+    const state = defaultState();
+    Object.assign(state.schemas['nur-lokal']!.roles.coder!, { escalation: old });
+    state.history.push({ ...structuredClone(state), revision: 0 });
+    const migrated = migrateSchemaEscalations(state);
+    expect(migrated.schemas['nur-lokal']!.roles.coder!.escalation).toEqual(expected);
+    expect(migrated.history[0]?.schemas['nur-lokal']!.roles.coder!.escalation).toEqual(expected);
+    expect(migrateSchemaEscalations(migrated)).toEqual(migrated);
     expect(
-      escalationReason(
-        { ...setting, onRequest: false },
-        { attempts: 0, toolCalls: 0, failure: 'request' },
-      ),
-    ).toBeNull();
+      resolveRow({ ...agent, modelOverrides: { escalation: old } }, [], state).cells.escalation,
+    ).toEqual({ source: 'own', value: expected });
   });
 
   it('routes only measured NPU chat classes to the 2B model', () => {

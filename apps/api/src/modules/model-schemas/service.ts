@@ -10,6 +10,8 @@ import {
 import { and, desc, eq, sql } from 'drizzle-orm';
 import { isDeepStrictEqual } from 'node:util';
 import { HttpError } from '#shared/lib';
+import { normalizeAgentEscalation } from '#modules/agents/core/service';
+import { migrateSchemaEscalations, migrateEscalationValue } from './migration';
 import {
   COMBO_EVAL_CANDIDATES,
   MODEL_COLUMNS,
@@ -75,7 +77,11 @@ export function defaultState(): State {
 function stateOf(raw: unknown): State {
   if (!raw || typeof raw !== 'object') return defaultState();
   const value = raw as State;
-  return { ...defaultState(), ...value, schemas: { ...MODEL_TEMPLATES, ...value.schemas } };
+  return migrateSchemaEscalations({
+    ...defaultState(),
+    ...value,
+    schemas: { ...MODEL_TEMPLATES, ...value.schemas },
+  });
 }
 export async function readModelState(): Promise<State> {
   const [row] = await db
@@ -118,53 +124,34 @@ export async function initialAgentModel(input: {
     (!source || source.overrides.reasoning !== undefined)
   )
     own.reasoning = input.runtimePolicy.reasoningEffort;
-  const explicitEscalation = (input.runtimePolicy?.helena as Record<string, unknown> | undefined)
-    ?.escalation as Record<string, unknown> | undefined;
+  const explicitEscalation = input.runtimePolicy?.escalation;
   if (explicitEscalation && (!source || source.overrides.escalation !== undefined)) {
-    own.escalation = {
-      target: explicitEscalation.target ?? null,
-      failures: explicitEscalation.onFailure ? 1 : 0,
-      stalledSteps: 0,
-      onRequest: explicitEscalation.mode !== 'never',
-    };
+    own.escalation = normalizeAgentEscalation(explicitEscalation);
   }
   return {
     role,
     overrides: own,
     model: (own.model as string | undefined) ?? values.model,
-    runtimePolicy: projectedPolicy(
-      input.runtimePolicy ?? {},
-      {
-        ...values,
-        runtime: (own.runtime as ModelValues['runtime']) ?? values.runtime,
-        reasoning: (own.reasoning as ModelValues['reasoning']) ?? values.reasoning,
-      },
-      own.escalation !== undefined,
-    ),
+    runtimePolicy: projectedPolicy(input.runtimePolicy ?? {}, {
+      ...values,
+      runtime: (own.runtime as ModelValues['runtime']) ?? values.runtime,
+      reasoning: (own.reasoning as ModelValues['reasoning']) ?? values.reasoning,
+      escalation: (own.escalation as ModelValues['escalation']) ?? values.escalation,
+    }),
   };
 }
 function projectedPolicy(
   policy: Record<string, unknown>,
   values: ModelValues,
-  preserveEscalation = false,
 ): Record<string, unknown> {
-  const helena = (policy.helena ?? {}) as Record<string, unknown>;
+  const helena = { ...((policy.helena ?? {}) as Record<string, unknown>) };
+  delete helena.escalation;
   return {
     ...policy,
+    ...(policy.helena && { helena }),
     runtime: values.runtime,
     reasoningEffort: values.reasoning,
-    ...(values.runtime === 'helena' &&
-      !preserveEscalation && {
-        helena: {
-          ...helena,
-          escalation: {
-            ...(helena.escalation as Record<string, unknown> | undefined),
-            mode: values.escalation.target ? 'auto' : 'never',
-            target: values.escalation.target,
-            onFailure: values.escalation.failures > 0,
-          },
-        },
-      }),
+    escalation: normalizeAgentEscalation(values.escalation),
   };
 }
 async function validateSchema(schema: ModelSchema) {
@@ -270,21 +257,8 @@ function validateValues(value: Partial<ModelValues>) {
   if (value.escalation !== undefined) {
     const e = value.escalation;
     if (!e || typeof e !== 'object') throw new HttpError(400, 'Invalid escalation setting');
-    if (
-      e.target !== null &&
-      !/^(agent:[1-9]\d*|runtime:(claude|codex)(\/[A-Za-z0-9._:-]{1,80})?)$/.test(e.target)
-    )
-      throw new HttpError(400, 'Invalid escalation target');
-    if (
-      !Number.isInteger(e.failures) ||
-      e.failures < 0 ||
-      e.failures > 20 ||
-      !Number.isInteger(e.stalledSteps) ||
-      e.stalledSteps < 0 ||
-      e.stalledSteps > 100 ||
-      typeof e.onRequest !== 'boolean'
-    )
-      throw new HttpError(400, 'Invalid escalation trigger');
+    if (!isDeepStrictEqual(e, normalizeAgentEscalation(e)))
+      throw new HttpError(400, 'Invalid escalation policy');
   }
 }
 async function inventory(teamId?: number) {
@@ -336,7 +310,14 @@ export function resolveRow(row: Row, memberships: Membership[], state: State) {
     };
   };
   for (const key of MODEL_COLUMNS) {
-    const own = row.modelOverrides?.[key];
+    const raw = row.modelOverrides?.[key];
+    const own =
+      key === 'escalation' && raw != null
+        ? migrateEscalationValue(
+            raw,
+            (row.runtimePolicy as { escalation?: unknown } | null)?.escalation,
+          )
+        : raw;
     Object.assign(cells, {
       [key]: {
         value: own ?? base[key],
@@ -407,12 +388,6 @@ export async function modelMatrix(teamId?: number, projectId?: number) {
     })),
   };
 }
-export async function agentEscalation(agentId: number) {
-  const state = await readModelState();
-  const { agents, memberships } = await inventory();
-  const agent = agents.find((entry) => entry.id === agentId);
-  return agent ? resolveRow(agent, memberships, state).cells.escalation.value : null;
-}
 export async function agentBrowserMode(agentId: number) {
   const state = await readModelState();
   const { agents, memberships } = await inventory();
@@ -434,11 +409,7 @@ function projectionOf(agent: Row, memberships: Membership[], state: State) {
   ) as ModelValues;
   return {
     model: ['command', 'webhook'].includes(cells.runtime.value) ? agent.model : cells.model.value,
-    runtimePolicy: projectedPolicy(
-      agent.runtimePolicy as Record<string, unknown>,
-      values,
-      cells.escalation.source === 'own',
-    ),
+    runtimePolicy: projectedPolicy(agent.runtimePolicy as Record<string, unknown>, values),
   };
 }
 export async function modelProjectionDrift() {
@@ -631,9 +602,6 @@ export async function applyMatrix(patch: MatrixPatch) {
       const policy = projectedPolicy(
         entry.row.runtimePolicy as Record<string, unknown>,
         Object.fromEntries(MODEL_COLUMNS.map((key) => [key, cells[key].value])) as ModelValues,
-        entry.before.cells.escalation.source === 'own' &&
-          JSON.stringify(entry.before.cells.escalation.value) ===
-            JSON.stringify(cells.escalation.value),
       );
       const updated = await tx
         .update(aiAgent)
