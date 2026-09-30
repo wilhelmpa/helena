@@ -1,5 +1,5 @@
 import { Elysia, t } from 'elysia';
-import { db, organizationDepartment } from '@repo/db';
+import { db, organizationDepartment, organizationGoal } from '@repo/db';
 import { and, eq } from 'drizzle-orm';
 import { authContext } from '#shared/auth-context';
 import { guards } from '#shared/guards';
@@ -230,6 +230,52 @@ export const organizationRoutes = new Elysia({
       teamManager: true,
       response: { 200: GoalResponse, ...commonErrors },
       detail: { summary: 'Update an organization goal' },
+    },
+  )
+  .get(
+    '/teams/:teamId/organization/goals/:goalId/budgets',
+    async ({ membership, params }) => {
+      const [goal] = await db
+        .select({ id: organizationGoal.id })
+        .from(organizationGoal)
+        .where(
+          and(
+            eq(organizationGoal.id, params.goalId),
+            eq(organizationGoal.teamId, membership.teamId),
+          ),
+        );
+      if (!goal) throw new HttpError(404, 'Goal not found');
+      return budgetStatuses({ goalIds: [goal.id] });
+    },
+    {
+      params: organizationGoalParams,
+      teamManager: true,
+      response: { 200: t.Array(BudgetStatusSchema), ...commonErrors },
+      detail: { summary: 'Get goal budgets and consumption' },
+    },
+  )
+  .put(
+    '/teams/:teamId/organization/goals/:goalId/budgets',
+    async ({ membership, params, body, user }) => {
+      const [goal] = await db
+        .select({ id: organizationGoal.id })
+        .from(organizationGoal)
+        .where(
+          and(
+            eq(organizationGoal.id, params.goalId),
+            eq(organizationGoal.teamId, membership.teamId),
+          ),
+        );
+      if (!goal) throw new HttpError(404, 'Goal not found');
+      await setBudgets(membership.teamId, { goalId: goal.id }, body.budgets, requireUser(user).id);
+      return budgetStatuses({ goalIds: [goal.id] });
+    },
+    {
+      params: organizationGoalParams,
+      body: budgetsBody,
+      teamManager: true,
+      response: { 200: t.Array(BudgetStatusSchema), ...commonErrors },
+      detail: { summary: 'Set goal budgets' },
     },
   )
   .delete(

@@ -1576,6 +1576,13 @@
       "when": 1790727028773,
       "tag": "0225_volition_catalog",
       "breakpoints": true
+    },
+    {
+      "idx": 226,
+      "version": "7",
+      "when": 1790727982174,
+      "tag": "0226_budget_goal_week",
+      "breakpoints": true
     }
   ]
 }

@@ -14,8 +14,8 @@ import {
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { user } from './auth';
-import { agentChatMessage, agentRun, aiAgent, approvalRequest, project, team } from './app';
-import { organizationDepartment } from './organization';
+import { agentChatMessage, agentRun, aiAgent, approvalRequest, issue, project, team } from './app';
+import { organizationDepartment, organizationGoal } from './organization';
 
 // Helena's Autopilot (docs/helena-decisions/policy-engine.md): the price table the cost of
 // a model call is estimated from, the budgets that stop agents, and the log of every
@@ -62,10 +62,9 @@ export const helenaModelPrice = pgTable(
   ],
 );
 
-// A budget of one agent or one project: tokens, euros (estimated from the price table) or
-// seconds of work, per UTC day or month. At 80 % the owner is told once per period; at
-// 100 % the agent (or the project's work) stops and the owner gets a card in Freigaben to
-// raise the budget or let the work continue once.
+// A budget of one task, agent, project, goal or department: tokens, euros or seconds of work
+// per UTC day, week or month. At 80 % work is throttled; at 100 % new work stops and
+// the owner gets an approval card.
 export const helenaBudget = pgTable(
   'helena_budget',
   {
@@ -74,13 +73,15 @@ export const helenaBudget = pgTable(
       .notNull()
       .references(() => team.id, { onDelete: 'cascade' }),
     agentId: integer('agent_id').references(() => aiAgent.id, { onDelete: 'cascade' }),
+    issueId: integer('issue_id').references(() => issue.id, { onDelete: 'cascade' }),
     projectId: integer('project_id').references(() => project.id, { onDelete: 'cascade' }),
     departmentId: integer('department_id').references(() => organizationDepartment.id, {
       onDelete: 'cascade',
     }),
+    goalId: integer('goal_id').references(() => organizationGoal.id, { onDelete: 'cascade' }),
     // 'tokens', 'cost' (euros) or 'time' (seconds).
     metric: text('metric').notNull(),
-    // 'day' or 'month', in UTC.
+    // 'day', 'week' or 'month', in UTC.
     period: text('period').notNull(),
     limitValue: numeric('limit_value', { precision: 18, scale: 4, mode: 'number' }).notNull(),
     // The start of the period whose 80 % warning went out, and of the period in which the
@@ -99,20 +100,26 @@ export const helenaBudget = pgTable(
   (t) => [
     check(
       'helena_budget_target_check',
-      sql`((${t.agentId} IS NOT NULL)::int + (${t.projectId} IS NOT NULL)::int + (${t.departmentId} IS NOT NULL)::int) = 1`,
+      sql`((${t.agentId} IS NOT NULL)::int + (${t.issueId} IS NOT NULL)::int + (${t.projectId} IS NOT NULL)::int + (${t.departmentId} IS NOT NULL)::int + (${t.goalId} IS NOT NULL)::int) = 1`,
     ),
     check('helena_budget_metric_check', sql`${t.metric} IN ('tokens', 'cost', 'time')`),
-    check('helena_budget_period_check', sql`${t.period} IN ('day', 'month')`),
+    check('helena_budget_period_check', sql`${t.period} IN ('day', 'week', 'month')`),
     check('helena_budget_limit_check', sql`${t.limitValue} > 0`),
     uniqueIndex('helena_budget_agent_uq')
       .on(t.agentId, t.metric, t.period)
       .where(sql`${t.agentId} IS NOT NULL`),
+    uniqueIndex('helena_budget_issue_uq')
+      .on(t.issueId, t.metric, t.period)
+      .where(sql`${t.issueId} IS NOT NULL`),
     uniqueIndex('helena_budget_project_uq')
       .on(t.projectId, t.metric, t.period)
       .where(sql`${t.projectId} IS NOT NULL`),
     uniqueIndex('helena_budget_department_uq')
       .on(t.departmentId, t.metric, t.period)
       .where(sql`${t.departmentId} IS NOT NULL`),
+    uniqueIndex('helena_budget_goal_uq')
+      .on(t.goalId, t.metric, t.period)
+      .where(sql`${t.goalId} IS NOT NULL`),
   ],
 );
 

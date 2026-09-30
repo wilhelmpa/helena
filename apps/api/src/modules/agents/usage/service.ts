@@ -55,7 +55,8 @@ export async function recordUsage(entry: {
     cacheWriteTokens: count(spend.cacheWriteTokens),
     reasoningTokens: count(spend.reasoningTokens),
   };
-  if (row.inputTokens + row.outputTokens === 0) return;
+  if (row.inputTokens + row.outputTokens === 0 && !(spend.durationMs && spend.durationMs > 0))
+    return;
   await db.insert(agentUsage).values({
     agentId: entry.agentId,
     projectId: entry.projectId,

@@ -196,7 +196,7 @@ export async function fireDueAgentHeartbeats(now = new Date()): Promise<number> 
         candidate &&
         !throttle &&
         current.heartbeatIntervalMinutes != null &&
-        (await heartbeatBudgetThrottled(id, candidate.projectId))
+        (await heartbeatBudgetThrottled(id, candidate.projectId, candidate.issueId))
       ) {
         await tx
           .update(aiAgent)

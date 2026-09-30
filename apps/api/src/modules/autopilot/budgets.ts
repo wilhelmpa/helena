@@ -1,11 +1,16 @@
 import {
   db,
+  agentRun,
   aiAgent,
   approvalRequest,
+  helenaGoalTask,
+  helenaProjectGoalLink,
   helenaBudget,
+  issue,
   notification,
   organizationAgentAssignment,
   organizationDepartment,
+  organizationGoal,
   organizationProjectAssignment,
   project,
   projectMember,
@@ -14,6 +19,7 @@ import {
 import { and, eq, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
 import { createComment } from '#modules/issues/activity';
+import { issueWhy } from '#modules/project-goals/ladder';
 import {
   metricValue,
   periodStart,
@@ -23,12 +29,9 @@ import {
   type UsageTotals,
 } from './usage';
 
-// Budgets of agents and projects (Helena's Autopilot): tokens, euros and seconds of work per
-// UTC day or month. At 80 % the owner of the budget is told once per period, on the task
-// the work was for. At 100 % the work stops cleanly: an agent budget pauses the agent, a
-// project budget holds the project's runs and chats, and the owner gets a card in
-// Freigaben to raise the budget or let the work continue once. Replaces the token ceilings
-// of governance.ts, whose values the migration copied here.
+// Budgets of tasks, agents, projects, goals and departments: tokens, euros and seconds per UTC
+// day, week or month. At 80 % heartbeats slow down; at 100 % new work stops and the
+// owner gets an approval card.
 
 type Database = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -38,10 +41,12 @@ export const WARN_RATIO = 0.8;
 
 export interface BudgetStatus {
   id: number;
-  scope: 'agent' | 'project' | 'department';
+  scope: 'issue' | 'agent' | 'project' | 'goal' | 'department';
   agentId: number | null;
+  issueId: number | null;
   projectId: number | null;
   departmentId: number | null;
+  goalId: number | null;
   metric: BudgetMetric;
   period: BudgetPeriod;
   limit: number;
@@ -52,6 +57,7 @@ export interface BudgetStatus {
   periodStart: string;
   warned: boolean;
   reached: boolean;
+  throttled: boolean;
   // Runs that may still start past the limit in this period ("Einmalig fortsetzen"), and
   // the runs that started on it, which finish unhindered.
   graceRuns: number;
@@ -73,10 +79,21 @@ function toStatus(row: BudgetRow, usage: UsageTotals | undefined): BudgetStatus 
   const limit = row.limitValue;
   return {
     id: row.id,
-    scope: row.agentId != null ? 'agent' : row.projectId != null ? 'project' : 'department',
+    scope:
+      row.issueId != null
+        ? 'issue'
+        : row.agentId != null
+          ? 'agent'
+          : row.projectId != null
+            ? 'project'
+            : row.goalId != null
+              ? 'goal'
+              : 'department',
     agentId: row.agentId,
+    issueId: row.issueId,
     projectId: row.projectId,
     departmentId: row.departmentId,
+    goalId: row.goalId,
     metric,
     period,
     limit,
@@ -86,67 +103,87 @@ function toStatus(row: BudgetRow, usage: UsageTotals | undefined): BudgetStatus 
     periodStart: start.toISOString(),
     warned: sameStart(row.warnedFor, start),
     reached: used >= limit,
+    throttled: limit > 0 && used >= limit * WARN_RATIO && used < limit,
     graceRuns: sameStart(row.graceFor, start) ? row.graceRuns : 0,
     graceRunIds: sameStart(row.graceFor, start) ? (row.graceRunIds ?? []) : [],
     unpricedTokens: metric === 'cost' ? (usage?.unpricedTokens ?? 0) : 0,
   };
 }
 
-// The status of every budget of the given agents and projects.
+// The status of budgets for the requested scopes.
 export async function budgetStatuses(targets: {
   agentIds?: number[];
+  issueIds?: number[];
   projectIds?: number[];
   departmentIds?: number[];
+  goalIds?: number[];
 }): Promise<BudgetStatus[]> {
   const agentIds = targets.agentIds ?? [];
+  const issueIds = targets.issueIds ?? [];
   const projectIds = targets.projectIds ?? [];
   const departmentIds = targets.departmentIds ?? [];
-  if (agentIds.length === 0 && projectIds.length === 0 && departmentIds.length === 0) return [];
+  const goalIds = targets.goalIds ?? [];
+  if (
+    issueIds.length === 0 &&
+    agentIds.length === 0 &&
+    projectIds.length === 0 &&
+    departmentIds.length === 0 &&
+    goalIds.length === 0
+  )
+    return [];
   const rows = await db
     .select()
     .from(helenaBudget)
     .where(
       or(
         agentIds.length > 0 ? inArray(helenaBudget.agentId, agentIds) : undefined,
+        issueIds.length > 0 ? inArray(helenaBudget.issueId, issueIds) : undefined,
         projectIds.length > 0 ? inArray(helenaBudget.projectId, projectIds) : undefined,
         departmentIds.length > 0 ? inArray(helenaBudget.departmentId, departmentIds) : undefined,
+        goalIds.length > 0 ? inArray(helenaBudget.goalId, goalIds) : undefined,
       ),
     )
     .orderBy(helenaBudget.id);
   if (rows.length === 0) return [];
-  const monthStart = periodStart('month');
-  const dayStart = periodStart('day');
   const wantAgents = [...new Set(rows.flatMap((r) => (r.agentId != null ? [r.agentId] : [])))];
+  const wantIssues = [...new Set(rows.flatMap((r) => (r.issueId != null ? [r.issueId] : [])))];
   const wantProjects = [
     ...new Set(rows.flatMap((r) => (r.projectId != null ? [r.projectId] : []))),
   ];
   const wantDepartments = [
     ...new Set(rows.flatMap((r) => (r.departmentId != null ? [r.departmentId] : []))),
   ];
-  const needsDay = rows.some((r) => r.period === 'day');
-  const [agentMonth, agentDay, projectMonth, projectDay, departmentMonth, departmentDay] =
-    await Promise.all([
-      usageSince('agent', wantAgents, monthStart),
-      needsDay ? usageSince('agent', wantAgents, dayStart) : new Map<number, UsageTotals>(),
-      usageSince('project', wantProjects, monthStart),
-      needsDay ? usageSince('project', wantProjects, dayStart) : new Map<number, UsageTotals>(),
-      usageSince('department', wantDepartments, monthStart),
-      needsDay
-        ? usageSince('department', wantDepartments, dayStart)
-        : new Map<number, UsageTotals>(),
-    ]);
+  const wantGoals = [...new Set(rows.flatMap((r) => (r.goalId != null ? [r.goalId] : [])))];
+  const scopes = {
+    issue: wantIssues,
+    agent: wantAgents,
+    project: wantProjects,
+    goal: wantGoals,
+    department: wantDepartments,
+  } as const;
+  const usage = new Map<string, Map<number, UsageTotals>>();
+  await Promise.all(
+    (Object.entries(scopes) as [keyof typeof scopes, number[]][]).flatMap(([scope, ids]) =>
+      (['day', 'week', 'month'] as BudgetPeriod[])
+        .filter((period) => ids.length > 0 && rows.some((row) => row.period === period))
+        .map(async (period) => {
+          usage.set(`${scope}:${period}`, await usageSince(scope, ids, periodStart(period)));
+        }),
+    ),
+  );
   return rows.map((row) => {
-    const byAgent = row.agentId != null;
-    const byProject = row.projectId != null;
-    const usage =
-      row.period === 'day'
-        ? (byAgent ? agentDay : byProject ? projectDay : departmentDay).get(
-            (byAgent ? row.agentId : byProject ? row.projectId : row.departmentId)!,
-          )
-        : (byAgent ? agentMonth : byProject ? projectMonth : departmentMonth).get(
-            (byAgent ? row.agentId : byProject ? row.projectId : row.departmentId)!,
-          );
-    return toStatus(row, usage);
+    const scope =
+      row.issueId != null
+        ? 'issue'
+        : row.agentId != null
+          ? 'agent'
+          : row.projectId != null
+            ? 'project'
+            : row.goalId != null
+              ? 'goal'
+              : 'department';
+    const id = row.issueId ?? row.agentId ?? row.projectId ?? row.goalId ?? row.departmentId!;
+    return toStatus(row, usage.get(`${scope}:${row.period}`)?.get(id));
   });
 }
 
@@ -174,14 +211,24 @@ export function budgetReason(
   projectKey?: string | null,
   departmentName?: string | null,
 ): string {
-  const periodText = status.period === 'day' ? 'Daily' : 'Monthly';
+  const periodText =
+    status.period === 'day' ? 'Daily' : status.period === 'week' ? 'Weekly' : 'Monthly';
   const of =
-    status.scope === 'project' && projectKey
-      ? ` of project ${projectKey}`
-      : status.scope === 'department' && departmentName
-        ? ` of department ${departmentName}`
-        : '';
-  const when = status.period === 'day' ? 'today (UTC)' : 'this month (UTC)';
+    status.scope === 'issue'
+      ? ` of task #${status.issueId}`
+      : status.scope === 'project' && projectKey
+        ? ` of project ${projectKey}`
+        : status.scope === 'goal'
+          ? ` of goal #${status.goalId}`
+          : status.scope === 'department' && departmentName
+            ? ` of department ${departmentName}`
+            : '';
+  const when =
+    status.period === 'day'
+      ? 'today (UTC)'
+      : status.period === 'week'
+        ? 'this week (UTC)'
+        : 'this month (UTC)';
   return (
     `${BUDGET_REASON_PREFIX}: ${periodText.toLowerCase()} ${METRIC_TEXT[status.metric]} budget${of}, ` +
     `${usedOf(status.metric, status.used, status.limit)} used ${when}.`
@@ -281,6 +328,56 @@ async function departmentOfWork(
   return row?.id == null ? null : { id: row.id, name: row.name! };
 }
 
+async function goalIdsOfIssue(issueId: number | null): Promise<number[]> {
+  if (issueId == null) return [];
+  const [task] = await db
+    .select({ parentId: issue.parentId, initiativeId: issue.initiativeId })
+    .from(issue)
+    .where(eq(issue.id, issueId));
+  if (!task) return [];
+  const [direct] = await db
+    .select({ goalId: helenaGoalTask.goalId })
+    .from(helenaGoalTask)
+    .where(eq(helenaGoalTask.issueId, issueId));
+  const [parent] =
+    direct || task.parentId == null
+      ? []
+      : await db
+          .select({ goalId: helenaGoalTask.goalId })
+          .from(helenaGoalTask)
+          .where(eq(helenaGoalTask.issueId, task.parentId));
+  const [initiative] =
+    direct || parent || task.initiativeId == null
+      ? []
+      : await db
+          .select({ goalId: helenaProjectGoalLink.goalId })
+          .from(helenaProjectGoalLink)
+          .where(eq(helenaProjectGoalLink.initiativeId, task.initiativeId));
+  const goalId =
+    direct?.goalId ?? parent?.goalId ?? initiative?.goalId ?? (await issueWhy(issueId))?.goal?.id;
+  if (goalId == null) return [];
+  const ids: number[] = [];
+  let current: number | null = goalId;
+  while (current != null && !ids.includes(current) && ids.length < 32) {
+    ids.push(current);
+    const [goal]: { parentId: number | null }[] = await db
+      .select({ parentId: organizationGoal.parentGoalId })
+      .from(organizationGoal)
+      .where(eq(organizationGoal.id, current));
+    current = goal?.parentId ?? null;
+  }
+  return ids;
+}
+
+async function issueIdOfRun(runId: number | null | undefined): Promise<number | null> {
+  if (runId == null) return null;
+  const [run] = await db
+    .select({ issueId: agentRun.issueId })
+    .from(agentRun)
+    .where(eq(agentRun.id, runId));
+  return run?.issueId ?? null;
+}
+
 // Pauses the agent unless it already is. True when this call paused it.
 export async function pauseForBudget(
   agentId: number,
@@ -355,8 +452,10 @@ async function fileBudgetCard(
       used: status.used,
       periodStart: status.periodStart,
       agentId: status.agentId,
+      issueId: status.issueId,
       projectId: status.projectId,
       departmentId: status.departmentId,
+      goalId: status.goalId,
     },
   });
   if (issueId != null) {
@@ -386,20 +485,20 @@ async function fileBudgetCard(
   }
 }
 
-// The budgets of the agent and the project that hold its work back now: reached, and not
-// lifted for one more run. Warns at 80 % and files the card at 100 %, each once per period.
-// Work outside a project (a Home chat) has only the agent's budgets, and no project to file
-// a card in: the agent is paused, and its card waits for work in a project.
+// Warns at 80 % and files a card for every budget reached at 100 %, once per period.
 export async function enforceBudgets(
   agentId: number,
   projectId: number | null,
   issueId: number | null,
 ): Promise<string | null> {
   const department = await departmentOfWork(agentId, projectId);
+  const goalIds = await goalIdsOfIssue(issueId);
   const statuses = await budgetStatuses({
+    issueIds: issueId == null ? [] : [issueId],
     agentIds: [agentId],
     projectIds: projectId == null ? [] : [projectId],
     departmentIds: department == null ? [] : [department.id],
+    goalIds,
   });
   if (statuses.length === 0) return null;
   const agent = await agentFacts(agentId);
@@ -420,8 +519,8 @@ export async function enforceBudgets(
       actorUserId: agent.userId,
       body: [
         ...handles,
-        `Heads-up: ${percent} % of my ${status.period === 'day' ? 'daily' : 'monthly'} ` +
-          `${METRIC_TEXT[status.metric]} budget${status.scope === 'project' && key ? ` of project ${key}` : status.scope === 'department' && department ? ` of department ${department.name}` : ''} ` +
+        `Heads-up: ${percent} % of my ${status.period === 'day' ? 'daily' : status.period === 'week' ? 'weekly' : 'monthly'} ` +
+          `${METRIC_TEXT[status.metric]} budget${status.scope === 'issue' ? ` of task #${status.issueId}` : status.scope === 'project' && key ? ` of project ${key}` : status.scope === 'goal' ? ` of goal #${status.goalId}` : status.scope === 'department' && department ? ` of department ${department.name}` : ''} ` +
           `is used (${usedOf(status.metric, status.used, status.limit)}). ` +
           'I stop taking new work when it is used up.',
       ].join(' '),
@@ -452,9 +551,20 @@ export async function enforceBudgets(
     return reason;
   }
   const { paused, filed } = await db.transaction(async (tx) => {
-    const filed = await claimOnce(first.id, 'reachedFor', new Date(first.periodStart), tx);
+    let filed = false;
+    for (const status of blocking) {
+      if (!(await claimOnce(status.id, 'reachedFor', new Date(status.periodStart), tx))) continue;
+      await fileBudgetCard(
+        status,
+        agentId,
+        noticeProjectId,
+        issueId,
+        budgetReason(status, key, department?.name),
+        tx,
+      );
+      filed = true;
+    }
     const paused = first.scope === 'agent' ? await pauseForBudget(agentId, reason, tx) : false;
-    if (filed) await fileBudgetCard(first, agentId, noticeProjectId, issueId, reason, tx);
     return { paused, filed };
   });
   if ((paused || filed) && issueId != null) {
@@ -482,14 +592,18 @@ export async function enforceBudgets(
 export async function heartbeatBudgetThrottled(
   agentId: number,
   projectId: number | null,
+  issueId: number | null = null,
 ): Promise<boolean> {
   const department = projectId == null ? null : await departmentOfWork(agentId, projectId);
+  const goalIds = await goalIdsOfIssue(issueId);
   const statuses = await budgetStatuses({
+    issueIds: issueId == null ? [] : [issueId],
     agentIds: [agentId],
     projectIds: projectId == null ? [] : [projectId],
     departmentIds: department == null ? [] : [department.id],
+    goalIds,
   });
-  return statuses.some((status) => !status.reached && status.ratio >= WARN_RATIO);
+  return statuses.some((status) => status.throttled);
 }
 
 // A claimed run that started past a used-up budget on "continue once": the grace is spent
@@ -500,10 +614,14 @@ export async function useGrace(
   runId: number,
 ): Promise<boolean> {
   const department = await departmentOfWork(agentId, projectId);
+  const issueId = await issueIdOfRun(runId);
+  const goalIds = await goalIdsOfIssue(issueId);
   const statuses = await budgetStatuses({
+    issueIds: issueId == null ? [] : [issueId],
     agentIds: [agentId],
     projectIds: [projectId],
     departmentIds: department == null ? [] : [department.id],
+    goalIds,
   });
   const exhausted = new Error('No budget grace remains');
   try {
@@ -587,7 +705,7 @@ export async function heldProjects(projectIds: number[], agentId?: number): Prom
   return [...held];
 }
 
-// Whether a budget of the agent or of the project is used up for good right now. The
+// Whether an applicable budget is used up for good right now. The
 // policy engine denies every action but reading and reporting then.
 export async function budgetExhausted(
   agentId: number | null,
@@ -595,10 +713,14 @@ export async function budgetExhausted(
   runId?: number | null,
 ): Promise<BudgetStatus | null> {
   const department = agentId == null ? null : await departmentOfWork(agentId, projectId);
+  const issueId = await issueIdOfRun(runId);
+  const goalIds = await goalIdsOfIssue(issueId);
   const statuses = await budgetStatuses({
+    issueIds: issueId == null ? [] : [issueId],
     agentIds: agentId == null ? [] : [agentId],
     projectIds: projectId == null ? [] : [projectId],
     departmentIds: department == null ? [] : [department.id],
+    goalIds,
   });
   return (
     statuses.find(
@@ -614,7 +736,12 @@ export interface BudgetInput {
   limit: number | null;
 }
 
-export type BudgetTarget = { agentId: number } | { projectId: number } | { departmentId: number };
+export type BudgetTarget =
+  | { issueId: number }
+  | { agentId: number }
+  | { projectId: number }
+  | { goalId: number }
+  | { departmentId: number };
 
 // Sets the budgets named; the ones not named stay as they are. An agent whose budget
 // pause no longer holds takes work again, and a pending card of a budget that is no longer
@@ -627,11 +754,15 @@ export async function setBudgets(
 ): Promise<void> {
   for (const entry of entries) {
     const where = and(
-      'agentId' in target
-        ? eq(helenaBudget.agentId, target.agentId)
-        : 'projectId' in target
-          ? eq(helenaBudget.projectId, target.projectId)
-          : eq(helenaBudget.departmentId, target.departmentId),
+      'issueId' in target
+        ? eq(helenaBudget.issueId, target.issueId)
+        : 'agentId' in target
+          ? eq(helenaBudget.agentId, target.agentId)
+          : 'projectId' in target
+            ? eq(helenaBudget.projectId, target.projectId)
+            : 'goalId' in target
+              ? eq(helenaBudget.goalId, target.goalId)
+              : eq(helenaBudget.departmentId, target.departmentId),
       eq(helenaBudget.metric, entry.metric),
       eq(helenaBudget.period, entry.period),
     );
@@ -647,11 +778,15 @@ export async function setBudgets(
     if (updated.length === 0) {
       await db.insert(helenaBudget).values({
         teamId,
-        ...('agentId' in target
-          ? { agentId: target.agentId }
-          : 'projectId' in target
-            ? { projectId: target.projectId }
-            : { departmentId: target.departmentId }),
+        ...('issueId' in target
+          ? { issueId: target.issueId }
+          : 'agentId' in target
+            ? { agentId: target.agentId }
+            : 'projectId' in target
+              ? { projectId: target.projectId }
+              : 'goalId' in target
+                ? { goalId: target.goalId }
+                : { departmentId: target.departmentId }),
         metric: entry.metric,
         period: entry.period,
         limitValue: entry.limit,
@@ -668,11 +803,15 @@ export async function settleBudgets(
   deciderUserId: string | null,
 ): Promise<void> {
   const statuses = await budgetStatuses(
-    'agentId' in target
-      ? { agentIds: [target.agentId] }
-      : 'projectId' in target
-        ? { projectIds: [target.projectId] }
-        : { departmentIds: [target.departmentId] },
+    'issueId' in target
+      ? { issueIds: [target.issueId] }
+      : 'agentId' in target
+        ? { agentIds: [target.agentId] }
+        : 'projectId' in target
+          ? { projectIds: [target.projectId] }
+          : 'goalId' in target
+            ? { goalIds: [target.goalId] }
+            : { departmentIds: [target.departmentId] },
   );
   const open = await db
     .select({ id: approvalRequest.id, payload: approvalRequest.payload })
@@ -682,12 +821,16 @@ export async function settleBudgets(
     const budgetId = (card.payload as { budgetId?: number } | null)?.budgetId;
     const status = statuses.find((s) => s.id === budgetId);
     const belongs =
-      'agentId' in target
-        ? (card.payload as { agentId?: number | null })?.agentId === target.agentId
-        : 'projectId' in target
-          ? (card.payload as { projectId?: number | null })?.projectId === target.projectId
-          : (card.payload as { departmentId?: number | null })?.departmentId ===
-            target.departmentId;
+      'issueId' in target
+        ? (card.payload as { issueId?: number | null })?.issueId === target.issueId
+        : 'agentId' in target
+          ? (card.payload as { agentId?: number | null })?.agentId === target.agentId
+          : 'projectId' in target
+            ? (card.payload as { projectId?: number | null })?.projectId === target.projectId
+            : 'goalId' in target
+              ? (card.payload as { goalId?: number | null })?.goalId === target.goalId
+              : (card.payload as { departmentId?: number | null })?.departmentId ===
+                target.departmentId;
     if (!belongs) continue;
     if (status && status.reached && status.graceRuns === 0) continue;
     await db

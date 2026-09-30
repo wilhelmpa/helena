@@ -3,12 +3,16 @@ import {
   agentRun,
   agentUsage,
   aiAgent,
+  issue,
   organizationAgentAssignment,
+  organizationGoal,
   organizationProjectAssignment,
+  project,
 } from '@repo/db';
 import { and, eq, gte, inArray, isNotNull, sql, type SQL } from 'drizzle-orm';
 import { costOf } from '@helena/policy';
 import { price } from '#modules/model-prices/service';
+import { usageBy } from '#modules/agents/usage/service';
 
 // What agents spent, for the budgets: tokens, euros (estimated from the price table at read
 // time, so a price change applies to what was spent before) and seconds of work. The one
@@ -18,13 +22,17 @@ import { price } from '#modules/model-prices/service';
 // work while the ledger fills; once every run has its rows that part contributes nothing.
 
 export type BudgetMetric = 'tokens' | 'cost' | 'time';
-export type BudgetPeriod = 'day' | 'month';
+export type BudgetPeriod = 'day' | 'week' | 'month';
 
 // Days and months are UTC, as the token ceilings were.
 export function periodStart(period: BudgetPeriod, now = new Date()): Date {
-  return period === 'day'
-    ? new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
-    : new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const day = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  if (period === 'day') return day;
+  if (period === 'week') {
+    day.setUTCDate(day.getUTCDate() - ((day.getUTCDay() + 6) % 7));
+    return day;
+  }
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 }
 
 export interface UsageTotals {
@@ -77,14 +85,76 @@ async function addRows(totals: Map<number, UsageTotals>, rows: ModelRow[]): Prom
   }
 }
 
-// The usage of each of the given agents (or projects) since `since`.
+// The usage of each requested scope since `since`.
 export async function usageSince(
-  by: 'agent' | 'project' | 'department',
+  by: 'issue' | 'agent' | 'project' | 'goal' | 'department',
   ids: number[],
   since: Date,
 ): Promise<Map<number, UsageTotals>> {
   const totals = new Map<number, UsageTotals>();
   if (ids.length === 0) return totals;
+  if (by === 'issue') {
+    const issues = await db
+      .select({ id: issue.id, teamId: project.teamId })
+      .from(issue)
+      .innerJoin(project, eq(project.id, issue.projectId))
+      .where(inArray(issue.id, ids));
+    for (const teamId of new Set(issues.map((row) => row.teamId))) {
+      const rows = await usageBy({ teamId, from: since, to: new Date(Date.now() + 86_400_000) }, [
+        'issue',
+      ]);
+      for (const row of rows) {
+        if (row.issueId == null || !ids.includes(row.issueId)) continue;
+        const current = totals.get(row.issueId) ?? { ...ZERO };
+        const tokens = row.inputTokens + row.outputTokens;
+        totals.set(row.issueId, {
+          tokens: current.tokens + tokens,
+          cost: current.cost + (row.costEur ?? 0),
+          unpricedTokens: current.unpricedTokens + (row.costEur === null ? tokens : 0),
+          seconds: current.seconds + row.durationMs / 1000,
+        });
+      }
+    }
+    return totals;
+  }
+  if (by === 'goal') {
+    const goals = await db
+      .select({
+        id: organizationGoal.id,
+        teamId: organizationGoal.teamId,
+        parentId: organizationGoal.parentGoalId,
+      })
+      .from(organizationGoal);
+    const wanted = new Set(ids);
+    const byId = new Map(goals.map((goal) => [goal.id, goal]));
+    const teams = new Set(goals.filter((goal) => wanted.has(goal.id)).map((goal) => goal.teamId));
+    for (const teamId of teams) {
+      const rows = await usageBy({ teamId, from: since, to: new Date(Date.now() + 86_400_000) }, [
+        'goal',
+      ]);
+      for (const row of rows) {
+        let goalId = row.goalId;
+        const visited = new Set<number>();
+        while (goalId != null && !visited.has(goalId)) {
+          visited.add(goalId);
+          const goal = byId.get(goalId);
+          if (!goal || goal.teamId !== teamId) break;
+          if (wanted.has(goalId)) {
+            const current = totals.get(goalId) ?? { ...ZERO };
+            const tokens = row.inputTokens + row.outputTokens;
+            totals.set(goalId, {
+              tokens: current.tokens + tokens,
+              cost: current.cost + (row.costEur ?? 0),
+              unpricedTokens: current.unpricedTokens + (row.costEur === null ? tokens : 0),
+              seconds: current.seconds + row.durationMs / 1000,
+            });
+          }
+          goalId = goal.parentId;
+        }
+      }
+    }
+    return totals;
+  }
   const ledgerKey = sql<number>`${
     by === 'agent'
       ? agentUsage.agentId

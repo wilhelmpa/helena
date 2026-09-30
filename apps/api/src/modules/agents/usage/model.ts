@@ -1,4 +1,5 @@
 import { t } from 'elysia';
+import { BudgetStatusSchema } from '#modules/autopilot/model';
 
 const dimension = t.Union([
   t.Literal('issue'),
@@ -65,6 +66,16 @@ export const UsageResponse = t.Object({
       costEur: t.Nullable(t.Number()),
     }),
   ),
+});
+
+export const budgetSummaryQuery = t.Object({
+  period: t.Optional(t.Union([t.Literal('day'), t.Literal('week'), t.Literal('month')])),
+});
+
+export const BudgetSummaryResponse = t.Object({
+  period: t.Union([t.Literal('day'), t.Literal('week'), t.Literal('month')]),
+  usage: UsageResponse,
+  budgets: t.Array(BudgetStatusSchema),
 });
 
 export type UsageDimensionName = typeof dimension.static;

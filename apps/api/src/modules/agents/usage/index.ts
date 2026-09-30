@@ -1,4 +1,14 @@
 import { Elysia } from 'elysia';
+import {
+  aiAgent,
+  db,
+  helenaBudget,
+  issue,
+  organizationDepartment,
+  organizationGoal,
+  project,
+} from '@repo/db';
+import { and, eq, isNotNull } from 'drizzle-orm';
 import { guards } from '#shared/guards';
 import { authContext } from '#shared/auth-context';
 import { HttpError } from '#shared/lib';
@@ -6,8 +16,17 @@ import { commonErrors } from '#shared/responses';
 import { runsTeam } from '#modules/teams/service';
 import { memberProjectIds } from '../core/service';
 import { agentForPerson } from '../people-access';
-import { UsageResponse, teamParams, usageQuery, type UsageDimensionName } from './model';
+import {
+  BudgetSummaryResponse,
+  UsageResponse,
+  budgetSummaryQuery,
+  teamParams,
+  usageQuery,
+  type UsageDimensionName,
+} from './model';
 import { unpriced, usageBy, type UsageRow } from './service';
+import { budgetStatuses } from '#modules/autopilot/budgets';
+import { periodStart } from '#modules/autopilot/usage';
 
 const DIMENSIONS: UsageDimensionName[] = [
   'issue',
@@ -64,6 +83,66 @@ export const agentUsageRoutes = new Elysia({
 })
   .use(authContext)
   .use(guards)
+
+  .get(
+    '/teams/:teamId/budget-summary',
+    async ({ membership, query }) => {
+      const period = query.period ?? 'month';
+      const from = periodStart(period);
+      const to = new Date(Date.now() + DAY_MS);
+      const [rows, agents, projects, goals, departments, issues] = await Promise.all([
+        usageBy({ teamId: membership.teamId, from, to }, [
+          'issue',
+          'agent',
+          'project',
+          'goal',
+          'department',
+        ]),
+        db.select({ id: aiAgent.id }).from(aiAgent).where(eq(aiAgent.teamId, membership.teamId)),
+        db.select({ id: project.id }).from(project).where(eq(project.teamId, membership.teamId)),
+        db
+          .select({ id: organizationGoal.id })
+          .from(organizationGoal)
+          .where(eq(organizationGoal.teamId, membership.teamId)),
+        db
+          .select({ id: organizationDepartment.id })
+          .from(organizationDepartment)
+          .where(eq(organizationDepartment.teamId, membership.teamId)),
+        db
+          .select({ id: issue.id })
+          .from(helenaBudget)
+          .innerJoin(issue, eq(issue.id, helenaBudget.issueId))
+          .innerJoin(project, eq(project.id, issue.projectId))
+          .where(and(eq(project.teamId, membership.teamId), isNotNull(helenaBudget.issueId))),
+      ]);
+      return {
+        period,
+        usage: {
+          from: from.toISOString().slice(0, 10),
+          to: new Date(to.getTime() - DAY_MS).toISOString().slice(0, 10),
+          by: ['issue', 'agent', 'project', 'goal', 'department'] as UsageDimensionName[],
+          currency: 'EUR' as const,
+          unpriced: unpriced(rows),
+          total: sum(rows),
+          rows,
+        },
+        budgets: await budgetStatuses({
+          issueIds: issues.map((row) => row.id),
+          agentIds: agents.map((row) => row.id),
+          projectIds: projects.map((row) => row.id),
+          goalIds: goals.map((row) => row.id),
+          departmentIds: departments.map((row) => row.id),
+        }),
+      };
+    },
+    {
+      params: teamParams,
+      query: budgetSummaryQuery,
+      teamManager: true,
+      response: { 200: BudgetSummaryResponse, ...commonErrors },
+      detail: { summary: 'Read period costs and budgets for dashboard tiles' },
+    },
+  )
 
   .get(
     '/teams/:teamId/agent-usage',

@@ -321,6 +321,7 @@ export async function getOrganization(teamId: number, projectId?: number) {
       agentIds: agents.map((row) => row.id),
       projectIds: projects.map((row) => row.id),
       departmentIds: departments.map((row) => row.id),
+      goalIds: goals.map((row) => row.id),
     }),
   ]);
   const projectsByAgent = new Map<number, typeof agentProjects>();
@@ -340,6 +341,7 @@ export async function getOrganization(teamId: number, projectId?: number) {
     })),
     goals: goals.map((row) => ({
       ...row,
+      budgets: budgets.filter((budget) => budget.goalId === row.id),
       status: row.status as GoalStatus,
       createdAt: iso(row.createdAt),
       updatedAt: iso(row.updatedAt),
