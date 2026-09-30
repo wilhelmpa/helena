@@ -81,7 +81,7 @@
     "loadError": "Some items could not be loaded. Please refresh.",
     "loading": "Loading Inbox…",
     "empty": "Nothing is waiting for you right now.",
-    "toRead": "TO READ",
+    "toRead": "To read",
     "noCompletedRuns": "No completed runs yet.",
     "runCompleted": "{name} · Run completed",
     "tags": {

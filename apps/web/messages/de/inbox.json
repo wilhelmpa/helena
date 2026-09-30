@@ -81,7 +81,7 @@
     "loadError": "Einige Einträge konnten nicht geladen werden. Bitte aktualisieren.",
     "loading": "Inbox wird geladen …",
     "empty": "Gerade wartet nichts auf dich.",
-    "toRead": "ZUM LESEN",
+    "toRead": "Zum Lesen",
     "noCompletedRuns": "Noch keine erledigten Läufe.",
     "runCompleted": "{name} · Lauf erledigt",
     "tags": {

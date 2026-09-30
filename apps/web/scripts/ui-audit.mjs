@@ -301,13 +301,13 @@ function measureContent() {
       continue;
     if (
       el.matches(
-        `${BOX}, .ds-pill, .ds-button, .ds-segmented, [role=button], [role=tab], [role=switch], [data-slot^=input], [data-slot=textarea], [data-slot=select-trigger], .ds-field, .ds-dropzone, .board-card, .kanban-card`,
+        `${BOX}, .ds-pill, .ds-button, .ds-segmented, [role=button], [role=tab], [role=switch], [data-slot^=input], [data-slot=textarea], [data-slot=select-trigger], [role=group][class*='group/input-group'], .ds-field, .ds-dropzone, .board-card, .kanban-card`,
       )
     )
       continue;
     if (
       el.closest(
-        'button, [role=button], [data-slot^=input], .ds-pill, .ds-field, .ds-segmented, .ds-list-row, .kanban-card, .board-card, .ds-issue-list-box, .ds-work-table-card',
+        'button, [role=button], [data-slot^=input], [class*="group/input-group"], .ds-pill, .ds-field, .ds-segmented, .ds-list-row, .kanban-card, .board-card, .ds-issue-list-box, .ds-work-table-card',
       )
     )
       continue;
@@ -570,6 +570,10 @@ async function overlayScenes(page, { phone }) {
       await page.goto(`${web}/?agentSheet=${process.env.UI_AUDIT_AGENT}`, {
         waitUntil: 'domcontentloaded',
       });
+      // The dialog opens once the page has hydrated (a first load can take a while).
+      await page
+        .waitForSelector('.ds-side-panel[data-open="true"]', { timeout: 20_000 })
+        .catch(() => {});
     },
     file: async () => {
       await page.goto(`${web}/project/${project}/files?path=Docs`, { waitUntil: 'load' });
