@@ -40,6 +40,15 @@ describe('instructions given while an answer runs', () => {
     assert.match(html, />wartet</);
   });
 
+  it('offers to open the next run of a queued "after" instruction (runs only)', () => {
+    const queued = item({ id: '3', mode: 'after', state: 'queued', nextId: 42 });
+    assert.doesNotMatch(wrap(<FollowupNotes items={[queued]} />), /Nächsten Lauf öffnen/);
+    assert.match(
+      wrap(<FollowupNotes items={[queued]} onOpenNext={() => undefined} />),
+      /Nächsten Lauf öffnen/,
+    );
+  });
+
   it('shows nothing without instructions', () => {
     assert.equal(wrap(<FollowupNotes items={[]} />), '');
   });
