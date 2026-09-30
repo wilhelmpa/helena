@@ -35,6 +35,7 @@ import http from 'node:http';
 import net from 'node:net';
 import path from 'node:path';
 import { promisify } from 'node:util';
+import { fileURLToPath } from 'node:url';
 
 const run = promisify(execFile);
 
@@ -42,6 +43,7 @@ const socketPath = process.env.OWNER_TERMINAL_SOCKET_PATH ?? '/run/volition-owne
 const socketGroup = process.env.OWNER_TERMINAL_SOCKET_GROUP ?? 'www-data';
 const runtimeRoot = process.env.OWNER_TERMINAL_RUNTIME_ROOT ?? '/run/volition-owner-terminal/sessions';
 const wetty = process.env.WETTY_BIN ?? '/usr/local/bin/wetty';
+const wettyLauncher = fileURLToPath(new URL('../terminal/wetty-local-command.mjs', import.meta.url));
 const shell = process.env.OWNER_TERMINAL_SHELL ?? '/usr/local/libexec/owner-terminal-shell';
 const tmux = process.env.TMUX_BIN ?? '/usr/bin/tmux';
 // The tmux server of helena-owner-tmux.service, which the sessions outlive this router in.
@@ -175,17 +177,17 @@ async function session(kind, name, record) {
       .catch(() => ({ code: 1 }));
     const base = `${publicPrefix}/${kind}/${name}`;
     const child = spawn(
-      wetty,
+      process.execPath,
       [
+        wettyLauncher,
+        '--wetty',
+        wetty,
         '--socket',
         wettySocketPath,
         '--base',
         base,
         '--command',
         `${shell} ${kind} ${name}`,
-        '--allow-iframe',
-        '--log-level',
-        'warn',
       ],
       { stdio: ['ignore', 'inherit', 'inherit'] },
     );

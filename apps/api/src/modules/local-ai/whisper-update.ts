@@ -59,6 +59,10 @@ export async function whisperUpdateCandidate(
     sourceUrl: `https://github.com/${REPOSITORY}`,
     notesUrl: available ? `https://github.com/${REPOSITORY}/releases/tag/v${available}` : null,
     applicable: ready,
+    detail: ready
+      ? null
+      : 'Whisper 1.9.4 benötigt einen vorbereiteten CPU-Build, einen bestandenen deutschen Sprachvergleich und ein gültiges Wartungsfenster; erst danach aktiviert der Update-Helfer das Paket mit erneutem Sprachtest und automatischem Rollback.' +
+        (typeof readiness?.reason === 'string' ? ` Vorprüfung: ${readiness.reason}` : ''),
     hint: ready ? null : { i18n: hint },
     error,
     data: {

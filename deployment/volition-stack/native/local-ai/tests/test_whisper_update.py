@@ -24,7 +24,7 @@ UNIT = f'''[Unit]
 Description=Helena STT
 [Service]
 ExecStart={update.OLD} --model {update.MODELS}/german.bin --language de \\
-  --host 127.0.0.1 --port 13306 --request-path /v1 --inference-path /audio/transcriptions \\
+  --host 127.0.0.1 --port 14306 --request-path /v1 --inference-path /audio/transcriptions \\
   --threads 4 --flash-attn --suppress-nst --no-timestamps --vad --vad-model {update.MODELS}/vad.bin
 User=helena-voice
 Group=helena-voice
@@ -36,6 +36,15 @@ WantedBy=multi-user.target
 
 
 class UnitParsingTest(unittest.TestCase):
+    def test_cpu_health_hook_is_retained_and_retargeted_for_the_candidate(self):
+        hook = (b'ExecStartPost=+/usr/bin/curl --fail --silent --output /dev/null --retry 240 '
+                b'--retry-connrefused --retry-delay 1 --max-time 2 http://127.0.0.1:14306/v1/health\n')
+        unit = UNIT.replace(b'User=helena-voice\n', hook + b'User=helena-voice\n')
+        self.assertEqual(update.exec_args(unit, update.OLD)[0], update.OLD)
+        candidate = update.private_unit_bytes(unit)
+        self.assertIn(b'http://127.0.0.1:14316/v1/health', candidate)
+        self.assertNotIn(b'http://127.0.0.1:14306/v1/health', candidate)
+
     def test_changes_only_executable_and_roundtrips(self):
         changed = update.replace_executable(UNIT, update.OLD, update.NEW)
         self.assertEqual(changed, UNIT.replace(update.OLD.encode(), update.NEW.encode()))
@@ -45,7 +54,7 @@ class UnitParsingTest(unittest.TestCase):
         for changed in (UNIT + b'ExecStart=/bin/false\n',
                         UNIT.replace(b'--host 127.0.0.1', b'--host 0.0.0.0'),
                         UNIT.replace(b'--language de', b'--language en'),
-                        UNIT.replace(b'--port 13306', b'--port 13307'),
+                        UNIT.replace(b'--port 14306', b'--port 14307'),
                         UNIT.replace(b'--vad ', b''),
                         UNIT.replace(b'--threads 4', b'--threads $THREADS'),
                         UNIT.replace(b'german.bin', b'../german.bin'),
@@ -66,7 +75,7 @@ class UnitParsingTest(unittest.TestCase):
     def test_private_candidate_waits_for_exec_and_has_isolated_network(self):
         data = update.private_unit_bytes(UNIT)
         self.assertIn(b'[Service]\nType=exec\nPrivateNetwork=yes\n', data)
-        self.assertIn(b'--port 13316', data)
+        self.assertIn(b'--port 14316', data)
         self.assertIn(update.NEW.encode(), data)
         for extra in (b'Type=simple\n', b'PrivateNetwork=no\n', b' Type = exec\n'):
             with self.assertRaisesRegex(RuntimeError, 'configuration'):
@@ -77,14 +86,14 @@ class BuildTest(unittest.TestCase):
     def test_build_is_offline_unprivileged_and_cpu_bounded(self):
         command = update.build_command('/source', 'isolated-build')
         for prop in ('DynamicUser=yes', 'PrivateDevices=yes', 'PrivateNetwork=yes',
-                     'MemoryHigh=12G', 'MemoryMax=16G', 'CPUWeight=20',
+                     'MemoryHigh=5G', 'MemoryMax=8G', 'CPUWeight=20',
                      'CPUQuota=200%', 'TasksMax=64', 'ProtectSystem=strict'):
             self.assertIn(prop, command)
         self.assertIn('--parallel 2', command[-1])
-        self.assertIn('-DGGML_HIP=ON', command[-1])
+        self.assertIn('-DGGML_HIP=OFF', command[-1])
         self.assertIn('-DGGML_STATIC=OFF', command[-1])
         self.assertIn('-DBUILD_SHARED_LIBS=OFF', command[-1])
-        self.assertIn('-DAMDGPU_TARGETS=gfx1151', command[-1])
+        self.assertNotIn('-DAMDGPU_TARGETS=', command[-1])
         self.assertIn('-DFETCHCONTENT_FULLY_DISCONNECTED=ON', command[-1])
         self.assertNotIn('apt ', command[-1])
         self.assertNotIn('--help', command[-1])
@@ -228,7 +237,7 @@ class PreparePackageTest(unittest.TestCase):
         if args[:2] == ['readelf', '-h']:
             return 'Advanced Micro Devices X86-64'
         if args[:2] == ['readelf', '-d']:
-            return f'{update.SDK}/lib libamdhip64 librocblas libhipblas'
+            return 'Shared library: [libc.so.6]'
         self.fail(f'Unexpected command: {args}')
 
     def test_prepare_is_readable_under_private_umask_and_repeat_does_not_build(self):

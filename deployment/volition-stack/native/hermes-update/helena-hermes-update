@@ -60,6 +60,7 @@ def load_config(path: Path) -> dict:
         "install", ["{venv}/bin/python", "-m", "pip", "install", "--quiet", "-e", "{source}"]
     )
     config.setdefault("smoke", ["{venv}/bin/hermes", "--version"])
+    config.setdefault("modelSmoke", None)
     return config
 
 
@@ -239,6 +240,7 @@ def check(config: dict, runner: Runner, *, offline: bool = False) -> dict:
         "latestIsAncestor": latest_is_ancestor,
         # The commits carried on top of upstream, which an update carries over.
         "localPatches": log_lines(runner, config, f"{upstream(config)}..HEAD", 50),
+        "modelSmokeConfigured": isinstance(config.get('modelSmoke'), list) and bool(config['modelSmoke']),
     }
 
 
@@ -276,6 +278,8 @@ def fill(args: list[str], config: dict) -> list[str]:
 
 
 def apply(config: dict, runner: Runner, target: str) -> dict:
+    if not isinstance(config.get('modelSmoke'), list) or not config['modelSmoke']:
+        raise UpdateError('Hermes-Vorprüfung: modelSmoke muss einen kurzen Modellaufruf mit Antwort VOLITION_UPDATE_OK konfigurieren')
     git(runner, config, "fetch", "--tags", "--prune", config["remote"])
     commit = resolve_target(runner, config, target)
     before = describe(runner, config, "HEAD")
@@ -312,6 +316,9 @@ def apply(config: dict, runner: Runner, target: str) -> dict:
             os.chmod(home, 0o777)
             smoke = runner.run(fill(config["smoke"], config), owner_of=str(venv),
                                env={"HERMES_HOME": home})
+        model_smoke = runner.run(fill(config['modelSmoke'], config), owner_of=str(venv))
+        if model_smoke.strip() != 'VOLITION_UPDATE_OK':
+            raise UpdateError('Hermes-Rauchtest: Modell lieferte keine gültige Antwort')
         if local_branch and not checked_out_elsewhere(runner, config, local_branch):
             git(runner, config, "checkout", "-q", "-B", local_branch, work)
         else:
@@ -321,7 +328,7 @@ def apply(config: dict, runner: Runner, target: str) -> dict:
             git(runner, config, "checkout", "-q", "--detach", work)
         git(runner, config, "branch", "-q", "-D", work, check=False)
         after = describe(runner, config, "HEAD")
-        return {"from": before, "to": after, "smoke": smoke[-500:], "carried": len(patches)}
+        return {"from": before, "to": after, "smoke": smoke[-500:], "modelSmoke": "passed", "carried": len(patches)}
     except Exception as error:
         runner.note(f"rolling back: {error}")
         git(runner, config, "cherry-pick", "--abort", check=False)
@@ -338,6 +345,15 @@ def apply(config: dict, runner: Runner, target: str) -> dict:
             runner.note(f"the restored venv could not be opened to every reader: {problem}")
         if git(runner, config, "rev-parse", "HEAD").splitlines()[-1] != before["commit"]:
             raise UpdateError("update failed; rollback needs operator check") from error
+        try:
+            with tempfile.TemporaryDirectory() as home:
+                os.chmod(home, 0o777)
+                runner.run(fill(config['smoke'], config), owner_of=str(venv), env={'HERMES_HOME': home})
+            restored_model = runner.run(fill(config['modelSmoke'], config), owner_of=str(venv))
+            if restored_model.strip() != 'VOLITION_UPDATE_OK':
+                raise UpdateError('Modellantwort fehlt')
+        except Exception as rollback_error:
+            raise UpdateError(f'Hermes-Update fehlgeschlagen: {error}; Rollback-Rauchtest fehlgeschlagen: {rollback_error}') from rollback_error
         raise UpdateError(f"update failed; previous version restored: {error}") from error
 
 

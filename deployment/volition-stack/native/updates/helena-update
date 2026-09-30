@@ -31,6 +31,7 @@ import datetime
 import fcntl
 import json
 import os
+import pwd
 import re
 import stat
 import subprocess
@@ -75,6 +76,9 @@ def load_config(path: Path) -> dict:
     config.setdefault("dpkgTools", {"chromium": "chromium", "kasmvnc": "kasmvncserver"})
     config.setdefault("statusKeepDays", 7)
     config.setdefault("aptTimeoutSeconds", 3600)
+    config.setdefault("runtimeSmoke", {})
+    config.setdefault("runtimeBin", "/usr/local/bin")
+    config.setdefault("aptArchive", "/var/cache/apt/archives")
     host_tools.config_defaults(config)
     return config
 
@@ -92,9 +96,11 @@ class Log:
 
 def run(log: Log | None, args: list[str], *, env: dict | None = None, timeout: int = 600,
         check: bool = True, limited: bool = False) -> subprocess.CompletedProcess:
+    program = os.path.basename(args[0])
     if limited and os.geteuid() == 0:
+        host_tools.build_preflight()
         args = ["systemd-run", "--scope", "--collect",
-                "-p", "MemoryHigh=12G", "-p", "MemoryMax=16G", "-p", "CPUWeight=20",
+                "-p", "MemoryHigh=5G", "-p", "MemoryMax=8G", "-p", "CPUWeight=20",
                 "--", *args]
     if log:
         log.note("$ " + " ".join(args))
@@ -102,9 +108,10 @@ def run(log: Log | None, args: list[str], *, env: dict | None = None, timeout: i
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
                             timeout=timeout)
     if log and result.stdout.strip():
-        log.note(result.stdout.strip()[-6000:])
+        log.note(host_tools.safe_output(result.stdout)[-6000:])
     if check and result.returncode != 0:
-        raise UpdateError(f"{os.path.basename(args[0])} exited with {result.returncode}")
+        detail = host_tools.safe_output(result.stdout)[-350:]
+        raise UpdateError(f"{program} fehlgeschlagen (Exit {result.returncode}): {detail or 'keine Diagnose ausgegeben'}")
     return result
 
 
@@ -326,9 +333,25 @@ def inventory(config: dict) -> dict:
     for name, package in config["dpkgTools"].items():
         tools[name] = dpkg_version(package)
     tools.update(host_tools.installed(config))
+    runtimes = runtimes_status(config)
+    runtime_apply, runtime_errors = [], {}
+    for runtime in config['runtimes']:
+        try:
+            runtime_preflight(config, runtime)
+            if runtimes.get(runtime, {}).get('intact') is not True:
+                raise UpdateError('Vorprüfung: installierte Runtime ist nicht intakt')
+            runtime_apply.append(runtime)
+        except (OSError, KeyError, UpdateError) as error:
+            runtime_errors[runtime] = str(error)
+    apt = apt_inventory()
+    names = [package for entry in apt['packages'] for package in entry['packages']]
+    cached = apt_rollback_packages(config, installed_versions(names))
+    apt['rollbackReady'] = list(cached)
     return {
-        "apt": {**apt_inventory(), **apt_refresh_state(config)},
-        "runtimes": runtimes_status(config),
+        "apt": {**apt, **apt_refresh_state(config)},
+        "runtimes": runtimes,
+        "runtimeApply": runtime_apply,
+        "runtimePreflightErrors": runtime_errors,
         "tools": tools,
         "hostToolApply": list(host_tools.TOOLS),
         "voice": {
@@ -352,6 +375,29 @@ def inventory(config: dict) -> dict:
 
 def installed_versions(packages: list[str]) -> dict[str, str | None]:
     return {package: dpkg_version(package) for package in packages}
+
+
+def apt_rollback_packages(config: dict, versions: dict) -> dict[str, str]:
+    found = {}
+    for path in Path(config['aptArchive']).glob('*.deb'):
+        info = path.lstat()
+        if not stat.S_ISREG(info.st_mode) or info.st_uid != 0 or info.st_mode & 0o022:
+            continue
+        result = run(None, ['dpkg-deb', '-f', str(path), 'Package', 'Version'], check=False, timeout=10)
+        fields = dict(line.split(': ', 1) for line in result.stdout.splitlines() if ': ' in line)
+        name = fields.get('Package')
+        if result.returncode == 0 and name in versions and fields.get('Version') == versions[name]:
+            found[name] = str(path)
+    return found
+
+
+def apt_smoke(units: list[str], prior_failed: set[str], log: Log) -> None:
+    audit = run(log, ['dpkg', '--audit'], timeout=30)
+    if audit.stdout.strip():
+        raise UpdateError('APT-Rauchtest: unvollständig konfigurierte Pakete')
+    if set(failed_units()) - prior_failed:
+        raise UpdateError('APT-Rauchtest: neue fehlgeschlagene Dienste')
+    host_tools.service_smoke(units)
 
 
 def apt_refresh_state(config: dict) -> dict:
@@ -406,14 +452,45 @@ def apply_apt(config: dict, packages: list[str], log: Log) -> dict:
     chosen = [package for package in wanted if package in upgradable]
     skipped = [package for package in wanted if package not in upgradable]
     if not chosen:
-        return {"upgraded": [], "skipped": skipped, "note": "nothing of it is upgradable any more"}
+        return {"upgraded": [], "skipped": skipped, "note": "Keine der angeforderten Aktualisierungen ist noch offen", "smoke": "passed"}
     before = installed_versions(chosen)
+    rollback = apt_rollback_packages(config, before)
+    if any(package not in rollback for package in chosen):
+        raise UpdateError('APT-Vorprüfung: Originalpakete für den automatischen Rollback fehlen im lokalen Paketcache')
+    prior_failed = set(failed_units())
+    active = run(None, ['systemctl', 'list-units', '--type=service', '--state=running', '--no-legend', '--plain'])
+    units = [line.split()[0] for line in active.stdout.splitlines()
+             if line.split() and line.split()[0].startswith(('volition-', 'helena-'))]
     with host_tools.quiet_queue(config, hold_seconds=int(config["aptTimeoutSeconds"]) + 120):
-        run(log, ["apt-get", "install", "--only-upgrade", "-y", "-q",
+        try:
+            simulation = run(log, ['apt-get', '-s', '--only-upgrade', 'install', *chosen])
+            for line in simulation.stdout.splitlines():
+                if REMOVE.match(line) or (NEW.match(line) and not INST.match(line)):
+                    raise UpdateError('APT-Vorprüfung: neue oder entfernte Abhängigkeiten benötigen eine eigene Wartung')
+                match = INST.match(line)
+                if match and match.group(1).split(':')[0] not in chosen:
+                    raise UpdateError('APT-Vorprüfung: nicht angeforderte Paketänderung')
+            run(log, ["apt-get", "install", "--only-upgrade", "-y", "-q",
                   "-o", "DPkg::Lock::Timeout=600",
                   "-o", "Dpkg::Options::=--force-confdef",
                   "-o", "Dpkg::Options::=--force-confold", *chosen],
-            env=env, timeout=int(config["aptTimeoutSeconds"]), limited=True)
+                env=env, timeout=int(config["aptTimeoutSeconds"]), limited=True)
+            if any(dpkg_version(package) != upgradable[package]['candidate'] for package in chosen):
+                raise UpdateError('APT-Rauchtest: installierte Version entspricht nicht dem geprüften Ziel')
+            apt_smoke(units, prior_failed, log)
+        except Exception as error:
+            if installed_versions(chosen) != before:
+                try:
+                    run(log, ['apt-get', 'install', '--allow-downgrades', '--no-remove', '-y',
+                              '-o', 'Dpkg::Options::=--force-confold', *rollback.values()], env=env,
+                        timeout=int(config['aptTimeoutSeconds']), limited=True)
+                    if installed_versions(chosen) != before:
+                        raise UpdateError('Originalversionen nicht wiederhergestellt')
+                    apt_smoke(units, prior_failed, log)
+                except Exception as rollback_error:
+                    raise UpdateError(f'APT-Update fehlgeschlagen: {error}; Rollback-Rauchtest fehlgeschlagen: {rollback_error}') from rollback_error
+                raise UpdateError(f'APT-Update fehlgeschlagen; vorherige Versionen wiederhergestellt: {error}') from error
+            raise
     after = installed_versions(chosen)
     upgraded = [{"package": package, "from": before[package], "to": after[package]}
                 for package in chosen]
@@ -426,6 +503,7 @@ def apply_apt(config: dict, packages: list[str], log: Log) -> dict:
             f"{entry['package']}={entry['from']}" for entry in upgraded if entry["from"]),
         "failedUnits": failed_units(),
         "rebootRequired": Path("/run/reboot-required").exists(),
+        "smoke": "passed",
     }
 
 
@@ -437,24 +515,76 @@ def apply_cli_runtime(config: dict, runtime: str, version: str, log: Log) -> dic
     installer = config["runtimesInstaller"]
     if not os.path.isfile(installer):
         raise UpdateError("the runtime installer is not installed")
+    runtime_preflight(config, runtime)
     with host_tools.quiet_queue(config, hold_seconds=1900):
-        before = runtimes_status(config).get(runtime, {}).get("current")
+        baseline = runtimes_status(config).get(runtime, {})
+        before = baseline.get("current")
+        if not before or baseline.get("intact") is not True:
+            raise UpdateError("Vorprüfung fehlgeschlagen: keine intakte Runtime für den automatischen Rollback")
         try:
             run(log, [installer, "upgrade", runtime, version], timeout=1800, limited=True)
             status = runtimes_status(config).get(runtime, {})
             if status.get("current") != version or status.get("intact") is not True:
                 raise UpdateError(f"{runtime} did not pass the installed-version check")
+            smoke = runtime_smoke(config, runtime, log)
             return {"runtime": runtime, "from": before, "to": version,
                     "rollback": f"{os.path.basename(installer)} rollback {runtime}",
-                    "failedUnits": failed_units(), "smoke": "passed"}
+                    "failedUnits": failed_units(), "smoke": "passed", "modelTest": smoke}
         except Exception as error:
             if before and runtimes_status(config).get(runtime, {}).get("current") != before:
-                run(log, [installer, "rollback", runtime], timeout=120)
-                restored = runtimes_status(config).get(runtime, {})
-                if restored.get("current") != before or restored.get("intact") is not True:
-                    raise UpdateError(f"update failed; rollback of {runtime} needs operator check") from error
-                raise UpdateError(f"update failed; previous version restored: {error}") from error
+                try:
+                    run(log, [installer, "rollback", runtime], timeout=120)
+                    restored = runtimes_status(config).get(runtime, {})
+                    if restored.get("current") != before or restored.get("intact") is not True:
+                        raise UpdateError("vorherige Installation nicht wiederhergestellt")
+                    runtime_smoke(config, runtime, log)
+                except Exception as rollback_error:
+                    raise UpdateError(f"Update fehlgeschlagen: {error}; Rollback-Rauchtest fehlgeschlagen: {rollback_error}") from rollback_error
+                raise UpdateError(f"Update fehlgeschlagen; vorherige Version wiederhergestellt (Rollback-Rauchtest bestanden): {error}") from error
             raise
+
+
+def runtime_preflight(config: dict, runtime: str) -> dict:
+    family = "codex" if runtime in ("codex", "codex-acp") else "claude"
+    settings = config["runtimeSmoke"].get(family, {})
+    for field in ("user", "home", "profile", "model"):
+        if not isinstance(settings.get(field), str) or not settings[field].strip():
+            raise UpdateError(f"Vorprüfung {runtime}: runtimeSmoke.{family}.{field} fehlt in der Dienstkonfiguration")
+    try:
+        account = pwd.getpwnam(settings['user'])
+    except KeyError as error:
+        raise UpdateError(f"Vorprüfung {runtime}: der konfigurierte Dienstbenutzer fehlt") from error
+    if account.pw_uid == 0:
+        raise UpdateError('Vorprüfung: Modell-Rauchtests benötigen einen unprivilegierten Dienstbenutzer')
+    for field in ("home", "profile"):
+        if not os.path.isabs(settings[field]) or not os.path.isdir(settings[field]):
+            raise UpdateError(f"Vorprüfung {runtime}: das konfigurierte {field}-Verzeichnis fehlt")
+    if not Path(__file__).with_name("runtime-smoke.mjs").is_file():
+        raise UpdateError("Vorprüfung: der Runtime-Rauchtest ist nicht installiert")
+    return settings
+
+
+def runtime_smoke(config: dict, runtime: str, log: Log) -> dict:
+    settings = runtime_preflight(config, runtime)
+    family = "codex" if runtime in ("codex", "codex-acp") else "claude"
+    environment = {"HOME": settings["home"], "PATH": "/usr/local/bin:/usr/bin:/bin", "LC_ALL": "C.UTF-8",
+                   "DISABLE_AUTOUPDATER": "1", "DISABLE_UPDATES": "1", "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+                   "CODEX_HOME" if family == "codex" else "CLAUDE_CONFIG_DIR": settings["profile"]}
+    args = ["/usr/sbin/runuser", "--preserve-environment", "-u", settings["user"], "--",
+            "setpriv", "--no-new-privs", "--", "/usr/local/bin/node",
+            str(Path(__file__).with_name("runtime-smoke.mjs")), runtime,
+            str(Path(config["runtimeBin"]) / runtime), settings["model"]]
+    log.note(f"Rauchtest {runtime}: kurzer Modellaufruf mit {settings['model']}")
+    result = subprocess.run(args, env=environment, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                            text=True, timeout=100)
+    diagnostic = host_tools.safe_output(result.stdout)[-1200:]
+    log.note(diagnostic)
+    if result.returncode:
+        raise UpdateError(f"Rauchtest {runtime}/{settings['model']} fehlgeschlagen: {diagnostic[-300:]}")
+    proof = json.loads(result.stdout)
+    if proof.get("smoke") != "passed" or proof.get("model") != settings["model"]:
+        raise UpdateError("Runtime-Rauchtest lieferte keinen gültigen Modellnachweis")
+    return proof
 
 
 def perform(config: dict, request: dict) -> dict:

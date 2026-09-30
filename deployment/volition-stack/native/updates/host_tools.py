@@ -36,9 +36,10 @@ UNPACK_LIMIT = 3 * 1024 * 1024 * 1024
 UNITS = {
     "bun": ["volition-plan-api.service", "volition-plan-worker.service"],
     "node": ["volition-plan-web.service", "volition-provisioning.service",
-             "volition-terminal.service", "volition-project-browser-router.service"],
+             "volition-terminal.service", "volition-owner-terminal.service",
+             "volition-project-browser-router.service"],
     "code-server": ["volition-code.service"],
-    "wetty": ["volition-terminal.service"],
+    "wetty": ["volition-terminal.service", "volition-owner-terminal.service"],
     "kasmvnc": [],
     "uv": [],
 }
@@ -253,8 +254,28 @@ def _extract(entries, reader, destination, seen, links) -> None:
             raise ToolError("archive contains a device, hardlink or unsupported entry")
 
 
+def safe_output(output: str) -> str:
+    return "\n".join(line for line in output.splitlines()
+                     if not re.search(r"token|password|secret|authorization|credential|api[_ -]?key|bearer|sk-", line, re.I))
+
+
+def build_preflight(process_root: Path = Path('/proc'), pressure_path: Path = Path('/proc/pressure/memory')) -> None:
+    for path in process_root.glob('[0-9]*/cmdline'):
+        try:
+            arguments = path.read_bytes().split(b'\0')
+        except OSError:
+            continue
+        if any(os.path.basename(argument) == b'full-test.sh' for argument in arguments):
+            raise ToolError('Vorprüfung: full-test.sh läuft; Update-Build bitte nach dem Vollgate starten')
+    pressure = pressure_path.read_text()
+    averages = dict(re.findall(r'^(some|full) avg10=([0-9.]+)', pressure, re.M))
+    if float(averages.get('some', 0)) > 5 or float(averages.get('full', 0)) > 1:
+        raise ToolError('Vorprüfung: hoher Speicherdruck; Update-Build bitte später starten')
+
+
 def command(args: list[str], *, cwd: Path | None = None, user: str | None = None,
             timeout: int = 60, limited: bool = False) -> str:
+    program = Path(args[0]).name
     # A version command may create configuration even inside a frozen installation.
     # Never use a passwd HOME, an owner's profile, shared /tmp or the release tree.
     with tempfile.TemporaryDirectory(prefix="helena-host-tool-", dir="/tmp") as temporary:
@@ -277,15 +298,16 @@ def command(args: list[str], *, cwd: Path | None = None, user: str | None = None
             args = ["/usr/sbin/runuser", "--preserve-environment", "-u", user, "--",
                     "setpriv", "--no-new-privs", "--", *args]
         if limited and os.geteuid() == 0:
+            build_preflight()
             args = ["systemd-run", "--scope", "--collect",
-                    "-p", "MemoryHigh=12G", "-p", "MemoryMax=16G", "-p", "CPUWeight=20",
+                    "-p", "MemoryHigh=5G", "-p", "MemoryMax=8G", "-p", "CPUWeight=20",
                     "--", *args]
         result = subprocess.run(args, cwd=cwd, env=env, text=True, stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT, timeout=timeout)
         if result.returncode:
-            # Package scripts and npm logs can echo user configuration. Report command identity
-            # and code only; our step log explains which bounded operation failed.
-            raise ToolError(f"{Path(args[0]).name} failed (exit {result.returncode})")
+            # Keep the bounded diagnostic while filtering credential-bearing lines.
+            raise ToolError(f"{program} fehlgeschlagen (Exit {result.returncode}): "
+                            + safe_output(result.stdout)[-350:])
         return result.stdout
 
 
@@ -462,14 +484,12 @@ def prepare(tool: str, version: str, parent: Path, log) -> Path:
         return destination
 
 
-def pty_smoke(node: Path, wetty: Path) -> None:
-    # A real PTY spawn catches ABI mismatches and missing spawn-helper, not just imports.
-    script = ("const p=require(process.argv[1]);const t=p.spawn('/bin/sh',['-c','printf helena-pty'],"
-              "{env:{PATH:'/usr/bin:/bin'},cols:80,rows:24});let text='';"
-              "t.onData(x=>text+=x);t.onExit(()=>process.exit(text.includes('helena-pty')?0:1));"
-              "setTimeout(()=>process.exit(2),3000).unref();")
-    command([str(node), "-e", script, str(wetty / "node_modules/node-pty")],
-            cwd=wetty, user="nobody", timeout=10)
+def session_smoke(tool: str, binary: Path, node: Path = Path("/usr/local/bin/node")) -> None:
+    script = Path(__file__).with_name("host-tool-session-smoke.mjs")
+    try:
+        command([str(node), str(script), tool, str(binary)], user="nobody", timeout=20)
+    except (ToolError, subprocess.TimeoutExpired) as error:
+        raise ToolError(f"{tool}: Sitzungs-Rauchtest fehlgeschlagen: {safe_output(str(error))[-350:]}") from error
 
 
 def uv_pair_smoke(bindir: Path, version: str | None = None) -> str:
@@ -504,12 +524,12 @@ def binary_smoke(tool: str, tree: Path, version: str) -> None:
     if not re.search(r"(?<![0-9.])v?" + re.escape(version) +
                      (r"(?![0-9])" if tool == "kasmvnc" else r"(?![0-9.])"), output):
         raise ToolError("prepared executable does not report the requested version")
-    if tool == "wetty":
-        pty_smoke(Path("/usr/local/bin/node"), tree)
+    if tool in ("wetty", "code-server"):
+        session_smoke(tool, binary)
     elif tool == "node":
-        wetty = Path("/usr/local/bin/wetty").resolve().parent.parent.parent.parent
-        if (wetty / "node_modules/node-pty").is_dir():
-            pty_smoke(binary, wetty)
+        wetty = Path("/usr/local/bin/wetty")
+        if wetty.is_file():
+            session_smoke("wetty", wetty, binary)
 
 
 def affected_units(tool: str) -> list[str]:
@@ -616,6 +636,10 @@ def activate(config: dict, tool: str, tree: Path, log) -> dict:
                 temp.write_text(kasm_dropin(current))
                 os.replace(temp, dropin)
                 command(["systemctl", "daemon-reload"])
+            if tool in ("wetty", "code-server"):
+                session_smoke(tool, bindir / tool)
+            elif tool == "node" and (bindir / "wetty").is_file():
+                session_smoke("wetty", bindir / "wetty", bindir / "node")
             if units:
                 log.note("Restarting only: " + ", ".join(units))
                 command(["systemctl", "restart", *units], timeout=60)
@@ -636,6 +660,10 @@ def activate(config: dict, tool: str, tree: Path, log) -> dict:
                     dropin.chmod(old_dropin_mode)
                 command(["systemctl", "daemon-reload"])
             try:
+                if tool in ("wetty", "code-server"):
+                    session_smoke(tool, old_binary)
+                elif tool == "node" and (bindir / "wetty").is_file():
+                    session_smoke("wetty", bindir / "wetty", old_binary)
                 if units:
                     command(["systemctl", "restart", *units], timeout=60)
                 service_smoke(units)
@@ -677,7 +705,13 @@ def apply(config: dict, tool: str, version: str, log) -> dict:
     if tool == "uv":
         uv_pair_smoke(Path(config["hostToolsBin"]), old_version)
     if old_version == version:
-        return {"tool": tool, "from": version, "to": version, "note": "already installed"}
+        if tool in ("wetty", "code-server"):
+            session_smoke(tool, binary)
+        elif tool == "node" and Path("/usr/local/bin/wetty").is_file():
+            session_smoke("wetty", Path("/usr/local/bin/wetty"), binary)
+        service_smoke(affected_units(tool))
+        return {"tool": tool, "from": version, "to": version,
+                "note": "Bereits installiert; Rauchtest bestanden", "smoke": "passed"}
     if tuple(map(int, version.split("."))) < tuple(map(int, old_version.split("."))):
         raise ToolError("host-tool update refuses a downgrade")
     if tool == "node" and version.split(".")[0] != old_version.split(".")[0]:

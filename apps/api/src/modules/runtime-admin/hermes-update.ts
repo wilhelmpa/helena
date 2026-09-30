@@ -22,6 +22,7 @@ export interface UpdateCheck {
   current: VersionRef;
   latest: VersionRef;
   latestIsAncestor?: boolean;
+  modelSmokeConfigured?: boolean;
   commits: { commit: string; date: string; subject: string }[];
   localPatches: { commit: string; date: string; subject: string }[];
 }
@@ -185,7 +186,7 @@ interface HelperStatus {
   id: string | null;
   state: string;
   ok?: boolean;
-  result?: unknown;
+  result?: Record<string, unknown> | null;
   error?: string;
   log?: string;
 }
@@ -201,11 +202,17 @@ async function follow(proposal: typeof agentProposal.$inferSelect, userId: strin
     { userId },
   ).catch(() => null);
   if (!status || status.id !== payload.helperRequestId || status.state === 'running') return;
+  const passed =
+    status.state === 'done' && status.ok === true && status.result?.modelSmoke === 'passed';
   await db
     .update(agentProposal)
     .set({
-      status: status.ok ? 'applied' : 'failed',
-      error: status.ok ? null : (status.error ?? 'The update failed').slice(0, 500),
+      status: passed ? 'applied' : 'failed',
+      error: passed
+        ? null
+        : (
+            status.error ?? 'Der Hermes-Helfer hat keinen bestandenen Modell-Rauchtest bestätigt.'
+          ).slice(0, 500),
       payload: { ...payload, result: status.result ?? null, log: status.log?.slice(-20_000) },
     })
     .where(eq(agentProposal.id, proposal.id));

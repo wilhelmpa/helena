@@ -258,6 +258,8 @@ export const localAiUpdateSource: UpdateSource = {
           ? `https://github.com/ggml-org/llama.cpp/releases/tag/${available}`
           : null,
         applicable: false,
+        detail:
+          'Für llama.cpp ist kein geprüftes b11277-Paket mit Umschaltung und Rollback vorbereitet. Der Vulkan-Dienst muss mit demselben Qwen3-Embedding-Modell auf Port 13308 laufen; vor der Freigabe sind Gesundheitsprüfung, Vektordimension, endliche Werte und ein semantischer Mini-Eval gegen den bisherigen Build nötig. Ein neuer Tag allein gibt den GPU-Build nicht frei.',
         hint: HINT,
       });
     }

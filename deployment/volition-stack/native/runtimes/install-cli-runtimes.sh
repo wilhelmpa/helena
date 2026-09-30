@@ -242,11 +242,16 @@ install_npm() {
       chmod 0755 "$staging/$target"
       "$node" --check "$staging/$target" || die "$name $version: $target does not parse"
     done < <("$python" -I -c 'import json,sys; [print(k+"\t"+v) for k,v in json.loads(sys.argv[1]).items()]' "$(pin "$name" links)")
-    if [[ "$name" == codex ]]; then
+    if [[ "$name" == codex || "$name" == codex-acp ]]; then
       local home; home=$(mktemp -d "$staging/home.XXXXXX")
+      local codex_version=$version
+      if [[ "$name" == codex-acp ]]; then
+        codex_version=$("$python" -I -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' \
+          "$staging/node_modules/@openai/codex/package.json")
+      fi
       env -i HOME="$home" CODEX_HOME="$home" PATH="$(dirname "$node"):/usr/bin:/bin" \
-        "$staging/node_modules/@openai/codex/bin/codex.js" --version | grep -qF "$version" ||
-        die "codex $version does not start"
+        "$staging/node_modules/@openai/codex/bin/codex.js" --version | grep -qF "$codex_version" ||
+        die "$name: bundled Codex $codex_version does not start"
       rm -rf -- "$home"
     fi
     printf '{"version":"%s","lock":"%s","installedAt":"%s"}\n' "$version" "$(lock_hash "$name")" "$(date -u +%FT%TZ)" >"$staging/.helena-installed"
