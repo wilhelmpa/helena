@@ -646,8 +646,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
           [
             {
               role: 'user',
-              content:
-                '(Helena) Deine Ausgabe hat das Tokenlimit erreicht und ist unvollständig. Setze exakt an der Abbruchstelle fort, ohne den bisherigen Text zu wiederholen.',
+              content: `(${displayName}) Deine Ausgabe hat das Tokenlimit erreicht und ist unvollständig. Setze exakt an der Abbruchstelle fort, ohne den bisherigen Text zu wiederholen.`,
             },
           ],
           step,

@@ -71,6 +71,7 @@ export function openAiEvalContext(options: {
         await import('../../../../../packages/agent-runtime/src/skill-usage-eval');
       return runSkillUsageEval({
         config: {
+          displayName: options.displayName,
           model: `helena-halogen/${options.model}`,
           reasoning: options.thinking === 'off' ? 'none' : (options.thinking ?? 'none'),
           servers: [
@@ -97,6 +98,7 @@ export function openAiEvalContext(options: {
         await import('../../../../../packages/agent-runtime/src/skill-learning-eval');
       return runSkillLearningEval({
         config: {
+          displayName: options.displayName,
           model: `helena-halogen/${options.model}`,
           reasoning: options.thinking === 'off' ? 'none' : (options.thinking ?? 'none'),
           servers: [

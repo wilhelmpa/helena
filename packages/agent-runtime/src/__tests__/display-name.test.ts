@@ -42,7 +42,7 @@ test('runner name reaches the model prompt, discovery and loop reminders', async
   expect(result.status).toBe('success');
   expect(JSON.stringify(model.doStreamCalls[0]!.prompt)).toContain('Du arbeitest in Atlas.');
   expect(JSON.stringify(model.doStreamCalls[0])).not.toContain('{appName}');
-  expect(memoryTool({} as HelenaApi, 'Atlas').description).toContain('in Atlas.');
+  expect(memoryTool({} as HelenaApi, undefined, null, 'Atlas').description).toContain('in Atlas.');
 });
 
 test('client failures use the configured name and preserve error status', async () => {

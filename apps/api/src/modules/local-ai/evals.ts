@@ -781,7 +781,7 @@ export async function evaluateReflection(
     const answer = await context.chat({
       system:
         renderDisplayName(
-          'Du bist ein Agent in {appName}. Die Sitzung unten hast du gerade beendet; jetzt hast du ',
+          'Du bist ein Agent in der Anwendung {appName}. Die Sitzung unten hast du gerade beendet; jetzt hast du ',
           context.displayName,
         ) + 'nur noch deine Werkzeuge memory und skill_manage.',
       prompt: `<session>\n${item.session}\n</session>\n\n${reflectionPrompt(item.reason, context.displayName)}`,
