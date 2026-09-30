@@ -44,6 +44,7 @@ export interface Limits {
   runBudgetSeconds?: number;
   firstChunkSeconds?: number;
   chunkSeconds?: number;
+  // Optional hard limit per model call; the run budget applies when omitted.
   stepSeconds?: number;
   maxOutputTokens?: number;
   // Compress at this token count (default: at most 12,000, or 60 % of the window).
@@ -107,7 +108,6 @@ export const DEFAULTS = {
   chatBudgetSeconds: 900,
   firstChunkSeconds: 30,
   chunkSeconds: 30,
-  stepSeconds: 60,
   maxOutputTokens: 4096,
   toolTimeoutSeconds: 120,
   shellTimeoutSeconds: 300,

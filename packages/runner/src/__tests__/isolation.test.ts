@@ -338,6 +338,35 @@ describe('isolated execution', () => {
     };
   }
 
+  for (const failed of [false, true]) {
+    it(`reads a native ${failed ? 'error' : 'success'} result through the launcher despite stderr warnings`, async () => {
+      const { path } = await fakeLauncher((socket) => {
+        socket.write(frame(0x12, 'DeprecationWarning: AI SDK Warning'));
+        const result = JSON.stringify({
+          type: 'result',
+          text: 'Account read.',
+          exitCode: failed ? 1 : 0,
+          ...(failed && { reason: 'error', error: 'Connection reset' }),
+        });
+        socket.write(frame(0x11, result.slice(0, 30)));
+        socket.write(frame(0x11, result.slice(30)));
+        socket.end(frame(0x13, JSON.stringify({ code: failed ? 1 : 0 })));
+      });
+      process.env.AGENT_ISOLATION = 'on';
+      process.env.VOLITION_LAUNCHER_SOCKET = path;
+      const outcome = await execute(config({ agent: 'helena', outputFormat: 'helena-jsonl' }), {
+        prompt: 'Read only.',
+        systemPrompt: '',
+        env: {},
+      });
+      expect(outcome).toEqual({
+        status: failed ? 'failed' : 'success',
+        output: 'Account read.',
+        ...(failed && { error: 'Connection reset' }),
+      });
+    });
+  }
+
   it('runs the preset through the launcher as the project', async () => {
     const { path, seen } = await fakeLauncher((socket) => {
       socket.write(

@@ -124,7 +124,8 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
       (kind === 'chat' ? DEFAULTS.chatBudgetSeconds : DEFAULTS.runBudgetSeconds)) * 1000;
   const maxTurns = config.limits?.maxTurns ?? DEFAULTS.maxTurns;
   const firstChunkMs = (config.limits?.firstChunkSeconds ?? DEFAULTS.firstChunkSeconds) * 1000;
-  const stepMs = (config.limits?.stepSeconds ?? DEFAULTS.stepSeconds) * 1000;
+  const stepMs =
+    config.limits?.stepSeconds === undefined ? budgetMs : config.limits.stepSeconds * 1000;
   const chunkMs = (config.limits?.chunkSeconds ?? DEFAULTS.chunkSeconds) * 1000;
   const toolTimeoutMs = (config.tools?.toolTimeoutSeconds ?? DEFAULTS.toolTimeoutSeconds) * 1000;
   let browserLeftMs = (config.tools?.browserBudgetSeconds ?? DEFAULTS.browserBudgetSeconds) * 1000;
@@ -523,6 +524,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
         text: lastText,
         exitCode: 1,
         reason: 'model-unavailable',
+        error: messageOf(lastError),
       });
     }
 
@@ -736,7 +738,10 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     signal.addEventListener('abort', onAbort, { once: true });
     if (signal.aborted) onAbort();
     let watchdog = setTimeout(() => stop('first-chunk'), Math.min(firstChunkMs, leftMs));
-    const stepTimer = setTimeout(() => stop('step-timeout'), stepMs);
+    const stepTimer =
+      config.limits?.stepSeconds === undefined
+        ? undefined
+        : setTimeout(() => stop('step-timeout'), stepMs);
     const budgetTimer = setTimeout(() => stop('budget'), Math.max(leftMs, 1));
     const bump = () => {
       clearTimeout(watchdog);
@@ -828,7 +833,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
       signal.removeEventListener('abort', onAbort);
     }
     if (why) throw new StepAbort(why);
-    if (streamError && calls.length === 0 && !text) throw streamError;
+    if (streamError) throw streamError;
     return { text, calls, usage };
   }
 
