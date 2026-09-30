@@ -258,6 +258,33 @@ describe('provider limits', () => {
     expect(changed.data).toEqual({ enabled: true, intervalMinutes: 15, nearPercent: 90 });
   });
 
+  it('keeps passive readings unless a fresh probe replaces an old unassigned reading', async () => {
+    const { asOwner, agent } = await setup();
+    const old = new Date(Date.now() - 3 * 24 * HOUR).toISOString();
+    const passive = (account: string, observedAt: string = old) =>
+      snapshot({
+        provider: 'anthropic',
+        source: 'claude-code',
+        via: 'passive',
+        account,
+        observedAt,
+      });
+    await recordLimitSnapshots(null, [passive('old-orphan')]);
+    expect((await asOwner['provider-limits'].get()).data!.accounts).toHaveLength(1);
+    await recordLimitSnapshots(null, [
+      snapshot({ provider: 'anthropic', source: 'claude-code', account: 'owner-probe' }),
+      passive('fresh-orphan', new Date().toISOString()),
+    ]);
+    await recordLimitSnapshots(agent.id, [passive('active-account')]);
+    const accounts = (await asOwner['provider-limits'].get()).data!.accounts;
+    expect(accounts.map((row) => row.account).sort()).toEqual([
+      'active-account',
+      'fresh-orphan',
+      'owner-probe',
+    ]);
+    expect(accounts.find((row) => row.account === 'active-account')!.stale).toBe(true);
+  });
+
   it('forgets an account', async () => {
     const { asOwner, agent } = await setup();
     await recordLimitSnapshots(agent.id, [snapshot()]);

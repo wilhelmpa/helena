@@ -165,6 +165,46 @@ async function fullTimeline() {
 describe('agent activity', () => {
   beforeEach(resetDb);
 
+  it('keeps failures in history without attention after their task is completed or archived', async () => {
+    const ctx = await setup();
+    const task = await createIssue(ctx.asOwner, ctx.columnId);
+    const runId = await queueStepRun({
+      agentId: ctx.agent.id,
+      projectId: ctx.projectId,
+      issueId: task.id,
+      prompt: 'Check the task',
+    });
+    await ctx.asRunner['agent-runs'].claim.post();
+    await ctx.asRunner['agent-runs']({ runId }).result.post({
+      status: 'failed',
+      error: 'Test failure',
+    });
+    await db.insert(pipelineRun).values({
+      id: 'completed-task-failure',
+      kind: 'routine',
+      definition: { steps: [] },
+      projectId: ctx.projectId,
+      issueId: task.id,
+      agentId: ctx.agent.id,
+      trigger: 'manual',
+      status: 'failed',
+      finishedAt: new Date(),
+    });
+    const failed = async () =>
+      (await activity(ctx.asOwner)).data!.items.filter(
+        (entry) => entry.id === `run:${runId}` || entry.id === 'workflow:completed-task-failure',
+      );
+    expect((await failed()).map((entry) => entry.requiresAttention)).toEqual([true, true]);
+    const completed = ctx.columns.find((column) => column.stateType === 'completed')!;
+    await ctx.asOwner.issues({ issueId: task.id }).patch({ columnId: completed.id });
+    expect((await failed()).map((entry) => entry.requiresAttention)).toEqual([false, false]);
+    await ctx.asOwner.issues({ issueId: task.id }).patch({ columnId: ctx.columnId });
+    expect((await failed()).map((entry) => entry.requiresAttention)).toEqual([true, true]);
+    await ctx.asOwner.issues({ issueId: task.id }).archive.post({});
+    expect((await failed()).map((entry) => entry.requiresAttention)).toEqual([false, false]);
+    expect((await failed()).every((entry) => entry.status === 'failed')).toBe(true);
+  });
+
   async function failedChat() {
     const ctx = await setup();
     const sent = (

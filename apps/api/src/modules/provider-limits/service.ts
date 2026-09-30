@@ -225,6 +225,7 @@ export async function listProviderLimits(now: Date = new Date()): Promise<{
 }> {
   const settings = await getLimitSettings();
   const at = now.getTime();
+  const staleBefore = at - STALE_INTERVALS * settings.intervalMinutes * 60_000;
   const rows = await db
     .select()
     .from(helenaProviderLimit)
@@ -258,6 +259,20 @@ export async function listProviderLimits(now: Date = new Date()): Promise<{
     const agents = links
       .filter((link) => link.limitId === row.id)
       .map((link) => ({ id: link.id, name: link.name }));
+    const stale = row.observedAt.getTime() < staleBefore;
+    if (
+      row.via === 'passive' &&
+      stale &&
+      agents.length === 0 &&
+      rows.some(
+        (other) =>
+          other.provider === row.provider &&
+          (other.source !== 'hermes' || runtimes.has('hermes')) &&
+          other.via === 'probe' &&
+          other.observedAt.getTime() >= staleBefore,
+      )
+    )
+      continue;
     const agentIds = agents.map((agent) => agent.id);
     const windows: LimitWindowView[] = [];
     for (const window of row.windows) {
@@ -289,9 +304,7 @@ export async function listProviderLimits(now: Date = new Date()): Promise<{
         settings.nearPercent,
         at,
       ),
-      stale:
-        row.via === 'probe' &&
-        at - row.observedAt.getTime() > STALE_INTERVALS * settings.intervalMinutes * 60_000,
+      stale,
       nextResetAt: nextReset(windows, at),
       agents,
     });
