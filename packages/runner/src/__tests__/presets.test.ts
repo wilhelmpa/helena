@@ -6,6 +6,29 @@ import { PRESETS, presetArgv, presetPrompt } from '../presets';
 // runs, it just starts over every time.
 
 describe('preset arguments', () => {
+  it('gives Home full unattended permissions while retaining the policy audit hook', () => {
+    for (const session of [null, 'existing-session']) {
+      const settings = {
+        unrestrictedHome: true,
+        autopilotLevel: 0,
+        policyHook: '/audit-hook',
+        sandbox: 'danger-full-access' as const,
+      };
+      const claude = presetArgv(PRESETS.claude, session, '', [], 'task', settings);
+      expect(claude).toContain('bypassPermissions');
+      expect(claude).not.toContain('plan');
+      expect(claude.join(' ')).toContain('/audit-hook');
+      const codex = presetArgv(PRESETS.codex, session, '', [], 'task', settings);
+      expect(codex).toContain('--dangerously-bypass-approvals-and-sandbox');
+      expect(codex).not.toContain('sandbox_mode="read-only"');
+    }
+    expect(presetArgv(PRESETS.claude, null, '', [], 'task', { autopilotLevel: 0 })).toContain(
+      'plan',
+    );
+    expect(presetArgv(PRESETS.codex, null, '', [], 'task', { autopilotLevel: 0 })).toContain(
+      'sandbox_mode="read-only"',
+    );
+  });
   it('starts Claude Code without a session and resumes the one it is given', () => {
     const fresh = presetArgv(PRESETS.claude, null, 'context', [], 'do it');
     expect(fresh).not.toContain('--resume');

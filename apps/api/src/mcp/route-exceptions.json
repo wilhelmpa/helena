@@ -1,5 +1,11 @@
 [
   [
+    "POST",
+    "/owner-terminal/ava/:kind/bootstrap",
+    "auth",
+    "Nativer Austausch eines Owner-Terminal-Grants für Home-MCP; kein Agentenwerkzeug."
+  ],
+  [
     "ALL",
     "/api/auth/*",
     "auth",

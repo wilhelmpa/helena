@@ -6,6 +6,7 @@ import { auth, getSessionFromHeaders } from '@repo/auth';
 import { HttpError } from './lib';
 import { getMcpOAuthToken } from './mcp-request';
 import { checkAgentSocket } from './agent-socket';
+import { OWNER_TOOLS_HEADER, ownerToolsUser } from '#modules/owner-terminal/ava-tools';
 
 // GET routes that need no session. Avatars may be embedded publicly. The invite lookup
 // (`GET /invites/:token`) renders the accept screen for a logged-out invitee, who
@@ -35,6 +36,8 @@ export type SessionUser = SessionResult['user'];
 export const authContext = new Elysia({ name: 'auth-context' }).resolve(
   { as: 'scoped' },
   async ({ request, path }): Promise<{ user: SessionUser | null }> => {
+    if (request.headers.has(OWNER_TOOLS_HEADER))
+      return { user: (await ownerToolsUser(request)) as SessionUser };
     const session = await getSessionFromHeaders(request.headers);
     if (session) {
       if (session.user.active === false) throw new HttpError(401, 'This account is deactivated');

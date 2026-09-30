@@ -26,6 +26,7 @@
 //    Keep the wire format (payload fields, base64url + '.' + HMAC-SHA256) in sync
 //    with that token.ts if either side changes.
 import { LOCAL_MODELS, prepareLocalModel, removeLocalState } from './owner-local-model.mjs';
+import { AVA_KINDS, prepareAvaTools, removeAvaState } from './owner-ava-tools.mjs';
 import { execFile, spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { createHmac, timingSafeEqual } from 'node:crypto';
@@ -264,6 +265,7 @@ async function closeSession(kind, name) {
   const current = sessions.get(key);
   sessions.delete(key);
   if (Object.hasOwn(LOCAL_MODELS, kind)) await removeLocalState(localStateRoot, kind, name);
+  if (AVA_KINDS.has(kind)) await removeAvaState(path.join(path.dirname(runtimeRoot), 'ava-tools'), kind, name);
   await run(tmux, tmuxArgs(['kill-session', '-t', `=owner-${kind}-${name}`])).catch(() => {});
   if (current) {
     await Promise.resolve(current)
@@ -308,6 +310,7 @@ async function resolveSession(target) {
   if (!payload) return { status: 403 };
   const record = Boolean(payload.record);
   try {
+    if (AVA_KINDS.has(target.kind)) await prepareAvaTools(path.join(path.dirname(runtimeRoot), 'ava-tools'), target.kind, target.name, target.token, payload.sessionId);
     if (Object.hasOwn(LOCAL_MODELS, target.kind)) await prepareLocalModel(localStateRoot, target.kind, target.name, target.token, payload.sessionId);
     const terminal = await session(target.kind, target.name, record);
     return { ...target, terminal };

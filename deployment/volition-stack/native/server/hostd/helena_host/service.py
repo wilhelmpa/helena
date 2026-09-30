@@ -10,7 +10,7 @@ import threading
 from dataclasses import dataclass
 from typing import Callable
 
-from . import audit, backup, events, guard, owner_sudo, power, storage, system, privileged, model_server, development
+from . import audit, backup, events, guard, owner_sudo, power, storage, system, privileged, model_server, development, development_jobs
 from .common import VERSION, Host, HostError, iso
 from .config import GUARD_LIMIT_RANGE, Config, load_settings, save_settings
 from .varlink import VarlinkError
@@ -24,9 +24,21 @@ interface io.helena.hostd
 
 method PrivilegedResult(id: string) -> (result: object)
 method DevelopmentEnqueue(name: string, body: object, model: string, effort: string, actor: ?string) -> (result: object)
-method DevelopmentStatus() -> (result: object)
-method DevelopmentReport(number: int) -> (result: object)
-method DevelopmentRelease() -> (result: object)
+method DevelopmentStatus(actor: ?string) -> (result: object)
+method DevelopmentReport(number: int, actor: ?string) -> (result: object)
+method DevelopmentRelease(actor: ?string) -> (result: object)
+method DevelopmentWorktree(branch: string, expected: string, target: string, name: string, dryRun: ?bool, actor: ?string) -> (result: object)
+method DevelopmentMerge(branch: string, expected: string, target: string, dryRun: ?bool, actor: ?string) -> (result: object)
+method DevelopmentReview(branch: string, expected: string, evidence: string, dryRun: ?bool, actor: ?string) -> (result: object)
+method DevelopmentGate(branch: string, expected: string, dryRun: ?bool, actor: ?string) -> (result: object)
+method DevelopmentTests(branch: string, expected: string, tests: object, dryRun: ?bool, actor: ?string) -> (result: object)
+method DevelopmentBuild(branch: string, expected: string, pauseHalogen: ?bool, dryRun: ?bool, actor: ?string) -> (result: object)
+method DevelopmentProbe(branch: string, expected: string, dryRun: ?bool, actor: ?string) -> (result: object)
+method DevelopmentDeploy(branch: string, expected: string, pauseHalogen: ?bool, dryRun: ?bool, actor: ?string) -> (result: object)
+method DevelopmentVerify(branch: string, expected: string, dryRun: ?bool, actor: ?string) -> (result: object)
+method DevelopmentJob(id: string, actor: ?string) -> (result: object)
+method DevelopmentQueueControl(number: int, action: string, actor: ?string) -> (result: object)
+method DevelopmentMax(maximum: int, actor: ?string) -> (result: object)
 method RootSettings() -> (result: object)
 method SetRootSettings(enabled: bool, directOnly: bool, unrestricted: ?bool, actor: ?string) -> (result: object)
 method RunPrivileged(id: string, command: string, seconds: int, epoch: int, actor: ?string) -> (result: object)
@@ -217,6 +229,18 @@ def restart_local_ai(ctx: Context, _: dict) -> dict:
 storage_lock = threading.Lock()
 
 
+def development_job(operation):
+    def run(ctx, params):
+        params = dict(params)
+        if operation == 'tests':
+            tests = params.pop('tests')
+            if set(tests) != {'files'} or not isinstance(tests['files'], list) or not all(isinstance(f, str) for f in tests['files']):
+                raise HostError('InvalidParameter', 'Invalid test files')
+            params['testFiles'] = tests['files']
+        return development_jobs.start(ctx, dict(params, operation=operation))
+    return run
+
+
 def _locked(lock: threading.Lock, fn: Callable[[Context, dict], dict]) -> Callable[[Context, dict], dict]:
     def run(ctx: Context, params: dict) -> dict:
         with lock:
@@ -227,9 +251,21 @@ def _locked(lock: threading.Lock, fn: Callable[[Context, dict], dict]) -> Callab
 METHODS: dict[str, Method] = {
     'PrivilegedResult': Method(privileged.result, _p(id='string')),
     'DevelopmentEnqueue': Method(development.enqueue, _p(name='string', body='object', model='string', effort='string', actor='?string'), mutating=True),
-    'DevelopmentStatus': Method(development.status, _p()),
-    'DevelopmentReport': Method(development.report, _p(number='int')),
-    'DevelopmentRelease': Method(development.release, _p()),
+    'DevelopmentStatus': Method(development.status, _p(actor='?string'), mutating=True),
+    'DevelopmentReport': Method(development.report, _p(number='int', actor='?string'), mutating=True),
+    'DevelopmentRelease': Method(development.release, _p(actor='?string'), mutating=True),
+    'DevelopmentWorktree': Method(development_job('worktree'), _p(branch='string', expected='string', target='string', name='string', dryRun='?bool', actor='?string'), mutating=True),
+    'DevelopmentMerge': Method(development_job('merge'), _p(branch='string', expected='string', target='string', dryRun='?bool', actor='?string'), mutating=True),
+    'DevelopmentReview': Method(development_job('review'), _p(branch='string', expected='string', evidence='string', dryRun='?bool', actor='?string'), mutating=True),
+    'DevelopmentGate': Method(development_job('gate'), _p(branch='string', expected='string', dryRun='?bool', actor='?string'), mutating=True),
+    'DevelopmentTests': Method(development_job('tests'), _p(branch='string', expected='string', tests='object', dryRun='?bool', actor='?string'), mutating=True),
+    'DevelopmentBuild': Method(development_job('build'), _p(branch='string', expected='string', pauseHalogen='?bool', dryRun='?bool', actor='?string'), mutating=True),
+    'DevelopmentProbe': Method(development_job('probe'), _p(branch='string', expected='string', dryRun='?bool', actor='?string'), mutating=True),
+    'DevelopmentDeploy': Method(development_job('deploy'), _p(branch='string', expected='string', pauseHalogen='?bool', dryRun='?bool', actor='?string'), mutating=True),
+    'DevelopmentVerify': Method(development_job('verify'), _p(branch='string', expected='string', dryRun='?bool', actor='?string'), mutating=True),
+    'DevelopmentJob': Method(development_jobs.result, _p(id='string', actor='?string'), mutating=True),
+    'DevelopmentQueueControl': Method(development.queue_control, _p(number='int', action='string', actor='?string'), mutating=True),
+    'DevelopmentMax': Method(development.set_max, _p(maximum='int', actor='?string'), mutating=True),
     'RootSettings': Method(privileged.settings, _p()),
     'SetRootSettings': Method(privileged.configure, _p(enabled='bool', directOnly='bool', unrestricted='?bool', actor='?string'), mutating=True),
     'RunPrivileged': Method(privileged.run, _p(id='string', command='string', seconds='int', epoch='int', actor='?string'), mutating=True),

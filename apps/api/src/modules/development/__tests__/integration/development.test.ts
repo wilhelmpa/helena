@@ -35,6 +35,21 @@ beforeEach(async () => {
           },
         ],
       };
+    if (method === 'DevelopmentMax') return { maximum: input.maximum };
+    if (method === 'DevelopmentQueueControl') return { number: input.number, action: input.action };
+    if (method.startsWith('Development'))
+      return {
+        id: 'b'.repeat(32),
+        operation: method.slice(11).toLowerCase(),
+        branch: 'hub/test',
+        expected: 'a'.repeat(40),
+        status: 'dry-run',
+        steps: ['Synthetic typed operation'],
+        output: '',
+        exitCode: null,
+        createdAt: '2026-09-30T10:00:00Z',
+        finishedAt: '2026-09-30T10:00:00Z',
+      };
     return { enabled: true, directOnly: false, unrestricted: true, epoch: 1 };
   });
 });
@@ -87,6 +102,160 @@ async function mcp(key: string, userId: string) {
 }
 
 describe('Home development tools', () => {
+  it('binds every development operation to Home, a full SHA and explicit dry-run state', async () => {
+    const { home, other, owner } = await setup();
+    for (const body of [
+      { operation: 'worktree', target: 'hub/new', name: 'new' },
+      { operation: 'merge', target: 'hub/new' },
+      {
+        operation: 'review',
+        evidence: 'Reviewer checked changed tests and diff; targeted checks green',
+      },
+      { operation: 'tests', testFiles: ['packages/runner/src/client.test.ts'] },
+      ...['gate', 'build', 'probe', 'deploy', 'verify'].map((operation) => ({ operation })),
+    ]) {
+      const response = await request(home.apiKey, '/agent-development/operations', {
+        ...body,
+        branch: 'hub/test',
+        expected: 'a'.repeat(40),
+        dryRun: true,
+      });
+      expect(response.status).toBe(200);
+      expect((await response.json()) as object).toMatchObject({
+        status: 'dry-run',
+        expected: 'a'.repeat(40),
+      });
+    }
+    const typed = calls.filter((entry) => entry.method !== 'RootSettings');
+    expect(typed.map((entry) => entry.method)).toEqual([
+      'DevelopmentWorktree',
+      'DevelopmentMerge',
+      'DevelopmentReview',
+      'DevelopmentTests',
+      'DevelopmentGate',
+      'DevelopmentBuild',
+      'DevelopmentProbe',
+      'DevelopmentDeploy',
+      'DevelopmentVerify',
+    ]);
+    expect(typed.every((entry) => entry.input.actor === `agent:${home.agentId}`)).toBe(true);
+    expect(typed[3]!.input.tests).toEqual({ files: ['packages/runner/src/client.test.ts'] });
+    expect((await request(home.apiKey, '/agent-development/jobs/' + 'b'.repeat(32))).status).toBe(
+      200,
+    );
+    for (const action of ['stop', 'requeue'])
+      expect(
+        (await request(home.apiKey, '/agent-development/tasks/165/control', { action })).status,
+      ).toBe(200);
+    expect(
+      (await request(home.apiKey, '/agent-development/queue/maximum', { maximum: 5 })).status,
+    ).toBe(200);
+    for (const maximum of [0, 6, 1.5])
+      expect(
+        (await request(home.apiKey, '/agent-development/queue/maximum', { maximum })).status,
+      ).toBe(400);
+    const count = calls.length;
+    for (const key of [other.apiKey!, undefined]) {
+      for (const path of ['operations', 'project', 'queue/maximum', 'tasks/165/control'])
+        expect(
+          (
+            await request(
+              key,
+              `/agent-development/${path}`,
+              {
+                operation: 'gate',
+                branch: 'hub/test',
+                expected: 'a'.repeat(40),
+                dryRun: true,
+                runtime: 'claude',
+                maximum: 1,
+                action: 'stop',
+              },
+              key ? undefined : owner.cookie,
+            )
+          ).status,
+        ).toBe(403);
+      expect(
+        (
+          await request(
+            key,
+            '/agent-development/jobs/' + 'b'.repeat(32),
+            undefined,
+            key ? undefined : owner.cookie,
+          )
+        ).status,
+      ).toBe(403);
+    }
+    expect(calls).toHaveLength(count);
+    for (const expected of ['abc', 'A'.repeat(40)])
+      expect(
+        (
+          await request(home.apiKey, '/agent-development/operations', {
+            operation: 'deploy',
+            branch: 'hub/test',
+            expected,
+            dryRun: true,
+          })
+        ).status,
+      ).toBe(400);
+  });
+  it('reuses HELENA #15, switches its coordinator, assigns two specialists and links the handoff', async () => {
+    const { home, asOwner, other } = await setup();
+    expect(
+      (
+        await request(home.apiKey, '/agent-development/project', {
+          runtime: 'claude',
+          dryRun: true,
+        })
+      ).status,
+    ).toBe(409);
+    for (let id = 2; id <= 15; id++) {
+      const created = await asOwner.projects.post({
+        key: id === 15 ? 'HELENA' : `D${id}`,
+        name: id === 15 ? 'HELENA' : `Fixture ${id}`,
+      });
+      expect(created.status).toBe(201);
+      expect(created.data?.id).toBe(id);
+    }
+    const planned = await request(home.apiKey, '/agent-development/project', {
+      runtime: 'claude',
+      dryRun: true,
+    });
+    expect(planned.status).toBe(200);
+    expect((await asOwner.projects({ projectKey: 'HELENA' }).get()).data?.project.name).toBe(
+      'HELENA',
+    );
+    for (const runtime of ['claude', 'codex'] as const) {
+      const response = await request(home.apiKey, '/agent-development/project', {
+        runtime,
+        dryRun: false,
+      });
+      expect(response.status).toBe(200);
+      const result = (await response.json()) as { coordinatorId: number; document: string };
+      const coordinator = await asOwner
+        .teams({ teamId: other.agent.teamId })
+        ['ai-agents']({ agentId: result.coordinatorId })
+        .get();
+      expect(coordinator.data?.runtimePolicy.runtime).toBe(runtime);
+      expect(coordinator.data?.model).toBe(
+        runtime === 'claude' ? 'claude-opus-5-5' : 'gpt-6.1-sol',
+      );
+      const note = await asOwner.knowledge.documents.get({ query: { path: result.document } });
+      expect(note.data?.content).toContain('/home/wilhelmpa/volition/CLAUDE.md');
+    }
+    expect((await asOwner.projects({ projectKey: 'HELENA' }).get()).data?.project).toMatchObject({
+      id: 15,
+      name: 'Ava Entwicklung',
+    });
+    const options = await asOwner
+      .teams({ teamId: other.agent.teamId })
+      ['ai-agents'].get({ query: { projectId: 15 } });
+    expect(
+      options.data?.filter((agent) =>
+        ['volition-development-reviewer', 'volition-development-coder'].includes(agent.username),
+      ),
+    ).toHaveLength(2);
+  });
   it('enqueues and reads all bounded host operations', async () => {
     const { home } = await setup();
     const queued = await request(home.apiKey, '/agent-development/tasks', task);
@@ -144,6 +313,11 @@ describe('Home development tools', () => {
       ['/agent-development/status', 'get'],
       ['/agent-development/reports/{number}', 'get'],
       ['/agent-development/release', 'get'],
+      ['/agent-development/operations', 'post'],
+      ['/agent-development/jobs/{id}', 'get'],
+      ['/agent-development/tasks/{number}/control', 'post'],
+      ['/agent-development/queue/maximum', 'post'],
+      ['/agent-development/project', 'post'],
     ]) {
       const operation = document.paths[path!]?.[method!];
       expect(operation).toBeDefined();
@@ -167,6 +341,11 @@ describe('Home development tools', () => {
       'get_codex_queue',
       'read_codex_report',
       'get_development_release',
+      'run_development_operation',
+      'get_development_job',
+      'control_codex_task',
+      'set_codex_maximum',
+      'configure_development_project',
     ];
     const listed = (await homeClient.listTools()).tools.map((tool) => tool.name);
     expect(listed).toEqual(expect.arrayContaining(names));
@@ -190,5 +369,5 @@ describe('Home development tools', () => {
       (await otherClient.callTool({ name: 'enqueue_codex_task', arguments: task })).isError,
     ).toBe(true);
     expect(calls).toHaveLength(count);
-  });
+  }, 15_000);
 });

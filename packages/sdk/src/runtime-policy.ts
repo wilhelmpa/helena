@@ -133,6 +133,7 @@ export interface RuntimeHelenaSettings {
 
 export interface RuntimePolicySnapshot {
   revision: string;
+  agent?: { id?: number; name?: string; username?: string; agentRole?: 'agent' | 'home' };
   // Older control planes omit project membership.
   projects?: { id: number }[];
   displayName?: string;

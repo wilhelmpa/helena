@@ -256,6 +256,7 @@ function spawnArgs(
       toolsets: task.toolsets,
       image: task.image,
       sandbox: task.hooks?.sandbox,
+      unrestrictedHome: task.hooks?.unrestrictedHome,
       autopilotLevel: task.autopilotLevel,
       policyHook: task.autopilotLevel == null ? null : policyHookCommand(),
       toolEnv: task.delivered?.length ? { delivered: task.delivered, present } : null,

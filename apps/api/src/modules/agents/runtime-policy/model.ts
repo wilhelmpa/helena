@@ -13,7 +13,12 @@ const runtimeMcpValue = t.Union([
 
 export const RuntimePolicySnapshotResponse = t.Object({
   revision: t.String(),
-  agent: t.Object({ id: t.Number(), name: t.String(), username: t.String() }),
+  agent: t.Object({
+    id: t.Number(),
+    name: t.String(),
+    username: t.String(),
+    agentRole: t.Optional(t.Union([t.Literal('agent'), t.Literal('home')])),
+  }),
   instructions: t.Nullable(t.String()),
   model: t.Nullable(t.String()),
   runtimePolicy,
