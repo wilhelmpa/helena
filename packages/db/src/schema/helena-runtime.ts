@@ -176,6 +176,7 @@ export const volitionProfileImport = pgTable(
     sourceKey: text('source_key').notNull(),
     fingerprint: text('fingerprint').notNull(),
     sessions: jsonb('sessions').notNull(),
+    audit: jsonb('audit').$type<{ actor: 'system'; name: string }>(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.agentId, t.sourceKey] })],

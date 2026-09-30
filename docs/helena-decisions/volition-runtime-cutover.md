@@ -30,44 +30,85 @@ paths and descriptor keys keep their names until the separate global renaming st
 
 ## Import procedure
 
-Prepare a closed, checkpointed, private copy of each profile. Do not point the importer at
-an active profile. The script opens SQLite read-only, refuses WAL snapshots, symlinks,
-invalid UTF-8, incomplete skills and oversized data, and never changes source files.
-Its supported input is `memories/{MEMORY,USER}.md` (or root files), learned skill directories
-outside `plan-managed`, and `state.db` with Hermes `sessions`/`messages` tables; a
-`sessions.json` export is also accepted. Resolve unsupported files instead of dropping them.
+Run the local importer as the API service user `volition-plan`, with the API environment
+from `/etc/volition/plan.env`; local mode is the default and needs no API key. It calls the
+same service as the endpoint, with the same request validation and protection rules. A
+successful apply records the system operator `Wartungsskript (Owner-Auftrag)` in the source
+journal inside the profile transaction; previews and unchanged retries write nothing.
+Migration `0229_volition_profile_import_audit` must be applied before import.
 
-Create a private mapping outside the repository, for example:
-
-```json
-[
-  {
-    "sourceKey": "profile-home-snapshot-2026-09-29",
-    "profile": "/private/snapshots/home",
-    "teamId": 1,
-    "agentId": 10,
-    "sessions": {
-      "legacy-private-chat-id": { "threadId": "existing-owner-thread-id" }
-    }
-  }
-]
-```
-
-The importer finds existing run and chat links by the original session ID and accepts
-explicit `runId`/`threadId` links only when they belong to the target agent. Private chats
-without their original owner thread are refused. Unlinked terminal histories are available
-only to people who administer the whole team. Originals, titles/content on the source and
-all native messages are retained; no reverse export to Hermes is implemented.
-
-Use a team manager's authorized API connection through `VOLITION_IMPORT_URL` and
-`VOLITION_IMPORT_API_KEY`, supplied through the normal credential mechanism. Never put a
-key in the mapping or command line. Run:
+First create a private mapping from the database's agent/team configuration and existing
+run/chat session IDs. `--plan` only lists profile directory names, so it does not require
+access to the contents of isolated profiles. Coordinator profiles use `<slug>` (including
+`VERV` → `verve` and Home), other agent profiles use `<slug>_<agentId>`; missing or ambiguous
+assignments fail. The mapping includes no credentials and is created exclusively with 0600
+inside a caller-owned 0700 directory; an existing output is refused.
 
 ```sh
-bun scripts/volition-profile-import.ts /private/profile-mapping.json
-bun scripts/volition-profile-import.ts /private/profile-mapping.json --apply
-bun scripts/volition-profile-import.ts /private/profile-mapping.json --apply
+systemd-run --wait --pipe --uid=volition-plan -p EnvironmentFile=/etc/volition/plan.env -p WorkingDirectory=/srv/volition/source/plan /usr/local/bin/bun run scripts/volition-profile-import.ts --plan /var/lib/volition/plan/profile-import/145/mapping.json
 ```
+
+Pause the affected runners and drain their outstanding work before taking snapshots.
+For profiles readable by the API service user, snapshot the mapping in one call:
+
+```sh
+systemd-run --wait --pipe --uid=volition-plan -p EnvironmentFile=/etc/volition/plan.env -p WorkingDirectory=/srv/volition/source/plan /usr/local/bin/bun run scripts/volition-profile-import.ts /var/lib/volition/plan/profile-import/145/mapping.json --snapshot /var/lib/volition/plan/profile-import/145/snapshots
+```
+
+`--snapshot` creates a new private destination, copies only MEMORY/USER, learned skills
+outside `plan-managed`, and the supported session source. It never copies `auth.json`,
+`.env`, Vault or token files (including these names inside skills). SQLite is opened with
+`mode=ro` and copied through Python 3's standard-library SQLite backup API, including
+committed WAL data; the destination is closed in DELETE journal mode without WAL. Python 3
+with `sqlite3` must already be installed. The original source remains unchanged. The
+resulting `<target>/mapping.json` preserves source keys and links and names the snapshots.
+Unsupported/binary/oversized skill files and symlinks fail; a failed or interrupted snapshot
+has no completed mapping and must be repeated into a new destination. The copy of memory
+and skills requires paused writers; the SQLite backup itself is consistent.
+
+With isolation enabled, profile contents belong to `vp-<slug>` (`vp-home` for Home).
+Snapshot each agent under that project user, using `--agent <agentId>`; systemd's
+`LoadCredential` makes the API user's private mapping available without making it public.
+For example, replace `AGENT_ID` with the selected numeric agent ID and `vol` with its slug:
+
+```sh
+systemd-run --wait --pipe --uid=vp-vol -p WorkingDirectory=/srv/volition/source/plan -p LoadCredential=profile-mapping:/var/lib/volition/plan/profile-import/145/mapping.json /bin/sh -c 'exec /usr/local/bin/bun run scripts/volition-profile-import.ts "$CREDENTIALS_DIRECTORY/profile-mapping" --snapshot /srv/volition/workspaces/projects/vol/.volition-profile-import/145-AGENT_ID --agent AGENT_ID'
+```
+
+The snapshot helper accesses no database and needs no API credential or API environment; the project user receives only the mapping through `LoadCredential`. Afterward the
+operator must grant `volition-plan` read/traverse access to the completed snapshot directory
+and mapping, or transfer this approved snapshot to a service-owned private directory and
+adjust only the `profile` paths in its mapping; keep `sourceKey` and session links unchanged.
+Do not grant access to original profile credentials. For example, an operator can give the
+API user read-only ACLs on the prepared snapshot and traversal on its two private parents:
+
+```sh
+setfacl -m u:volition-plan:--x /srv/volition/workspaces/projects/vol/.volition-profile-import /srv/volition/workspaces/projects/vol/.volition-profile-import/145-AGENT_ID
+setfacl -R -m u:volition-plan:r-X /srv/volition/workspaces/projects/vol/.volition-profile-import/145-AGENT_ID
+```
+
+The import reader accepts `memories/{MEMORY,USER}.md` (or root files), learned skill
+directories outside `plan-managed`, and `state.db` with Hermes `sessions`/`messages` tables;
+a `sessions.json` export is also accepted. It opens SQLite read-only and refuses WAL
+snapshots, symlinks, invalid UTF-8 and oversized data. Existing run and chat links are found
+by original session ID, with explicit links accepted only for the target agent. Private chats
+without their owner thread are refused; unlinked terminal history remains team-admin-only.
+
+Use the completed snapshot mapping for dry-run, apply and unchanged verification:
+
+```sh
+systemd-run --wait --pipe --uid=volition-plan -p EnvironmentFile=/etc/volition/plan.env -p WorkingDirectory=/srv/volition/source/plan /usr/local/bin/bun run scripts/volition-profile-import.ts /var/lib/volition/plan/profile-import/145/snapshots/mapping.json --local
+systemd-run --wait --pipe --uid=volition-plan -p EnvironmentFile=/etc/volition/plan.env -p WorkingDirectory=/srv/volition/source/plan /usr/local/bin/bun run scripts/volition-profile-import.ts /var/lib/volition/plan/profile-import/145/snapshots/mapping.json --local --apply
+systemd-run --wait --pipe --uid=volition-plan -p EnvironmentFile=/etc/volition/plan.env -p WorkingDirectory=/srv/volition/source/plan /usr/local/bin/bun run scripts/volition-profile-import.ts /var/lib/volition/plan/profile-import/145/snapshots/mapping.json --local --apply
+```
+
+For isolated snapshots, substitute each project snapshot's `mapping.json` in these calls.
+Optional `--http` uses `VOLITION_IMPORT_URL` and `VOLITION_IMPORT_API_KEY` from the protected
+environment of an authorized team manager; never put credentials in mappings or arguments.
+All modes print immediate progress to stderr, emit only import summaries on stdout, close
+connections and exit with 0/1; the hard total deadline (including startup, backup and closing)
+is 300000 ms by default, configurable via `VOLITION_SCRIPT_TIMEOUT_MS` (1–900000), with exit
+code 124 and the last phase on expiry. Completed profile transactions remain committed.
 
 The second apply must report `unchanged`. Reusing a source key for changed source content,
 a differing existing memory/skill, or an existing session target is a conflict. An unchanged
