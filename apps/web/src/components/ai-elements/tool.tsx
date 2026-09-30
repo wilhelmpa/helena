@@ -7,7 +7,14 @@
 
 import { useMemo, type ComponentProps, type ReactNode } from 'react';
 import type { DynamicToolUIPart, ToolUIPart } from 'ai';
-import { CheckCircle2, ChevronRight, CircleDashed, ShieldAlert, XCircle } from 'lucide-react';
+import {
+  CheckCircle2,
+  ChevronRight,
+  CircleDashed,
+  CircleMinus,
+  ShieldAlert,
+  XCircle,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { MessageResponse, NO_BLOCK_LIMIT } from './message';
@@ -22,7 +29,20 @@ export function toolName(part: ToolPart): string {
 export const isToolRunning = (state: ToolState) =>
   state === 'input-streaming' || state === 'input-available';
 
-export function ToolStatusIcon({ state, className }: { state: ToolState; className?: string }) {
+export function ToolStatusIcon({
+  state,
+  neutral = false,
+  className,
+}: {
+  state: ToolState;
+  // Finished, but not with the tool's usual success: a command that exited non-zero and
+  // printed output. Drawn calm, neither green nor red.
+  neutral?: boolean;
+  className?: string;
+}) {
+  if (neutral && state === 'output-available') {
+    return <CircleMinus className={cn('size-3.5 shrink-0 text-muted-foreground', className)} />;
+  }
   if (state === 'output-error' || state === 'output-denied') {
     return <XCircle className={cn('size-3.5 shrink-0 text-status-danger', className)} />;
   }
@@ -50,9 +70,17 @@ export type ToolHeaderProps = ComponentProps<typeof CollapsibleTrigger> & {
   state: ToolState;
   // Read out with the state icon, which is only drawn.
   stateLabel: string;
+  neutral?: boolean;
 };
 
-export function ToolHeader({ className, name, state, stateLabel, ...props }: ToolHeaderProps) {
+export function ToolHeader({
+  className,
+  name,
+  state,
+  stateLabel,
+  neutral,
+  ...props
+}: ToolHeaderProps) {
   return (
     <CollapsibleTrigger
       className={cn(
@@ -62,11 +90,15 @@ export function ToolHeader({ className, name, state, stateLabel, ...props }: Too
       {...props}
     >
       <ChevronRight className="size-3.5 shrink-0 text-muted-foreground transition-transform duration-150 group-data-[state=open]:rotate-90 rtl:group-data-[state=closed]:rotate-180" />
-      <ToolStatusIcon state={state} />
-      <span className="sr-only">{stateLabel}</span>
+      <ToolStatusIcon state={state} neutral={neutral} />
+      <span className={neutral ? 'hidden' : 'sr-only'}>{stateLabel}</span>
       <span dir="ltr" className="truncate font-mono text-xs">
         {name}
       </span>
+      {/* A command that ended with a code says so in the row: a result, not a failure. */}
+      {neutral && (
+        <span className="ms-auto shrink-0 ps-2 text-xs text-muted-foreground">{stateLabel}</span>
+      )}
     </CollapsibleTrigger>
   );
 }

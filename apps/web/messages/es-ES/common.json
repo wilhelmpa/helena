@@ -137,7 +137,9 @@
       "viewFullscreen": "Ver a pantalla completa",
       "zoomIn": "Acercar",
       "zoomOut": "Alejar"
-    }
+    },
+    "toolExited": "Terminó con código {code}",
+    "toolExitedNonzero": "Terminó con un código distinto de cero"
   },
   "share": {
     "createFailed": "No se ha podido crear el enlace. Inténtalo otra vez.",

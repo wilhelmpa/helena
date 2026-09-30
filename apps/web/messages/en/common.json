@@ -137,7 +137,9 @@
       "viewFullscreen": "View full screen",
       "zoomIn": "Zoom in",
       "zoomOut": "Zoom out"
-    }
+    },
+    "toolExited": "Exited with code {code}",
+    "toolExitedNonzero": "Exited with a non-zero code"
   },
   "share": {
     "createFailed": "Could not create the link. Try again.",

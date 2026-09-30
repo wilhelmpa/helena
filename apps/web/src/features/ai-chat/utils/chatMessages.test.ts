@@ -7,6 +7,7 @@ import {
   toUIMessage,
   type PlanUIMessage,
 } from './chatMessages';
+import { toolOutcome } from '@/components/agent-message/toolOutcome';
 
 describe('toUIMessage / messageText', () => {
   it('joins a stored message back into the text the composer would have sent', () => {
@@ -42,6 +43,32 @@ describe('toUIMessage / messageText', () => {
     const [part] = ui.parts;
     assert.equal(part.type, 'dynamic-tool');
     assert.equal(part.state === 'output-error' ? part.errorText : undefined, 'permission denied');
+  });
+
+  it('restores a command that exited non-zero with output as a result with its exit code', () => {
+    const ui = toUIMessage({
+      id: '2',
+      role: 'assistant',
+      createdAt: '2026-09-23T10:00:00Z',
+      parts: [
+        {
+          type: 'tool',
+          toolCallId: 't',
+          toolName: 'terminal',
+          args: '{"cmd":"grep x y"}',
+          result: '',
+          isError: true,
+          outcome: 'nonzero_with_output',
+          exitCode: 1,
+        },
+      ],
+    });
+    const [part] = ui.parts;
+    assert.equal(part.type === 'dynamic-tool' && part.state, 'output-available');
+    assert.deepEqual(part.type === 'dynamic-tool' && toolOutcome(part), {
+      outcome: 'nonzero_with_output',
+      exitCode: 1,
+    });
   });
 
   it('keeps the reported runtime, model and fallback on a restored answer', () => {

@@ -5,6 +5,7 @@ import type { DynamicToolUIPart } from 'ai';
 import { LoaderCircle, TriangleAlert, Wrench } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Task, TaskContent, TaskTrigger } from '@/components/ai-elements/task';
+import { toolOutcome } from './toolOutcome';
 import {
   Tool,
   ToolContent,
@@ -21,15 +22,26 @@ export type RenderTool = (tool: DynamicToolUIPart) => ReactNode | undefined;
 // One tool call: its name and state, opening onto what it was given and what it answered.
 export function AgentToolCall({ tool }: { tool: DynamicToolUIPart }) {
   const t = useTranslations('common.agentChat');
+  const outcome = toolOutcome(tool);
+  const neutral = tool.state === 'output-available' && outcome?.outcome === 'nonzero_with_output';
   const stateLabel =
     tool.state === 'output-error' || tool.state === 'output-denied'
       ? t('toolFailed')
-      : tool.state === 'output-available'
-        ? t('toolDone')
-        : t('toolRunning');
+      : neutral
+        ? outcome?.exitCode != null
+          ? t('toolExited', { code: outcome.exitCode })
+          : t('toolExitedNonzero')
+        : tool.state === 'output-available'
+          ? t('toolDone')
+          : t('toolRunning');
   return (
     <Tool>
-      <ToolHeader name={tool.toolName} state={tool.state} stateLabel={stateLabel} />
+      <ToolHeader
+        name={tool.toolName}
+        state={tool.state}
+        stateLabel={stateLabel}
+        neutral={neutral}
+      />
       <ToolContent>
         <ToolInput input={tool.input} label={t('toolInput')} />
         <ToolOutput

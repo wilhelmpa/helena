@@ -4,6 +4,7 @@ import { readUIMessageStream } from 'ai';
 import type { AgUiEvent } from '@/lib/api/endpoints/agentChat';
 import { AgUiChunkMapper, type PlanChunk } from './agUiChunks';
 import type { PlanUIMessage } from './chatMessages';
+import { toolOutcome } from '@/components/agent-message/toolOutcome';
 
 // Runs events through the mapper and the AI SDK's own message reader, so the test sees
 // exactly the message the chat would render.
@@ -102,6 +103,34 @@ describe('AgUiChunkMapper', () => {
       ['output-error', 'exit 2'],
       ['output-error', 'exit 1'],
     ]);
+  });
+
+  it('keeps a command that exited non-zero with output as a result, with its exit code', async () => {
+    const message = await messageOf([
+      { type: 'TOOL_CALL_START', toolCallId: 'a', toolCallName: 'terminal' },
+      {
+        type: 'TOOL_CALL_RESULT',
+        toolCallId: 'a',
+        content: 'no match',
+        metadata: { isError: true, outcome: 'nonzero_with_output', exitCode: 1 },
+      },
+      { type: 'TOOL_CALL_START', toolCallId: 'b', toolCallName: 'terminal' },
+      {
+        type: 'TOOL_CALL_RESULT',
+        toolCallId: 'b',
+        content: 'spawn failed',
+        metadata: { outcome: 'error', exitCode: null },
+      },
+      { type: 'RUN_FINISHED' },
+    ]);
+    const [first, second] = message.parts;
+    assert.equal(first.type === 'dynamic-tool' && first.state, 'output-available');
+    assert.deepEqual(first.type === 'dynamic-tool' && toolOutcome(first), {
+      outcome: 'nonzero_with_output',
+      exitCode: 1,
+    });
+    assert.equal(second.type === 'dynamic-tool' && second.state, 'output-error');
+    assert.equal(second.type === 'dynamic-tool' && toolOutcome(second)?.outcome, 'error');
   });
 
   it('flattens a result given as AG-UI content parts to its text', async () => {
