@@ -63,6 +63,9 @@
   padding: 0 8px 12px;
 }
 .ds-sidebar-brand > a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
   border-radius: var(--radius-sm);
   color: var(--text);
   font-size: 11px;
@@ -455,17 +458,15 @@
   gap: 8px;
   padding: 0 0 12px;
 }
-/* The wordmark does not fit 56px: the rail shows its first letter. */
-.ds-brand-mark {
-  display: none;
+/* The orb mark (packages/brand, HelenaMark): 24px, beside the name; the wordmark does not fit
+   56px, so the rail shows the mark alone. */
+.ds-brand-orb {
+  width: 24px;
+  height: 24px;
+  flex: none;
 }
 .ds-app[data-sidebar='rail']:not([data-sidebar-open='true']) .ds-brand-full {
   display: none;
-}
-.ds-app[data-sidebar='rail']:not([data-sidebar-open='true']) .ds-brand-mark {
-  display: inline;
-  font-size: 13px;
-  letter-spacing: 0;
 }
 .ds-app[data-sidebar='rail']:not([data-sidebar-open='true']) .ds-project-switcher {
   justify-content: center;
