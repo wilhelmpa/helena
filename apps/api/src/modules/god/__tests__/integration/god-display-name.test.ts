@@ -16,7 +16,11 @@ describe('display name setting', () => {
     await app.handle(new Request('http://localhost/api/auth/get-session'));
     expect((await auth.$context).appName).toBe('Atlas');
     const spec = await app.handle(new Request('http://localhost/docs/json'));
-    expect(await spec.json()).toMatchObject({ info: { title: 'Atlas API' } });
+    const document = await spec.json();
+    expect(document.info.title).toBe('Atlas API');
+    expect(document.tags.find((tag: { name: string }) => tag.name === 'Routines').description).toBe(
+      'Tasks created or reopened for an agent on a schedule, run by the Atlas engine',
+    );
   });
 
   it('lets only the administrator write a valid name', async () => {
