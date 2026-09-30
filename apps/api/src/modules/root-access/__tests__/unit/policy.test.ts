@@ -63,7 +63,7 @@ describe('root provenance matrix', () => {
 });
 
 describe('root launcher attribution', () => {
-  it('derives Home work and its actual runtime from launcher headers', () => {
+  it('derives Home work and retains its launcher runtime hint', () => {
     expect(
       workFromHeaders(
         1,

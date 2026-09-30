@@ -68,8 +68,19 @@ export async function connectMcp(
       stderr: 'ignore',
     });
   } else if (spec.transport === 'http') {
+    const headers = new Headers(namedValues(spec.headers, env));
+    if (['itsaplan', 'helena', 'plan'].includes(spec.name)) {
+      for (const [header, variable] of [
+        ['x-helena-run', 'ITSAPLAN_RUN_ID'],
+        ['x-volition-message', 'ITSAPLAN_MESSAGE_ID'],
+      ] as const) {
+        const id = env[variable];
+        if (id) headers.set(header, id);
+        else headers.delete(header);
+      }
+    }
     transport = new StreamableHTTPClientTransport(new URL(spec.url ?? ''), {
-      requestInit: { headers: namedValues(spec.headers, env), redirect: 'error' },
+      requestInit: { headers, redirect: 'error' },
     });
   } else {
     throw new Error(`MCP server ${spec.name}: SSE is not supported`);
