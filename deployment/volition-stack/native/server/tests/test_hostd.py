@@ -668,6 +668,23 @@ class BackupTests(HostTest):
                 self.assertEqual(kwargs['env'], backup.restic_env(self.config))
         self.assertNotIn('password', json.dumps(result))
 
+    def test_vault_integrity_accepts_an_empty_private_directory(self):
+        self.vault_snapshot()
+        for private, present in (('/srv/volition/vault/Private', True),
+                                 ('/srv/volition/vault/Private-other', False)):
+            with self.subTest(private=private):
+                nodes = [
+                    {'struct_type': 'node', 'path': '/srv/volition/vault', 'type': 'dir'},
+                    {'struct_type': 'node', 'path': private, 'type': 'dir'},
+                    {'struct_type': 'node', 'path': '/srv/volition/vault/Home/note.md',
+                     'type': 'file', 'size': 3},
+                ]
+                self.runner.on('/usr/bin/restic', 'ls', out='\n'.join(json.dumps(node) for node in nodes))
+                self.runner.on('/usr/bin/restic', 'dump', out='abc')
+                self.assertEqual(backup.vault_integrity(self.host, self.config),
+                                 {'state': 'ok', 'vault_present': True,
+                                  'private_present': present, 'sample_ok': True})
+
     def test_vault_integrity_coverage_and_restore_failures(self):
         self.vault_snapshot()
         for path, rc, out, expected in (

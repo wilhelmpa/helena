@@ -295,6 +295,23 @@ class KeeperLogic(unittest.TestCase):
         self.hermes.probe_status = 200
         self.assertEqual(self.keeper().tick(refresh=True)['logins'][0]['state'], 'ok')
 
+    def test_cli_distinguishes_deferred_checks_from_rejected_logins(self):
+        status = {'logins': [
+            {'provider': 'anthropic', 'id': 'a', 'managed': True, 'state': 'error',
+             'error': 'Login check is temporarily unavailable (HTTP 429). The keeper will retry.'},
+            {'provider': 'anthropic', 'id': 'b', 'managed': True, 'state': 'invalid',
+             'error': KEEPER.LOGIN_REJECTED},
+        ]}
+        output = io.StringIO()
+        with contextlib.redirect_stderr(output):
+            KEEPER.report_login_problems(status)
+        lines = output.getvalue().splitlines()
+        self.assertIn('a: check deferred', lines[0])
+        self.assertNotIn(': error', lines[0])
+        self.assertIn('HTTP 429', lines[0])
+        self.assertIn('b: invalid', lines[1])
+        self.assertEqual(status['logins'][0]['state'], 'error')
+
     def test_a_new_login_clears_a_previous_rejection_and_late_401_keeps_a_rotated_token(self):
         old = Row('a', 'old-access', 'old-refresh', ms(7 * 3600))
         self.hermes.add('anthropic', old)

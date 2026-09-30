@@ -381,14 +381,41 @@ describe('agent loop', () => {
       });
     }
     script.push({ text: 'fertig', inputTokens: 100 });
+    const model = scriptedModel(script);
     const { result } = await run(script, {
       sessions,
-      config: { limits: { compressAtTokens: 4000 } },
+      models: { 'helena-halogen/flash': model },
+      config: {
+        model: 'helena-halogen/flash',
+        reasoning: 'high',
+        servers: [
+          {
+            provider: 'helena-halogen',
+            kind: 'openai-compatible',
+            baseUrl: 'http://127.0.0.1:1/v1',
+            local: true,
+            contextLength: 262_144,
+          },
+        ],
+        limits: { compressAtTokens: 4000 },
+      },
     });
     expect(result.status).toBe('success');
     const stored = await sessions.load(result.sessionId);
     expect(stored!.summary).toBe('Zusammenfassung.');
     expect(stored!.compactedThrough).toBeGreaterThan(0);
+    const compression = model.doStreamCalls.find((call) =>
+      call.prompt.some(
+        (message) =>
+          message.role === 'system' &&
+          message.content.startsWith('Erstelle eine einzige flache Zusammenfassung'),
+      ),
+    );
+    expect(compression!.providerOptions?.helenaHalogen).toMatchObject({
+      reasoningEffort: 'none',
+      chat_template_kwargs: { enable_thinking: false },
+    });
+    expect(compression!.providerOptions).not.toHaveProperty('helena-halogen');
   });
 
   test('keeps the original session when the memory flush fails', async () => {

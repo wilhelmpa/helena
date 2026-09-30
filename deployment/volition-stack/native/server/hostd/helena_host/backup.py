@@ -256,7 +256,9 @@ def vault_integrity(host: Host, config: Config) -> dict:
                                  timeout=180, stdout_path=restored)
                 sample_ok = result.returncode == 0 and os.path.getsize(restored) == sample['size']
         return {'state': 'ok', 'vault_present': bool(nodes),
-                'private_present': any(node['path'].startswith(vault + '/Private/') for node in nodes),
+                'private_present': any(node['path'].startswith(vault + '/Private/')
+                                       or (node['path'] == vault + '/Private' and node.get('type') == 'dir')
+                                       for node in nodes),
                 'sample_ok': sample_ok}
     except (HostError, OSError, ValueError, TypeError, KeyError, subprocess.TimeoutExpired):
         return {'state': 'error'}

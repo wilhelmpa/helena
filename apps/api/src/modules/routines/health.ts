@@ -34,6 +34,7 @@ export async function automationHealth(projectId: number) {
     .where(
       and(
         eq(agentRun.projectId, projectId),
+        isNull(agentRun.archivedAt),
         isNull(aiAgent.pausedAt),
         sql`(${agentRun.issueId} IS NULL OR (${issue.archivedAt} IS NULL AND ${projectColumn.stateType} NOT IN ('completed', 'canceled')))`,
         sql`((${agentRun.status} = 'pending' AND ${agentRun.createdAt} < now() - interval '2 hours')

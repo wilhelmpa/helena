@@ -196,7 +196,8 @@ def scan(root, index, receipts, project_users=None, backup=None, git=None):
                 if target.is_dir() and not acl_grants(acl, 'vp-home', 'rwx', default=True):
                     issue('home_default_acl', relative)
             elif parts[0] == 'Private':
-                if any(f'user:{user}:' in acl for user in project_users.values()) or 'user:vp-home:' in acl:
+                # Home binds the owner's Private vault; project agents never do.
+                if any(f'user:{user}:' in acl for user in project_users.values() if user != 'vp-home'):
                     issue('private_acl', relative)
             elif len(parts) >= 2 and parts[1] in project_users:
                 user = project_users[parts[1]]
@@ -249,7 +250,8 @@ def scan(root, index, receipts, project_users=None, backup=None, git=None):
         sample = next((p for p, kind in disk.items() if kind == 'file' and p.startswith(('Home/', 'Projects/', 'Private/'))), None)
         if not backup.get('vault_present', any(p == '/srv/volition/vault' or p.startswith('/srv/volition/vault/') for p in paths)):
             issue('backup_missing', 'Vault')
-        if not backup.get('private_present', any(p.startswith('/srv/volition/vault/Private/') for p in paths)):
+        if not backup.get('private_present', any(p == '/srv/volition/vault/Private'
+                                               or p.startswith('/srv/volition/vault/Private/') for p in paths)):
             issue('backup_private_missing', 'Private')
         if not backup.get('sample_ok'):
             issue('backup_restore', sample or 'Vault')
