@@ -210,6 +210,7 @@ export const BUILTIN_TASK_CLASSES: LocalAiTaskClass[] = [
     wired: true,
     modes: PREFER_ONLY,
     evaluate: evaluateVoiceReply,
+    evalVersion: 2,
     threshold: VOICE_REPLY_THRESHOLD,
   },
   {

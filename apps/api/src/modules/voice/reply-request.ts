@@ -106,8 +106,18 @@ export function voiceReplyNow(
   }
 }
 
-// Whether held-back text is clearly an answer: a finished sentence, or long enough.
+export function isTextHandOver(text: string): boolean {
+  return /^[\s\p{P}]*hand_to_agent[\s\p{P}]*$/iu.test(text);
+}
+
+function couldBeTextHandOver(text: string): boolean {
+  const name = text.replace(/^[\s\p{P}]+/u, '').toLowerCase();
+  return HAND_OVER_TOOL.startsWith(name) || isTextHandOver(text);
+}
+
+// A possible hand-over stays held until the stream ends.
 export function committed(text: string): boolean {
+  if (couldBeTextHandOver(text)) return false;
   const trimmed = text.trim();
   return trimmed.length >= COMMIT_CHARS || /[.!?…](["“”'’)»]*)\s*$/u.test(trimmed);
 }

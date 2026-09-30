@@ -469,6 +469,7 @@ async function evaluateInto(
         key,
         model: model.id,
         classId: entry.id,
+        backend: server.kind,
       });
     // The judge of the evals a program cannot check (Deutsch-Texte), as set in Lokale KI; a
     // class that never asks it costs nothing (a run judge queues only when asked).
