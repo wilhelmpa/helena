@@ -11,6 +11,11 @@
 //   edges        (O92, O104) the breadcrumb, the toolbar row of a phone and the first content
 //                of every page stand on one left edge, the header is 56px and the content starts
 //                the padding below it;
+//   content      (owner 30.09., docs/ui-framework.md §19) the ground is the ground token; every box is THE
+//                box (radius 12, surface, card shadow, 16px inside) or an inset; no hand-drawn box (a
+//                frame plus a fill without a box class); boxes next to each other 16px apart, sections
+//                in <Sections> 32px; every empty state has its symbol, a page's own in one place; the
+//                section title is 15/520, the small label 10px, the group head 32px high
 //   overlays     (O102, O103) the chat panel, a task, an agent, a file, a receipt (UI_AUDIT_RECEIPT=1)
 //                and the settings modal are
 //                opened and compared: head height, control order and size, distance to the
@@ -25,7 +30,7 @@
 // UI_AUDIT_CHROME names the Chrome or Chromium binary it drives.
 import { writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { edgeFindings, overlayFindings } from './ui-audit-rules.mjs';
+import { contentFindings, edgeFindings, overlayFindings } from './ui-audit-rules.mjs';
 
 // playwright-core, as the browser gateway uses it (no browsers of its own: UI_AUDIT_CHROME).
 const require = createRequire(
@@ -54,12 +59,27 @@ export const ROUTES = [
   '/organization?orgView=tree',
   '/organization?orgView=list',
   '/organization?tab=goals',
+  '/approvals',
+  '/browsers',
   '/activity',
   '/files',
   '/files?kind=files',
   '/schedules',
   '/workflows',
   '/settings',
+  '/settings/defaults',
+  '/settings/agents',
+  '/settings/local-ai',
+  '/settings/decisions',
+  '/settings/skills',
+  '/settings/tools',
+  '/settings/access',
+  '/settings/voice',
+  '/settings/organization',
+  '/settings/channels',
+  '/settings/server',
+  '/settings/updates',
+  '/settings/security',
   `/project/${project}/dashboard`,
   `/project/${project}`,
   `/project/${project}#layout=list`,
@@ -186,6 +206,199 @@ function measure() {
     tableCard: document.querySelectorAll('.ds-table-card, .ds-issue-table-box').length,
     boardCards: document.querySelectorAll('.board-card, [data-board-card]').length,
   };
+  return out;
+}
+
+// Runs in the page: the content's boxes, distances, empty states and heads (owner 30.09.,
+// docs/ui-framework.md §19). Only what the design system's box classes and computed styles tell.
+function measureContent() {
+  const round = (value) => Math.round(parseFloat(value) * 10) / 10;
+  const body = document.querySelector('.ds-page > .ds-page-scroll > .ds-page-body');
+  if (!body) return { none: true };
+  const probe = document.createElement('div');
+  document.body.appendChild(probe);
+  const colorOf = (name) => {
+    probe.style.backgroundColor = `var(${name})`;
+    return getComputedStyle(probe).backgroundColor;
+  };
+  const tokens = new Map(
+    ['--bg', '--surface-1', '--surface-2', '--surface-3'].map((name) => [colorOf(name), name]),
+  );
+  probe.remove();
+  const transparent = (color) =>
+    !color || /rgba\(.*,\s*0\)$/.test(color) || color === 'transparent';
+  const describe = (element) => {
+    const classes =
+      typeof element.className === 'string'
+        ? element.className.split(/\s+/).filter(Boolean).slice(0, 3).join('.')
+        : '';
+    return `${element.tagName.toLowerCase()}${classes ? `.${classes}` : ''}`;
+  };
+  const shadowShows = (value) =>
+    value !== 'none' &&
+    value.split(/,(?![^(]*\))/).some((layer) => !/rgba\(0, 0, 0, 0\)/.test(layer));
+  const visible = (element) => {
+    const rect = element.getBoundingClientRect();
+    const style = getComputedStyle(element);
+    return (
+      rect.width > 2 && rect.height > 2 && style.display !== 'none' && style.visibility !== 'hidden'
+    );
+  };
+  // What is drawn inside an overlay, a chart or a dialog is not the page's content.
+  const outside = (element) =>
+    !element.closest(
+      '.ds-side-panel, .ds-overlay, [role=dialog], .react-flow, .ds-modal, [data-radix-popper-content-wrapper]',
+    );
+  const out = {
+    variant: document.querySelector('.ds-page')?.getAttribute('data-page') ?? null,
+    ground: null,
+    boxes: [],
+    rogue: [],
+    gaps: [],
+    sectionGaps: [],
+    empty: [],
+    heads: [],
+  };
+  // The page's ground.
+  let ground = null;
+  for (let node = body; node; node = node.parentElement) {
+    const color = getComputedStyle(node).backgroundColor;
+    if (!transparent(color)) {
+      ground = color;
+      break;
+    }
+  }
+  out.ground = { ok: tokens.get(ground) === '--bg', color: ground };
+  const BOX =
+    '.ds-card, .ds-list-box, .ds-issue-list-box, .ds-settings-rows, .ds-settings-card, .ds-doc-card, .ds-activity-list, .ds-work-table-card';
+  const boxes = [...body.querySelectorAll(BOX)].filter((el) => visible(el) && outside(el));
+  for (const el of boxes) {
+    const style = getComputedStyle(el);
+    const inset = el.matches('.ds-card[data-tone="inset"]');
+    const other = el.matches('.ds-card[data-tone="node"], .ds-card[data-tone="popover"]');
+    if (other) continue;
+    out.boxes.push({
+      at: describe(el),
+      kind: inset ? 'inset' : el.classList.contains('ds-card') ? 'card' : 'list',
+      radius: style.borderTopLeftRadius,
+      bg: tokens.get(style.backgroundColor) ?? style.backgroundColor,
+      shadow: shadowShows(style.boxShadow),
+      pad: [style.paddingTop, style.paddingRight, style.paddingBottom, style.paddingLeft].map(
+        round,
+      ),
+      // A card that says its own padding (a list or table box, a document, a chart node).
+      padVariant: el.matches('[data-pad], [data-layout]') || el.className.includes('doc'),
+    });
+  }
+  // Boxes drawn by hand: a frame and a fill that no box class gave.
+  for (const el of body.querySelectorAll('*')) {
+    if (!visible(el) || !outside(el)) continue;
+    if (
+      /^(INPUT|TEXTAREA|SELECT|BUTTON|TABLE|TR|TD|TH|IMG|SVG|CANVAS|IFRAME|VIDEO|PATH|LABEL)$/i.test(
+        el.tagName,
+      )
+    )
+      continue;
+    if (
+      el.matches(
+        `${BOX}, .ds-pill, .ds-button, .ds-segmented, [role=button], [role=tab], [role=switch], [data-slot^=input], [data-slot=textarea], [data-slot=select-trigger], .ds-field, .ds-dropzone, .board-card, .kanban-card`,
+      )
+    )
+      continue;
+    if (
+      el.closest(
+        'button, [role=button], [data-slot^=input], .ds-pill, .ds-field, .ds-segmented, .ds-list-row, .kanban-card, .board-card, .ds-issue-list-box, .ds-work-table-card',
+      )
+    )
+      continue;
+    const style = getComputedStyle(el);
+    const rect = el.getBoundingClientRect();
+    if (rect.width < 120 || rect.height < 32) continue;
+    if (parseFloat(style.borderTopLeftRadius) >= 100) continue;
+    const framed =
+      parseFloat(style.borderTopWidth) > 0 &&
+      !transparent(style.borderTopColor) &&
+      style.borderTopStyle !== 'dashed';
+    const filled =
+      !transparent(style.backgroundColor) && tokens.get(style.backgroundColor) !== '--bg';
+    if (framed && filled && out.rogue.length < 12) out.rogue.push(describe(el));
+  }
+  // Distances of boxes that stand next to each other (siblings, nothing between them).
+  const parents = new Set(boxes.map((el) => el.parentElement));
+  for (const parent of parents) {
+    const kids = [...parent.children].filter(visible);
+    for (let i = 1; i < kids.length; i++) {
+      const a = kids[i - 1];
+      const b = kids[i];
+      if (!a.matches(BOX) || !b.matches(BOX)) continue;
+      if (a.matches('[data-tone]') || b.matches('[data-tone]')) continue;
+      const ra = a.getBoundingClientRect();
+      const rb = b.getBoundingClientRect();
+      const sameRow = Math.abs(ra.top - rb.top) < 4;
+      const gap = sameRow ? rb.left - ra.right : rb.top - ra.bottom;
+      // A grid row that wrapped, a list of boxes that share an edge: not a gap to judge.
+      if (!sameRow && rb.top < ra.bottom - 1) continue;
+      if (gap < 0 || gap > 80) continue;
+      out.gaps.push({ a: describe(a), b: describe(b), gap: round(gap) });
+    }
+  }
+  // Sections stand one section gap apart.
+  for (const wrapper of body.querySelectorAll('.ds-sections')) {
+    const kids = [...wrapper.children].filter(visible);
+    for (let i = 1; i < kids.length; i++) {
+      const gap = kids[i].getBoundingClientRect().top - kids[i - 1].getBoundingClientRect().bottom;
+      out.sectionGaps.push({ a: describe(kids[i - 1]), b: describe(kids[i]), gap: round(gap) });
+    }
+  }
+  // Empty states: with a symbol; a page's own one is a block of one height (60vh), so its symbol
+  // sits in the same place on every page.
+  for (const el of body.querySelectorAll('.ds-empty')) {
+    if (!visible(el) || !outside(el)) continue;
+    out.empty.push({
+      icon: !!el.querySelector('.ds-empty-icon'),
+      fill: el.hasAttribute('data-fill'),
+      height: Math.round(el.getBoundingClientRect().height),
+      expected: Math.round(Math.max(240, innerHeight * 0.6)),
+    });
+  }
+  // Heads: one section title, one small label, one group head.
+  const text = (el) => (el.textContent ?? '').trim().slice(0, 30);
+  for (const el of body.querySelectorAll(
+    '.ds-section-title, .ds-settings-group-head h3, .ds-settings-section-head h3',
+  )) {
+    if (!visible(el) || !outside(el)) continue;
+    const style = getComputedStyle(el);
+    out.heads.push({
+      kind: 'section',
+      text: text(el),
+      size: round(style.fontSize),
+      weight: Number(style.fontWeight),
+    });
+  }
+  for (const el of body.querySelectorAll('.ds-mono-label')) {
+    if (!visible(el) || !outside(el)) continue;
+    out.heads.push({ kind: 'label', text: text(el), size: round(getComputedStyle(el).fontSize) });
+  }
+  for (const el of body.querySelectorAll('.ds-group-head')) {
+    if (!visible(el) || !outside(el)) continue;
+    out.heads.push({
+      kind: 'group',
+      text: text(el),
+      height: round(el.getBoundingClientRect().height),
+    });
+  }
+  for (const el of body.querySelectorAll('h2, h3')) {
+    if (!visible(el) || !outside(el) || el.classList.contains('sr-only')) continue;
+    if (
+      el.closest(BOX) ||
+      el.closest(
+        '.ds-empty, .ds-section-head, .ds-settings-group-head, .ds-settings-section-head, .ds-group-head, .ds-doc-page, .ds-knowledge-viewer, [class*=prose], .ds-org, .ds-goals, .ds-gallery-column, .ds-page-header',
+      )
+    )
+      continue;
+    if (/(^|\s)ds-/.test(el.className)) continue;
+    out.heads.push({ kind: 'stray', text: text(el), at: describe(el) });
+  }
   return out;
 }
 
@@ -527,7 +740,8 @@ async function main() {
         // "#layout=table": the task layout lives in the browser (useViewEditor's
         // planner_view), set before the page reads it.
         const [path, layout] = route.split('#layout=');
-        if (!page.url().startsWith(web)) await page.goto(`${web}/`, { waitUntil: 'load' });
+        if (!page.url().startsWith(web))
+          await page.goto(`${web}/`, { waitUntil: 'load', timeout: 180_000 });
         await page
           .evaluate((value) => {
             if (value) localStorage.setItem('planner_view', value);
@@ -544,7 +758,8 @@ async function main() {
           return page.evaluate(measure);
         });
         const edges = await page.evaluate(measureEdges).catch(() => ({ none: true }));
-        results.push({ route, theme, width, ...measured, edges });
+        const content = await page.evaluate(measureContent).catch(() => ({ none: true }));
+        results.push({ route, theme, width, ...measured, edges, content });
       }
       if (!args['no-overlays']) {
         const scenes = await overlayScenes(page, { phone: width < 1024 });
@@ -560,6 +775,7 @@ async function main() {
     findings: [
       ...findings(results),
       ...edgeFindings(results),
+      ...contentFindings(results),
       ...overlays.flatMap((entry) => overlayFindings(entry.scenes, entry)),
     ],
   };

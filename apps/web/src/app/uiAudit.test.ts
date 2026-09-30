@@ -159,3 +159,128 @@ describe('overlay rules', () => {
     assert.ok(wrong.some((line) => /zweite Esc/.test(line)));
   });
 });
+
+// The content of a page (owner 30.09., docs/ui-framework.md §19): the ground, the box, the distances
+// between boxes and sections, the empty state and the titles.
+describe('content rules', () => {
+  const box = (over: Record<string, unknown> = {}) => ({
+    at: 'div.ds-card',
+    kind: 'card',
+    radius: '12px',
+    bg: '--surface-1',
+    shadow: true,
+    pad: [16, 16, 16, 16],
+    padVariant: false,
+    ...over,
+  });
+  const content = (over: Record<string, unknown> = {}) => ({
+    variant: 'default',
+    ground: { ok: true, color: 'rgb(246, 245, 248)' },
+    boxes: [box()],
+    rogue: [],
+    gaps: [{ a: 'a', b: 'b', gap: 16 }],
+    sectionGaps: [{ a: 'a', b: 'b', gap: 32 }],
+    empty: [{ icon: true, fill: true, height: 540, expected: 540 }],
+    heads: [
+      { kind: 'section', text: 'Titel', size: 15, weight: 520 },
+      { kind: 'label', text: 'LABEL', size: 10 },
+      { kind: 'group', text: 'GRUPPE', height: 32 },
+    ],
+    ...over,
+  });
+  const at = (c: unknown, route = '/x') => [{ route, theme: 'light', width: 1440, content: c }];
+
+  it('accepts a page built from the boxes', () => {
+    assert.deepEqual(rules.contentFindings(at(content())), []);
+  });
+
+  it('finds another ground, another radius, no shadow and another padding', () => {
+    assert.match(
+      rules.contentFindings(at(content({ ground: { ok: false, color: 'rgb(0, 0, 0)' } })))[0],
+      /Seitengrund/,
+    );
+    const found = rules.contentFindings(
+      at(content({ boxes: [box({ radius: '8px', shadow: false, pad: [20, 20, 20, 20] })] })),
+    );
+    assert.equal(found.length, 3);
+    assert.ok(found.some((line) => /Radius 8px statt 12px/.test(line)));
+    assert.ok(found.some((line) => /Kartenschatten/.test(line)));
+    assert.ok(found.some((line) => /Innenabstand 20\/20\/20\/20 px statt 16 px/.test(line)));
+  });
+
+  it('lets a card say its own padding and an inset be an inset', () => {
+    assert.deepEqual(
+      rules.contentFindings(at(content({ boxes: [box({ pad: [0, 0, 0, 0], padVariant: true })] }))),
+      [],
+    );
+    assert.deepEqual(
+      rules.contentFindings(
+        at(
+          content({
+            boxes: [box({ kind: 'inset', radius: '8px', bg: '--surface-2', shadow: false })],
+          }),
+        ),
+      ),
+      [],
+    );
+    assert.equal(
+      rules.contentFindings(
+        at(content({ boxes: [box({ kind: 'inset', radius: '12px', bg: '--surface-2' })] })),
+      ).length,
+      1,
+    );
+  });
+
+  it('finds a hand-drawn box and boxes that stand 12px apart', () => {
+    const found = rules.contentFindings(
+      at(content({ rogue: ['div.rounded-md.border'], gaps: [{ a: 'a', b: 'b', gap: 12 }] })),
+    );
+    assert.ok(found.some((line) => /eigene Box div\.rounded-md\.border/.test(line)));
+    assert.ok(found.some((line) => /12 px auseinander statt 16 px/.test(line)));
+  });
+
+  it('finds sections that stand 24px apart', () => {
+    const found = rules.contentFindings(
+      at(content({ sectionGaps: [{ a: 'a', b: 'b', gap: 24 }] })),
+    );
+    assert.equal(found.length, 1);
+    assert.match(found[0], /24 px auseinander statt 32 px/);
+  });
+
+  it('finds an empty state without a symbol or one that is not the page block', () => {
+    assert.match(
+      rules.contentFindings(
+        at(content({ empty: [{ icon: false, fill: false, height: 100, expected: 540 }] })),
+      )[0],
+      /Leerzustand ohne Symbol/,
+    );
+    // Taller than the block (a long text) is fine, shorter is not.
+    assert.deepEqual(
+      rules.contentFindings(
+        at(content({ empty: [{ icon: true, fill: true, height: 600, expected: 540 }] })),
+      ),
+      [],
+    );
+    const found = rules.contentFindings(
+      at(content({ empty: [{ icon: true, fill: true, height: 310, expected: 540 }] })),
+    );
+    assert.equal(found.length, 1);
+    assert.match(found[0], /Leerzustand ist 310 px hoch statt 540 px/);
+  });
+
+  it('finds a title that is not the section title and a heading without a building block', () => {
+    const found = rules.contentFindings(
+      at(
+        content({
+          heads: [
+            { kind: 'section', text: 'Alt', size: 14, weight: 500 },
+            { kind: 'label', text: 'LABEL', size: 12 },
+            { kind: 'group', text: 'GRUPPE', height: 28 },
+            { kind: 'stray', text: 'Eigen', at: 'h2.text-md' },
+          ],
+        }),
+      ),
+    );
+    assert.equal(found.length, 4);
+  });
+});

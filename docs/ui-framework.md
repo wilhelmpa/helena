@@ -247,3 +247,43 @@ Plan und Bestandsaufnahme: `docs/ui-konsistenz-refactor.md` (Mac-Doku). Was gilt
   behaelt mindestens 560 px, Pfeiltasten 10 px (Shift 50), Doppelklick/Enter = Standard 248 px. Die
   Breite liegt pro Nutzer im Browser (`helena:sidebar-width:<userId>`, `utils/sidebarWidth.ts`).
   Rail, Overlay-Sidebar und Handy behalten den Token `--sidebar-w`.
+
+## 19. Inhalte der Hauptseiten: gleiche Abstände, Hintergründe, Boxen (Owner 30.09.)
+
+Owner: „Die Hauptseiten-Inhalte anschauen: gleiche Abstände, gleiche Hintergründe, gleiche Boxen, sodass alles harmonisch ist.“ Zusammen mit §17 (Kopfleiste, Overlays) ist damit die ganze Seite festgelegt: oben die eine Leiste, darunter dieser Satz Regeln. Alle Werte stehen als Tokens in `tokens.css` („Content boxes“), kein Baustein schreibt eine eigene Zahl.
+
+**Die Regeln (Tokens):**
+
+| Was | Wert | Token |
+|---|---|---|
+| Seitengrund | `--bg`, immer; keine Seite färbt ihn um | `--bg` |
+| Box | `surface-1`, Radius 12, Kartenschatten, **16 px** Innenabstand, **12 px** zwischen den Teilen | `--box-pad`, `--box-gap`, `--radius-card`, `--shadow-card` |
+| Enge Box (Kachel im Diagramm, kleine Karte im Raster) | 12 px Innenabstand | `--box-pad-tight` |
+| Geräumige Box (Dokument, Ziel-Detail) | 24 px | `--box-pad-roomy` |
+| Einschub (Box in einer Box: Notiz, Unterformular) | `surface-2`, Radius 8, kein Schatten | `--radius-md` |
+| Abstand zwischen Boxen (untereinander UND nebeneinander) | **16 px** | `--stack-gap` |
+| Abstand zwischen Abschnitten (Titel + Inhalt) | **32 px** | `--section-gap` |
+| Abschnittstitel → seine Box | 12 px | `--section-head-gap` |
+| Abschnittstitel | 15 px / 520 (`Section`, `SettingsGroup`, `SettingsSection`), optional ein Satz 13 px darunter | |
+| Kleinbeschriftung (Widget-Name, Gruppenkopf, Spaltenkopf, Kachel-Name) | Mono 10 px, Großbuchstaben, Sperrung `--label-tracking` | `--label-size` |
+| Gruppenkopf über einer Liste | 32 px hoch, Kleinbeschriftung + Zähler (`GroupHead`) | |
+| Leerzustand | immer mit Symbol (Vorgabe: Ablage), ein Satz, optional Titel und Aktion; der der Seite steht in einem Block von 60 vh, damit das Symbol überall an derselben Stelle sitzt; in einer Box (`boxed`) kompakt | |
+| Hell und dunkel | dieselben Stufen: Grund `bg`, Box `surface-1`, Einschub/Hover `surface-2`, Auswahl `surface-3` | |
+
+**Bausteine (alle in `@/design-system`, jeder Rahmen aus genau einem):**
+
+- **`Card`** ist DIE Box: `title` (13/520) oder `eyebrow` (Kleinbeschriftung, für Widgets/Kacheln), `meta`, `actions`, `pad` (`normal` · `tight` · `roomy` · `none` für Listen/Tabellen mit eigenen Zeilen), `gap`, `layout="row"`, `as` (section, article, li, ul, `Link`, `button`), `interactive`, `selected`, `headingAs`, `tooltip`. Töne: `inset` (Box in Box), `node` (Karte fester Größe im Diagramm, Inhalt mittig, `selected` = Akzentring; Organigramm-Knoten), `popover` (schwebende Karte, Overlay-Schatten; Hover-Karte). Kacheln (`Tile`, `ProjectTile`), Dashboard-Abschnitte, Inbox-Karten, Startseiten-Karten, Ziele, Agenten-/Abteilungskarten, Workflow-Karten sind alle `Card`.
+- **`ListBox`** (Listen, mit `padded` 4 px Luft, Zeilen bekommen Radius 8), **`TableCard`**, **`RowList`** (Zeilenliste mit `SectionLabel`), **`SettingsGroup`/`SettingsRow`** (+ `SettingsSection`/`SettingsCard`, dieselbe Optik) zeichnen dieselbe Box.
+- **`Section`** (Titel, Satz, Aktionen; Inhalt mit `--stack-gap`), **`Sections`** (mehrere Abschnitte untereinander, `--section-gap`), **`GroupHead`**, **`MonoLabel`/`MonoMeta`**, **`EmptyState`** (`fill` / `boxed`), **`Notice`** (getönte Hinweise, Radius wie die Box).
+- `DashboardPrimitives` hat keine eigene Karte, kein eigenes Label mehr: `Card`, `MonoLabel`, `MonoMeta` sind Re-Exporte des Design-Systems.
+
+**Der Orb auf dem Handy (< 900 px):** Er sitzt in der Kopfleiste am rechten Ende (52-px-Fläche, der Partikel-Orb zeichnet sich in ~70 % davon) statt unten rechts über der Seite; die Leiste hält den Platz frei (`.ds-page-header::after`), sodass er nie Titel, Steuerungen, Listenaktionen oder das Eingabefeld verdeckt. Über 900 px bleibt er unten rechts. Er fehlt weiter auf Start (dort ist er die Seite), im Terminal und bei offenem Panel.
+
+**Nicht mehr erlaubt (Guard):**
+
+- In Seiten und Features (`features/**`, `app/**`) sperrt ESLint die Klassen `bg-card`, `bg-popover`, `border` (ganzer Rahmen) und `shadow-*` (`better-tailwindcss/no-restricted-classes`); zusammen mit den schon gesperrten Radien, Abständen und Schriftgrößen kann eine Seite keine eigene Box zeichnen. Bestand steht in `eslint-suppressions.json` und wird nur kürzer (`bunx eslint --prune-suppressions .`).
+- `src/design-system/boxGuard.test.ts`: kein Modul-CSS und kein Feature-CSS setzt `--shadow-card`, `Card`/`Tile` werden nicht nachgebaut.
+- Messung im echten Browser: `apps/web/scripts/ui-audit.mjs` misst jede Route (hell/dunkel, 1440/390) auf Seitengrund, jede Box (Radius, Hintergrund-Token, Schatten, Innenabstand der Karten), handgemalte Boxen (Rahmen + Füllung ohne Box-Klasse), den Abstand nebeneinanderliegender Boxen (16 px), den Abstand der Abschnitte in `Sections` (32 px), das Symbol jedes Leerzustands samt seiner Lage und die Schriftgrößen der Titel (`contentFindings` in `ui-audit-rules.mjs`, getestet in `uiAudit.test.ts`).
+
+**Umstellung:** 70 handgemalte Karten (`rounded-md border bg-card`) sind per Codemod auf `Card` gewechselt (Radius 8 + Rahmen wurde Radius 12 + Kartenschatten). Übrig sind Sonderfälle (getönte Ränder, Icon-Kacheln, Menüs), sie stehen im Bericht `~/agent-work/ui-inhalte/bericht.md`.
+
