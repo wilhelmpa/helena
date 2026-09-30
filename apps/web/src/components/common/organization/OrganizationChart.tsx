@@ -328,13 +328,8 @@ export default function OrganizationChart({
   const focusId = focus.kind === 'root' ? projectId : focus.id;
   const tree = useMemo(
     () =>
-      view === 'tree'
-        ? organizationChartLayout(agents, collapsed, delegating, {
-            stackLeaves: ringLevel === 'home' || ringLevel === 'department',
-            tasks,
-          })
-        : null,
-    [agents, collapsed, delegating, ringLevel, tasks, view],
+      view === 'tree' ? organizationChartLayout(agents, collapsed, delegating, { tasks }) : null,
+    [agents, collapsed, delegating, tasks, view],
   );
   const ring = useMemo(
     () =>

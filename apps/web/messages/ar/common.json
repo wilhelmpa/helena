@@ -137,7 +137,9 @@
       "viewFullscreen": "عرض بملء الشاشة",
       "zoomIn": "تكبير",
       "zoomOut": "تصغير"
-    }
+    },
+    "toolExited": "انتهى بالرمز {code}",
+    "toolExitedNonzero": "انتهى برمز غير صفري"
   },
   "share": {
     "createFailed": "تعذّر إنشاء الرابط. حاول مرة أخرى.",

@@ -13,6 +13,7 @@ import {
   type ToolCallStartEvent,
 } from '@ag-ui/core';
 import type { AgUiEvent } from '@/lib/api/endpoints/agentChat';
+import { outcomeMetadata } from '@/components/agent-message/toolOutcome';
 import { parseToolText, type PlanChatMetadata, type PlanUIMessage } from './chatMessages';
 
 export type PlanChunk = InferUIMessageChunk<PlanUIMessage>;
@@ -85,20 +86,48 @@ export class AgUiChunkMapper {
       case EventType.TOOL_CALL_END:
         return this.toolReady(as<ToolCallArgsEvent>(event).toolCallId ?? '');
       case EventType.TOOL_CALL_RESULT: {
-        const result = as<ToolCallResultEvent & { isError?: boolean }>(event);
+        const result = as<
+          ToolCallResultEvent & {
+            isError?: boolean;
+            metadata?: {
+              isError?: boolean;
+              outcome?: 'ok' | 'nonzero_with_output' | 'error';
+              exitCode?: number | null;
+            };
+          }
+        >(event);
         const id = result.toolCallId ?? '';
         if (!this.tools.has(id)) return [];
         // AG-UI has no error flag on a result; Helena's runner puts MCP's `isError` into
         // the event's metadata (older runners sent it on the event itself).
-        const failed = result.metadata?.isError === true || result.isError === true;
+        // A command that ended non-zero with output is not a failed tool (`outcome`): it
+        // is shown as "ended with code N", the agent reads its output.
+        const outcome = result.metadata?.outcome;
+        const failed =
+          outcome === 'nonzero_with_output'
+            ? false
+            : outcome === 'error' || result.metadata?.isError === true || result.isError === true;
+        const providerMetadata = outcomeMetadata(outcome, result.metadata?.exitCode);
         // AG-UI 1.0 lets a result be content parts; the chat shows their text.
         const content =
           typeof result.content === 'string' ? result.content : contentToText(result.content ?? []);
         return [
           ...this.toolReady(id),
           failed
-            ? { type: 'tool-output-error', toolCallId: id, errorText: content, dynamic: true }
-            : { type: 'tool-output-available', toolCallId: id, output: content, dynamic: true },
+            ? {
+                type: 'tool-output-error',
+                toolCallId: id,
+                errorText: content,
+                dynamic: true,
+                ...(providerMetadata && { providerMetadata }),
+              }
+            : {
+                type: 'tool-output-available',
+                toolCallId: id,
+                output: content,
+                dynamic: true,
+                ...(providerMetadata && { providerMetadata }),
+              },
         ];
       }
       case EventType.RUN_FINISHED:

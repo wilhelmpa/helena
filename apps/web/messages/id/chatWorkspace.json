@@ -134,7 +134,8 @@
     "queuedList": "Menunggu dikirim",
     "localModel": "{name} (lokal)",
     "fallbackModel": "Cadangan: {name}",
-    "busyElsewhere": "{agent} sedang mengerjakan hal lain – jawaban mungkin perlu waktu."
+    "busyElsewhere": "{agent} sedang mengerjakan hal lain – jawaban mungkin perlu waktu.",
+    "sendAs": "Kirim sebagai {mode}"
   },
   "artifact": {
     "title": "Artefak",
@@ -304,5 +305,25 @@
     "collapse": "Tutup obrolan",
     "openTab": "Buka sebagai tab",
     "empty": "Tanya {agent} …"
+  },
+  "followups": {
+    "failed": "Instruksi tidak dapat dikirim.",
+    "modeLabel": "Cara mengirim",
+    "mode": {
+      "inject": "Sisipkan",
+      "after": "Sesudahnya",
+      "replace": "Hentikan dan ganti"
+    },
+    "hint": {
+      "inject": "Agen membacanya pada langkah berikutnya dan terus bekerja",
+      "after": "Diajukan sebagai pertanyaan berikutnya setelah jawaban selesai",
+      "replace": "Membatalkan langkah yang berjalan dan melakukan ini"
+    },
+    "state": {
+      "pending": "menunggu",
+      "applied": "diterapkan",
+      "queued": "dijadwalkan"
+    },
+    "listLabel": "Instruksi untuk jawaban yang berjalan"
   }
 }

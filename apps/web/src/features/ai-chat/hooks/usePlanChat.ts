@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
-import { showChatVersion } from '@/lib/api/endpoints/agentChat';
+import { showChatVersion, type AgUiEvent } from '@/lib/api/endpoints/agentChat';
 import { qk } from '@/services/queryKeys';
 import { uuid } from '@/utils/uuid';
 import { PlanChatTransport, type PlanSendOptions } from '../services/planChatTransport';
@@ -36,6 +36,7 @@ export function usePlanChat({
   threadId,
   onThreadCreated,
   onError,
+  onEvent,
   pageContext,
 }: {
   scopeKey: string;
@@ -43,6 +44,8 @@ export function usePlanChat({
   threadId: string | null;
   onThreadCreated: (threadId: string) => void;
   onError: (error: Error) => void;
+  // Every AG-UI event of the answers followed, as it arrives.
+  onEvent?: (event: AgUiEvent) => void;
   pageContext?: { projectKey: string | null; path: string };
 }) {
   const client = useQueryClient();
@@ -53,8 +56,12 @@ export function usePlanChat({
   const [restored, setRestored] = useState(initialThreadId == null);
   const [nextPage, setNextPage] = useState<number | null>(null);
   const [loadingOlder, setLoadingOlder] = useState(false);
-  const latest = useRef({ onThreadCreated, onError });
-  latest.current = { onThreadCreated, onError };
+  const latest = useRef({ onThreadCreated, onError, onEvent });
+  latest.current = { onThreadCreated, onError, onEvent };
+  useEffect(() => {
+    transport.listen((event) => latest.current.onEvent?.(event));
+    return () => transport.listen(undefined);
+  }, [transport]);
   // The chat's own setter and status, for callbacks the chat itself calls (onData,
   // onFinish), which are created before it.
   const chatRef = useRef<{
@@ -187,6 +194,22 @@ export function usePlanChat({
     return chat.resumeStream();
   }, [chat, transport, agent.id]);
 
+  // Follows the answer the server started on its own behalf: an instruction sent as
+  // "after" is the next turn, asked and answered once the answer it waited for ended. The
+  // transcript's newest page brings the turn in (its question and the answer, still empty),
+  // and the answer is followed from its first event like one found running on opening.
+  const followAnswer = useCallback(
+    async (ref: { agentId: number; messageId: number }) => {
+      const id = transport.threadId;
+      if (!id) return;
+      const page = await thread.fetchPageOf(id, 0);
+      chat.setMessages((current) => mergeNewestPage(current, page.items.map(toUIMessage)));
+      transport.follow({ agentId: ref.agentId, messageId: ref.messageId });
+      await chat.resumeStream();
+    },
+    [chat, thread, transport],
+  );
+
   // A send that failed before the server stored it is sent again as it was; one that
   // was stored is answered again.
   const retrySend = useCallback(() => {
@@ -246,6 +269,7 @@ export function usePlanChat({
     regenerate,
     edit,
     reconnect,
+    followAnswer,
     retrySend,
     switchVersion,
     loadOlder,

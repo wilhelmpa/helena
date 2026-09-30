@@ -20,6 +20,7 @@ import type { PlanChat } from '../../hooks/usePlanChat';
 import type { Artifact } from '../../utils/artifacts';
 import type { PlanUIMessage } from '../../utils/chatMessages';
 import ChatMessageItem from './ChatMessageItem';
+import type { Followup } from '@/lib/api/endpoints/agentFollowups';
 import ChatDaySeparator from './ChatDaySeparator';
 
 // Keeps following an answer to its end unless the reader scrolled. The scroller lets go
@@ -100,6 +101,8 @@ export interface ChatMessageListProps {
   editingId: string | null;
   onEditingChange: (messageId: string | null) => void;
   onShowArtifact: (artifact: Artifact) => void;
+  // The instructions given while an answer ran, by the answer's message id.
+  followups?: Map<string, Followup[]>;
   showOrb: boolean;
 }
 
@@ -130,6 +133,7 @@ function ChatTranscript({
   editingId,
   onEditingChange,
   onShowArtifact,
+  followups,
   showOrb,
 }: ChatMessageListProps) {
   const t = useTranslations('chatWorkspace');
@@ -224,6 +228,7 @@ function ChatTranscript({
                       onEdit={edit}
                       onShowArtifact={onShowArtifact}
                       onSwitchVersion={switchVersion}
+                      followups={followups?.get(message.id)}
                     />
                   </MessageScrollerItem>
                 </Fragment>

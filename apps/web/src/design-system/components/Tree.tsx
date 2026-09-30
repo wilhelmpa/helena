@@ -99,6 +99,17 @@ export function TreeNote({ children }: { children: ReactNode }) {
   );
 }
 
+// A long list inside a tree section (the sidebar's chats) in a box of its own: it has a
+// bounded height and scrolls, so it never pushes the navigation below it out of the
+// sidebar (owner, O94). Short lists take only the room they need.
+export function TreeScroll({ children, label }: { children: ReactNode; label?: string }) {
+  return (
+    <div className="ds-tree-scroll" role="group" aria-label={label} tabIndex={-1}>
+      {children}
+    </div>
+  );
+}
+
 // The search field of a tree section, at the indent of the rows it filters.
 export function TreeSearch({
   value,

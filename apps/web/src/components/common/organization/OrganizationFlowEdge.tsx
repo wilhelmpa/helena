@@ -14,7 +14,6 @@ export type FlowEdge = Edge<
   {
     active: boolean;
     accent?: string;
-    rail?: boolean;
     // The height of the shared line all reports of a leader hang from (tree view).
     busY?: number;
     variant?: 'straight' | 'step';
@@ -67,9 +66,8 @@ export default function OrganizationFlowEdge({
   const reduced = useMediaQuery('(prefers-reduced-motion: reduce)');
   const visible = usePageVisible();
   const active = Boolean(data?.active);
-  const path = data?.rail
-    ? `M ${sourceX},${sourceY} L ${sourceX},${targetY - 6} Q ${sourceX},${targetY} ${sourceX + 6},${targetY} L ${targetX},${targetY}`
-    : data?.busY != null
+  const path =
+    data?.busY != null
       ? busPath(sourceX, sourceY, targetX, targetY, data.busY)
       : data?.variant === 'straight'
         ? getStraightPath({ sourceX, sourceY, targetX, targetY })[0]

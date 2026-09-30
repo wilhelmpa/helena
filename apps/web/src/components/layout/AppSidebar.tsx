@@ -16,6 +16,7 @@ import {
 import { useSession } from '@/lib/auth-client';
 import type { Project } from '@/lib/api/endpoints/projects';
 import type { View } from '@/lib/api/endpoints/views';
+import HelenaMark from '@/components/brand/HelenaMark';
 import SidebarAccountRow from '@/components/brand/SidebarAccountRow';
 import { Tip } from '@/design-system';
 import SidebarProjectSwitcher from './SidebarProjectSwitcher';
@@ -97,10 +98,9 @@ export default function AppSidebar({
     <nav className="ds-sidebar" aria-label={t('sidebarProject')}>
       <div className="ds-sidebar-brand">
         <Link href="/" title={t('sidebarHome')}>
+          {/* The orb mark beside the name; in the rail (56px) the mark stands alone. */}
+          <HelenaMark className="ds-brand-orb" />
           <span className="ds-brand-full">{appName.toUpperCase()}</span>
-          <span className="ds-brand-mark" aria-hidden="true">
-            {appName.charAt(0).toUpperCase()}
-          </span>
         </Link>
         <span className="ds-sidebar-brand-tools">
           <time suppressHydrationWarning>{clock}</time>

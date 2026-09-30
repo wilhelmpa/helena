@@ -11,7 +11,7 @@ export const APP_NAME = runtimeEnv().displayName ?? 'Ava';
 // over the header, which read as a glow on the phone (owner, 29.09., O70). The test
 // themeColor.test.ts keeps them equal to the tokens.
 export const THEME_COLOR_LIGHT = '#f6f5f8';
-export const THEME_COLOR_DARK = '#0b0a0e';
+export const THEME_COLOR_DARK = '#121016';
 
 // The theme-color for a resolved theme ('light' | 'dark' | unknown → light).
 export const themeColorFor = (theme: string | undefined) =>

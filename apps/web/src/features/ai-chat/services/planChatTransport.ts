@@ -53,6 +53,16 @@ export class PlanChatTransport implements ChatTransport<PlanUIMessage> {
   resume: PlanAnswerRef | null = null;
   // The answer the current stream follows, for `cancel`. Null between answers.
   active: PlanAnswerRef | null = null;
+  // Sees every event of the answers this transport follows before it is mapped — for what
+  // is not part of the message (an instruction that was taken over, see useChatFollowups).
+  private eventListener?: (event: AgUiEvent) => void;
+  listen(listener: ((event: AgUiEvent) => void) | undefined) {
+    this.eventListener = listener;
+  }
+  // The next answer to follow is this one (see reconnectToStream).
+  follow(ref: PlanAnswerRef) {
+    this.resume = ref;
+  }
 
   constructor(
     readonly scopeKey: string,
@@ -139,6 +149,7 @@ export class PlanChatTransport implements ChatTransport<PlanUIMessage> {
     const done = () => {
       if (this.active === ref) this.active = null;
     };
+    const onEvent = (event: AgUiEvent) => this.eventListener?.(event);
     return new ReadableStream<PlanChunk>({
       start(controller) {
         for (const chunk of [...head, ...mapper.start()]) controller.enqueue(chunk);
@@ -168,6 +179,7 @@ export class PlanChatTransport implements ChatTransport<PlanUIMessage> {
             controller.close();
             return;
           }
+          onEvent?.(next.value);
           const chunks = mapper.map(next.value);
           for (const chunk of chunks) controller.enqueue(chunk);
           if (chunks.length > 0) return;

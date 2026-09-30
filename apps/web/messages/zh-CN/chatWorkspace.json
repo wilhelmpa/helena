@@ -134,7 +134,8 @@
     "queuedList": "等待发送",
     "localModel": "{name}（本地）",
     "fallbackModel": "备用：{name}",
-    "busyElsewhere": "{agent} 正在处理其他事情——回复可能需要一些时间。"
+    "busyElsewhere": "{agent} 正在处理其他事情——回复可能需要一些时间。",
+    "sendAs": "以“{mode}”发送"
   },
   "artifact": {
     "title": "产物",
@@ -304,5 +305,25 @@
     "collapse": "收起聊天",
     "openTab": "作为标签页打开",
     "empty": "问问 {agent} …"
+  },
+  "followups": {
+    "failed": "无法发送指令。",
+    "modeLabel": "发送方式",
+    "mode": {
+      "inject": "插入",
+      "after": "之后",
+      "replace": "停止并替换"
+    },
+    "hint": {
+      "inject": "智能体会在下一步读取并继续工作",
+      "after": "当前回答结束后作为下一个问题发送",
+      "replace": "取消正在运行的步骤，改为执行此内容"
+    },
+    "state": {
+      "pending": "等待中",
+      "applied": "已采纳",
+      "queued": "已排期"
+    },
+    "listLabel": "对进行中回答的指令"
   }
 }

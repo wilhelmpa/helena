@@ -137,7 +137,9 @@
       "viewFullscreen": "全屏查看",
       "zoomIn": "放大",
       "zoomOut": "缩小"
-    }
+    },
+    "toolExited": "以代码 {code} 结束",
+    "toolExitedNonzero": "以非零代码结束"
   },
   "share": {
     "createFailed": "无法创建链接，请重试。",

@@ -237,6 +237,10 @@ export interface AiChatToolPart {
   args?: string;
   result?: string;
   isError?: boolean;
+  // How the call ended where the runtime reports it: a command that exits non-zero but
+  // printed output is `nonzero_with_output`, not a failure.
+  outcome?: 'ok' | 'nonzero_with_output' | 'error';
+  exitCode?: number | null;
 }
 
 // A vault file or a task a question carries. `path` is relative to the vault.

@@ -10,7 +10,7 @@ import { ShellCtx } from '@/context/shellContext';
 import { useSearchTerm } from '@/hooks/useSearchTerm';
 import type { ChatListView, ChatSummary } from '@/lib/api/endpoints/agentChat';
 import { Skeleton } from '@/components/ui/skeleton';
-import { TreeItem, TreeNote, TreeSearch } from '@/design-system';
+import { TreeItem, TreeNote, TreeScroll, TreeSearch } from '@/design-system';
 import { chatPath } from '@/utils/paths';
 import { chatsOf, useChatList } from '../../hooks/useChatList';
 import { ChatFoldersContext, useChatFolders } from '../../hooks/useChatFolders';
@@ -186,73 +186,79 @@ export default function SidebarChats({
         }
       >
         <TreeSearch value={search} onChange={setSearch} label={t('list.search')} />
-        {query.isLoading && <Loading />}
-        {empty && <TreeNote>{term ? t('list.noMatches') : t('list.empty.active')}</TreeNote>}
-        {term ? (
-          chats.map(row)
-        ) : (
-          <>
-            {sections.pinned.length > 0 && (
+        <TreeScroll label={tNav('sidebarChats')}>
+          {query.isLoading && <Loading />}
+          {empty && <TreeNote>{term ? t('list.noMatches') : t('list.empty.active')}</TreeNote>}
+          {term ? (
+            chats.map(row)
+          ) : (
+            <>
+              {sections.pinned.length > 0 && (
+                <TreeItem
+                  label={t('list.group.pinned')}
+                  mark={<Pin size={14} aria-hidden="true" />}
+                  storageKey={storage('pinned')}
+                  containsActive={holdsActive(sections.pinned)}
+                >
+                  {sections.pinned.map(row)}
+                </TreeItem>
+              )}
+              {sections.folders.map(({ folder, chats: filed }) => (
+                <TreeItem
+                  key={folder.id}
+                  label={folder.name}
+                  mark={<Folder size={14} aria-hidden="true" />}
+                  storageKey={storage(`folder:${folder.id}`)}
+                  containsActive={holdsActive(filed)}
+                  actions={<SidebarChatFolderMenu folderId={folder.id} name={folder.name} />}
+                >
+                  {filed.length > 0 ? (
+                    filed.map(row)
+                  ) : (
+                    <TreeNote>{t('list.folders.empty')}</TreeNote>
+                  )}
+                </TreeItem>
+              ))}
+              {sections.agents.map(({ agent, chats: own }) => (
+                <TreeItem
+                  key={agent.id}
+                  label={agentName(agent.id, agent.name)}
+                  mark={<Avatar name={agent.name} className="size-4" aria-hidden />}
+                  storageKey={storage(`agent:${agent.id}`)}
+                  containsActive={holdsActive(own)}
+                  actions={
+                    <SidebarChatNewInAgent
+                      projectKey={projectKey}
+                      agentId={agent.id}
+                      name={agentName(agent.id, agent.name)}
+                    />
+                  }
+                >
+                  {own.map(row)}
+                </TreeItem>
+              ))}
+              <div ref={more} />
+              {query.isFetchingNextPage && <Loading />}
               <TreeItem
-                label={t('list.group.pinned')}
-                mark={<Pin size={14} aria-hidden="true" />}
-                storageKey={storage('pinned')}
-                containsActive={holdsActive(sections.pinned)}
+                label={t('list.viewArchived')}
+                mark={<Archive size={14} aria-hidden="true" />}
+                storageKey={storage('archived')}
+                defaultOpen={false}
               >
-                {sections.pinned.map(row)}
+                <SidebarChatsOfView view="archived" projectKey={projectKey} onRemoved={removed} />
               </TreeItem>
-            )}
-            {sections.folders.map(({ folder, chats: filed }) => (
               <TreeItem
-                key={folder.id}
-                label={folder.name}
-                mark={<Folder size={14} aria-hidden="true" />}
-                storageKey={storage(`folder:${folder.id}`)}
-                containsActive={holdsActive(filed)}
-                actions={<SidebarChatFolderMenu folderId={folder.id} name={folder.name} />}
+                label={t('list.viewTrash')}
+                mark={<Trash2 size={14} aria-hidden="true" />}
+                storageKey={storage('trash')}
+                defaultOpen={false}
+                actions={<SidebarChatTrashMenu projectKey={projectKey} />}
               >
-                {filed.length > 0 ? filed.map(row) : <TreeNote>{t('list.folders.empty')}</TreeNote>}
+                <SidebarChatsOfView view="trash" projectKey={projectKey} onRemoved={removed} />
               </TreeItem>
-            ))}
-            {sections.agents.map(({ agent, chats: own }) => (
-              <TreeItem
-                key={agent.id}
-                label={agentName(agent.id, agent.name)}
-                mark={<Avatar name={agent.name} className="size-4" aria-hidden />}
-                storageKey={storage(`agent:${agent.id}`)}
-                containsActive={holdsActive(own)}
-                actions={
-                  <SidebarChatNewInAgent
-                    projectKey={projectKey}
-                    agentId={agent.id}
-                    name={agentName(agent.id, agent.name)}
-                  />
-                }
-              >
-                {own.map(row)}
-              </TreeItem>
-            ))}
-            <div ref={more} />
-            {query.isFetchingNextPage && <Loading />}
-            <TreeItem
-              label={t('list.viewArchived')}
-              mark={<Archive size={14} aria-hidden="true" />}
-              storageKey={storage('archived')}
-              defaultOpen={false}
-            >
-              <SidebarChatsOfView view="archived" projectKey={projectKey} onRemoved={removed} />
-            </TreeItem>
-            <TreeItem
-              label={t('list.viewTrash')}
-              mark={<Trash2 size={14} aria-hidden="true" />}
-              storageKey={storage('trash')}
-              defaultOpen={false}
-              actions={<SidebarChatTrashMenu projectKey={projectKey} />}
-            >
-              <SidebarChatsOfView view="trash" projectKey={projectKey} onRemoved={removed} />
-            </TreeItem>
-          </>
-        )}
+            </>
+          )}
+        </TreeScroll>
       </TreeItem>
     </ChatFoldersContext.Provider>
   );

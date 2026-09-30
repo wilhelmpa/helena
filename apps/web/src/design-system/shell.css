@@ -63,6 +63,9 @@
   padding: 0 8px 12px;
 }
 .ds-sidebar-brand > a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
   border-radius: var(--radius-sm);
   color: var(--text);
   font-size: 11px;
@@ -259,6 +262,15 @@
 .ds-tree-search > * {
   width: 100%;
 }
+/* A long list inside a tree section: a bounded box that scrolls by itself, so the sidebar's
+   navigation below it stays in view whatever the number of rows (owner, O94). */
+.ds-tree-scroll {
+  max-height: clamp(7rem, 26vh, 18rem);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
 .ds-tree-skeleton {
   height: 24px;
   margin: var(--space-1) 12px var(--space-1) 28px;
@@ -446,17 +458,15 @@
   gap: 8px;
   padding: 0 0 12px;
 }
-/* The wordmark does not fit 56px: the rail shows its first letter. */
-.ds-brand-mark {
-  display: none;
+/* The orb mark (packages/brand, HelenaMark): 24px, beside the name; the wordmark does not fit
+   56px, so the rail shows the mark alone. */
+.ds-brand-orb {
+  width: 24px;
+  height: 24px;
+  flex: none;
 }
 .ds-app[data-sidebar='rail']:not([data-sidebar-open='true']) .ds-brand-full {
   display: none;
-}
-.ds-app[data-sidebar='rail']:not([data-sidebar-open='true']) .ds-brand-mark {
-  display: inline;
-  font-size: 13px;
-  letter-spacing: 0;
 }
 .ds-app[data-sidebar='rail']:not([data-sidebar-open='true']) .ds-project-switcher {
   justify-content: center;
@@ -503,7 +513,7 @@
   .ds-app .ds-sidebar {
     position: fixed;
     inset: 0 auto 0 0;
-    z-index: 70;
+    z-index: var(--z-drawer);
     width: min(var(--sidebar-w), 86vw);
     transform: translateX(-102%);
     visibility: hidden;
@@ -520,7 +530,7 @@
   .ds-app[data-sidebar-open='true'] .ds-sidebar-scrim {
     position: fixed;
     inset: 0;
-    z-index: 69;
+    z-index: var(--z-drawer-scrim);
     display: block;
     background: var(--scrim);
   }
@@ -1001,14 +1011,14 @@
   .ds-app[data-sidebar='rail'][data-sidebar-open='true'] .ds-sidebar {
     position: fixed;
     inset: 0 auto 0 0;
-    z-index: 70;
+    z-index: var(--z-drawer);
     width: var(--sidebar-w);
     box-shadow: var(--shadow-panel);
   }
   .ds-app[data-sidebar='rail'][data-sidebar-open='true'] .ds-sidebar-scrim {
     position: fixed;
     inset: 0;
-    z-index: 69;
+    z-index: var(--z-drawer-scrim);
     display: block;
     background: var(--scrim);
   }
@@ -1204,7 +1214,7 @@
 /* The one overlay (design-system/layout/Overlay.tsx): above the tool panel. */
 .ds-side-panel.ds-overlay,
 .ds-side-panel.ds-issue-overlay {
-  z-index: 55;
+  z-index: var(--z-overlay);
 }
 .ds-overlay-body,
 .ds-issue-overlay-body {

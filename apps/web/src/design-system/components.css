@@ -2615,6 +2615,13 @@ a.ds-run-card:hover {
 }
 
 /* ── Board columns (Aufgaben › Board) ─────────────────────────────────────── */
+/* A column has no surface of its own; the padding it keeps for its tint (a full WIP limit,
+   a card dropped on it) lies outside the content edge. The row is pulled out by exactly that
+   padding, so the first column's heading and cards start on the same left edge as the title
+   and the toolbar (owner, 30.09., O91). */
+.ds-board {
+  margin-inline: calc(var(--space-3) * -1);
+}
 /* Wide enough for a title on one or two lines (owner, 28.09.: narrow cards, titles
    breaking). On a phone a column is 82% of the screen, so the next one shows at the edge
    and the swipe to it is obvious. */

@@ -76,10 +76,10 @@
 [data-theme='dark'] {
   color-scheme: dark;
 
-  --bg: #0b0a0e;
-  --surface-1: #141218;
-  --surface-2: #1c1a21;
-  --surface-3: #26232d;
+  --bg: #121016;
+  --surface-1: #1a1820;
+  --surface-2: #221f29;
+  --surface-3: #2c2934;
   --line: #ffffff14;
   --line-strong: #ffffff1f;
 
@@ -138,6 +138,20 @@
   --space-5: 24px;
   --space-6: 32px;
   --space-7: 48px;
+  /* Stacking order, ONE place (owner, O95): what opens from a layer lies above it. Page
+     chrome 40–50 < the one overlay 55 < the sidebar as a drawer 70 (its scrim 69) < menus,
+     popovers, selects and tooltips 75 < dialogs and sheets 80/81 < the large modal 100 and
+     everything opened on top of it 120/121. New layers take a step here, never a number in
+     a rule; zIndex.test.ts keeps the order. */
+  --z-overlay: 55;
+  --z-drawer-scrim: 69;
+  --z-drawer: 70;
+  --z-menu: 75;
+  --z-dialog-scrim: 80;
+  --z-dialog: 81;
+  --z-modal: 100;
+  --z-modal-menu: 120;
+  --z-modal-dialog: 121;
   /* The chat composer's field: its height for one line and the height of that line, so the
      text sits in the middle (PromptInputTextarea). */
   --ds-chat-field-min: 40px;

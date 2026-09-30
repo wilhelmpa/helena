@@ -137,7 +137,9 @@
       "viewFullscreen": "Lihat layar penuh",
       "zoomIn": "Perbesar",
       "zoomOut": "Perkecil"
-    }
+    },
+    "toolExited": "Selesai dengan kode {code}",
+    "toolExitedNonzero": "Selesai dengan kode bukan nol"
   },
   "share": {
     "createFailed": "Gagal membuat tautan. Coba lagi.",

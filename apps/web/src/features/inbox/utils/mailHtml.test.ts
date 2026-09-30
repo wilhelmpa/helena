@@ -50,6 +50,7 @@ describe('mailFrameDocument', () => {
       surface: 'red;}</style><script>alert(1)</script>',
     });
     assert.doesNotMatch(dark, /<script>/);
-    assert.match(dark, /background:#141218/);
+    // the dark surface token (--surface-1) stands in for anything that is not a colour
+    assert.match(dark, /background:#1a1820/);
   });
 });
