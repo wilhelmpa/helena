@@ -286,6 +286,8 @@ function measureContent() {
       radius: style.borderTopLeftRadius,
       bg: tokens.get(style.backgroundColor) ?? style.backgroundColor,
       shadow: shadowShows(style.boxShadow),
+      // A chosen card (Auswahl) lies one step up on the surface scale (docs/ui-framework.md §19).
+      selected: el.classList.contains('is-selected'),
       pad: [style.paddingTop, style.paddingRight, style.paddingBottom, style.paddingLeft].map(
         round,
       ),
@@ -458,7 +460,21 @@ function measureOrb() {
     if (action && (box.width > 480 || box.height > 240)) continue;
     const clip = visible(el, box);
     if (!clip) continue;
-    if (clip.l < orb.r && clip.r > orb.l && clip.t < orb.b && clip.b > orb.t)
+    // Text is where its lines are, not where its box is (a centred line in a wide empty pane).
+    let shapes = [clip];
+    if (!action) {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      shapes = [...range.getClientRects()]
+        .map((line) => ({
+          l: Math.max(line.left, clip.l),
+          t: Math.max(line.top, clip.t),
+          r: Math.min(line.right, clip.r),
+          b: Math.min(line.bottom, clip.b),
+        }))
+        .filter((line) => line.r > line.l && line.b > line.t);
+    }
+    if (shapes.some((s) => s.l < orb.r && s.r > orb.l && s.t < orb.b && s.b > orb.t))
       hits.push(`${action ? 'Aktion' : 'Text'} ${describe(el)}`);
   }
   return { hits: [...new Set(hits)].slice(0, 6) };

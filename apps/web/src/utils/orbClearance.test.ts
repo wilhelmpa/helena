@@ -12,12 +12,14 @@ const scroller = (scrollHeight: number, clientHeight: number, marked = false) =>
 });
 
 describe('orb clearance', () => {
-  it('looks at the middle and the four corners of the orb, a little inside', () => {
+  it('looks at a grid over the orb, a little inside its edge, corners included', () => {
     const points = orbPoints({ left: 100, top: 200, right: 164, bottom: 264 });
-    assert.equal(points.length, 5);
-    assert.deepEqual(points[0], [132, 232]);
-    assert.deepEqual(points[1], [108, 208]);
-    assert.deepEqual(points[4], [156, 256]);
+    assert.equal(points.length, 16);
+    assert.deepEqual(points[0], [104, 204]);
+    assert.deepEqual(points[3], [160, 204]);
+    assert.deepEqual(points[15], [160, 260]);
+    // Every point lies inside the box.
+    for (const [x, y] of points) assert.ok(x >= 100 && x <= 164 && y >= 200 && y <= 264);
   });
 
   it('marks a scroller that overflows and not one that fits', () => {

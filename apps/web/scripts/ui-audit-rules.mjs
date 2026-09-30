@@ -145,7 +145,7 @@ export function contentFindings(results) {
       if (box.kind === 'inset') {
         if (box.radius !== BOX.inset)
           out.push(`${tag}: Einschub ${label} hat Radius ${box.radius} statt ${BOX.inset}`);
-        if (box.bg !== '--surface-2')
+        if (box.bg !== '--surface-2' && !(box.selected && box.bg === '--surface-3'))
           out.push(`${tag}: Einschub ${label} liegt auf ${box.bg} statt --surface-2`);
         continue;
       }

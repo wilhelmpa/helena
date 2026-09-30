@@ -19,16 +19,18 @@ type Scroller = Pick<Element, 'hasAttribute'> & {
   clientHeight: number;
 };
 
-// The points of the orb that count: its middle and its four corners, a little inside.
-export function orbPoints(box: Box): Array<[number, number]> {
-  const inset = 8;
-  return [
-    [(box.left + box.right) / 2, (box.top + box.bottom) / 2],
-    [box.left + inset, box.top + inset],
-    [box.right - inset, box.top + inset],
-    [box.left + inset, box.bottom - inset],
-    [box.right - inset, box.bottom - inset],
-  ];
+// The points of the orb that count: a grid over its box, a little inside (a scroller may reach
+// only a corner of it, like a board column that ends just under it).
+export function orbPoints(box: Box, steps = 4): Array<[number, number]> {
+  const inset = 4;
+  const points: Array<[number, number]> = [];
+  for (let row = 0; row < steps; row++)
+    for (let column = 0; column < steps; column++)
+      points.push([
+        box.left + inset + ((box.right - box.left - 2 * inset) * column) / (steps - 1),
+        box.top + inset + ((box.bottom - box.top - 2 * inset) * row) / (steps - 1),
+      ]);
+  return points;
 }
 
 // Which of the elements under the orb are scrollers that overflow. A marked scroller carries its

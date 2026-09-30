@@ -231,6 +231,20 @@ describe('content rules', () => {
     );
   });
 
+  it('lets a chosen inset lie one step up, and nothing else off surface-2', () => {
+    const inset = (extra: object) =>
+      rules.contentFindings(
+        at(
+          content({
+            boxes: [box({ kind: 'inset', radius: '8px', shadow: false, ...extra })],
+          }),
+        ),
+      );
+    assert.deepEqual(inset({ bg: '--surface-3', selected: true }), []);
+    assert.equal(inset({ bg: '--surface-3', selected: false }).length, 1);
+    assert.equal(inset({ bg: '--surface-1', selected: true }).length, 1);
+  });
+
   it('finds a hand-drawn box and boxes that stand 12px apart', () => {
     const found = rules.contentFindings(
       at(content({ rogue: ['div.rounded-md.border'], gaps: [{ a: 'a', b: 'b', gap: 12 }] })),
