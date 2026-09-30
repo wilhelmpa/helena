@@ -83,7 +83,7 @@ function useFailureEntries(): { entries: NeedsYouEntry[]; isPending: boolean } {
   const activity = useHomeActiveActivity();
   return {
     entries: (activity.data?.items ?? [])
-      .filter((entry) => entry.status === 'failed')
+      .filter((entry) => entry.status === 'failed' && entry.requiresAttention !== false)
       .map((entry) => ({
         key: entry.id,
         kind: 'failure',

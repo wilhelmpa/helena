@@ -1,3 +1,4 @@
+import { markChatFailuresSeen } from '#modules/agent-activity/attention';
 import {
   aiAgent,
   db,
@@ -576,6 +577,7 @@ export async function setNotificationRead(
 // Marks every unread notification of the user read, optionally scoped to a project.
 // Returns how many were updated.
 export async function markAllRead(userId: string, projectId?: number): Promise<number> {
+  const chats = await markChatFailuresSeen(userId, projectId);
   const conds = [eq(notification.userId, userId), isNull(notification.readAt)];
   if (projectId != null) conds.push(eq(notification.projectId, projectId));
   const rows = await db
@@ -583,7 +585,7 @@ export async function markAllRead(userId: string, projectId?: number): Promise<n
     .set({ readAt: sql`now()` })
     .where(and(...conds))
     .returning({ id: notification.id });
-  return rows.length;
+  return rows.length + chats;
 }
 
 // Snoozes one of the user's notifications until the given time (null clears it).

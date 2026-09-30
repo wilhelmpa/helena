@@ -54,6 +54,10 @@ for provider in request.get("providers", []):
     raw = snapshot.raw if isinstance(getattr(snapshot, "raw", None), dict) else {}
     extra = {}
     account = raw.get("account_id")
+    if provider == "anthropic":
+        organization = raw.get("organization")
+        organization = organization if isinstance(organization, dict) else {}
+        account = raw.get("organization_id") or raw.get("org_id") or organization.get("uuid") or organization.get("id") or account
     if isinstance(account, str) and account:
         extra["account"] = hashlib.sha256((provider + ":" + account).encode()).hexdigest()[:16]
     rate_limit = raw.get("rate_limit")

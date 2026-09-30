@@ -106,6 +106,20 @@ async function answerLimits(asRunner: Api, snapshots: unknown[]) {
 
 describe('provider limits', () => {
   beforeEach(resetDb);
+  it('excludes inactive Hermes snapshots even when historical agent links remain', async () => {
+    const { asOwner, agent } = await setup();
+    await recordLimitSnapshots(agent.id, [snapshot()]);
+    expect((await asOwner['provider-limits'].get()).data!.accounts).toHaveLength(1);
+    await db
+      .update(aiAgent)
+      .set({ runtimePolicy: { runtime: 'helena' } })
+      .where(eq(aiAgent.id, agent.id));
+    expect((await asOwner['provider-limits'].get()).data!.accounts).toHaveLength(0);
+    await recordLimitSnapshots(null, [snapshot({ account: 'owner', source: 'codex' })]);
+    expect(
+      (await asOwner['provider-limits'].get()).data!.accounts.map((row) => row.account),
+    ).toEqual(['owner']);
+  });
 
   it("stores a runner's snapshot and reads it back with states and tokens", async () => {
     const { asOwner, asRunner, agent } = await setup();

@@ -20,11 +20,19 @@ const view = (over: Partial<ProviderLimitView>): ProviderLimitView =>
   }) as unknown as ProviderLimitView;
 
 describe('mergeSameSubscriptions', () => {
+  it('merges the same provider account even when resets differ', () => {
+    const newer = view({ id: 2, observedAt: '2026-09-24T14:00:00.000Z', windows: [] });
+    expect(mergeSameSubscriptions([view({}), newer])).toHaveLength(1);
+  });
+  it('does not identify an account from a single matching session reset', () => {
+    const local = view({ account: 'loc-other', windows: [view({}).windows[0]!] });
+    expect(mergeSameSubscriptions([view({}), local])).toHaveLength(2);
+  });
   it('shows the Hermes login and the owner login of one plan once', () => {
     const owner = view({ id: 2 });
     const hermes = view({
       id: 10,
-      account: 'loc-e36ca05639d30f45',
+      account: 'acct-1',
       source: 'hermes',
       login: 'hermes',
       plan: null,
@@ -41,6 +49,10 @@ describe('mergeSameSubscriptions', () => {
     expect(one!.plan).toBe('max');
     expect(one!.agents).toEqual([{ id: 1, name: 'Home' }]);
     expect(one!.windows[0]!.usedPercent).toBe(95);
+  });
+
+  it('keeps distinct accounts apart even when all reset times match', () => {
+    expect(mergeSameSubscriptions([view({}), view({ account: 'loc-other' })])).toHaveLength(2);
   });
 
   it('keeps accounts apart whose windows end at other times, or that are both real', () => {

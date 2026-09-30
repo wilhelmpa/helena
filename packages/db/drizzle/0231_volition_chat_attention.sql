@@ -1,0 +1,1 @@
+ALTER TABLE "agent_chat_message" ADD COLUMN "attention_seen_at" timestamp with time zone;

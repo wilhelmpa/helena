@@ -85,7 +85,8 @@ def listing(state_dir: str, *, limit: int = 100) -> dict:
     return {
         'events': list(reversed(events)),
         'seenUpTo': seen,
-        'unseen': sum(1 for event in data['events'] if event['id'] > seen),
+        'unseen': sum(1 for event in data['events'] if event['id'] > seen
+                      and not (event['code'] == 'BootEntryRepaired' and event['severity'] != 'critical')),
         'unseenCritical': sum(1 for event in data['events']
                               if event['id'] > seen and event['severity'] == 'critical'),
     }

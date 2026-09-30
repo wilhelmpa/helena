@@ -4,7 +4,7 @@ const REPORT = '/var/lib/volition/plan/vault-integrity.json';
 const MAX_AGE_MS = 30 * 60_000;
 
 export interface VaultIntegrity {
-  state: 'ok' | 'down';
+  state: 'ok' | 'down' | 'unknown';
   checkedAt: string | null;
   findings: { code: string; path: string; detail: string }[];
 }
@@ -21,8 +21,10 @@ export async function vaultIntegrity(): Promise<VaultIntegrity> {
     }
     const age = Date.now() - Date.parse(report.checkedAt);
     const stale = !Number.isFinite(age) || age > MAX_AGE_MS || age < -5 * 60_000;
+    let state: VaultIntegrity['state'] = 'down';
+    if (!stale && (report.state === 'ok' || report.state === 'unknown')) state = report.state;
     return {
-      state: stale || report.state !== 'ok' ? 'down' : 'ok',
+      state,
       checkedAt: report.checkedAt,
       findings: stale
         ? [
@@ -40,9 +42,10 @@ export async function vaultIntegrity(): Promise<VaultIntegrity> {
               typeof item.detail === 'string',
           ),
     };
-  } catch {
+  } catch (error) {
+    const pending = (error as NodeJS.ErrnoException).code === 'ENOENT';
     return {
-      state: 'down',
+      state: pending ? 'unknown' : 'down',
       checkedAt: null,
       findings: [
         { code: 'missing_report', path: 'Vault', detail: 'No integrity report is available' },

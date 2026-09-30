@@ -58,6 +58,56 @@ const service = (
 describe('system health', () => {
   beforeEach(resetDb);
 
+  it('counts only engine failures without a successful rerun of the same work', async () => {
+    const { god } = await setup();
+    const { projectId, issueId } = await project(god);
+    const now = Date.now();
+    const base = {
+      kind: 'agent_team',
+      definition: { steps: [] },
+      projectId,
+      issueId,
+      trigger: 'manual',
+    };
+    await db.insert(pipelineRun).values([
+      {
+        ...base,
+        id: 'old-failure',
+        status: 'failed',
+        error: 'invalid evidence',
+        createdAt: new Date(now - 3000),
+        finishedAt: new Date(now - 2000),
+      },
+      {
+        ...base,
+        id: 'recovery',
+        status: 'succeeded',
+        createdAt: new Date(now - 1000),
+        finishedAt: new Date(now),
+      },
+      {
+        ...base,
+        id: 'unrelated',
+        issueId: null,
+        status: 'failed',
+        error: 'still open',
+        finishedAt: new Date(now),
+      },
+      {
+        ...base,
+        id: 'simulation',
+        issueId: null,
+        dryRun: true,
+        status: 'failed',
+        error: 'dry run',
+        finishedAt: new Date(now),
+      },
+    ]);
+    const health = (await god.api.god['system-health'].get()).data!;
+    expect(health.engine.failedLastDay).toBe(1);
+    expect(health.engine.lastErrors.map((entry) => entry.runId)).toEqual(['unrelated']);
+  });
+
   it('shows the latest Vault check only to the owner and marks stale checks red', async () => {
     const dir = await mkdtemp(join(process.env.TMPDIR ?? tmpdir(), 'vault-health-'));
     const saved = process.env.VOLITION_VAULT_INTEGRITY_REPORT;
@@ -75,6 +125,16 @@ describe('system health', () => {
       const member = await addUser({ email: 'member@example.com' });
       expect((await god.api.god['vault-integrity'].get()).data?.state).toBe('ok');
       expect((await member.api.god['vault-integrity'].get()).status).toBe(403);
+      await writeFile(
+        process.env.VOLITION_VAULT_INTEGRITY_REPORT,
+        JSON.stringify({
+          state: 'unknown',
+          checkedAt: new Date().toISOString(),
+          findings: [{ code: 'backup_unchecked', path: 'Vault', detail: '' }],
+        }),
+      );
+      expect((await god.api.god['vault-integrity'].get()).data?.state).toBe('unknown');
+
       await writeFile(
         process.env.VOLITION_VAULT_INTEGRITY_REPORT,
         JSON.stringify({

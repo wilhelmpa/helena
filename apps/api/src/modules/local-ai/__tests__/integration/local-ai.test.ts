@@ -1,3 +1,5 @@
+import { storeCliEval } from '../../../../scripts/local-ai-eval-store';
+import { BUILTIN_TASK_CLASSES } from '../../task-classes';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'bun:test';
 import { aiAgent, agentRun, agentUsage, db, helenaLocalAiEval, helenaModelServer } from '@repo/db';
 import { eq, sql } from 'drizzle-orm';
@@ -15,6 +17,8 @@ import {
   localAiStatus,
   runtimeLocalAi,
   settleEvals,
+  latestEvals,
+  classBlocker,
 } from '../../service';
 import { COMPRESSION_CASES } from '../../evals';
 import { LOCAL_AI_MAX_WAIT_MS, localAiMayStart } from '../../pressure';
@@ -160,6 +164,40 @@ async function setup() {
 
 describe('local AI', () => {
   beforeEach(resetDb);
+  it('CLI results update the registered model gate without applying a policy', async () => {
+    const { server } = await setup();
+    const entry = BUILTIN_TASK_CLASSES.find((item) => item.id === 'hermes-helpers')!;
+    const base = `http://127.0.0.1:${fake.port}/api/v1`;
+    for (const score of [0, 1]) {
+      expect(
+        await storeCliEval({
+          baseUrl: base,
+          model: MODELS[0]!.id as string,
+          entry,
+          ranAt: new Date(),
+          result: {
+            score,
+            cases: [{ id: 'test', passed: score === 1 }],
+            latencyMsP50: null,
+            tokensPerSecond: null,
+          },
+        }),
+      ).toBe(true);
+      const evals = await latestEvals();
+      expect(classBlocker(entry, `helena-${server.slug}/${MODELS[0]!.id}`, evals)).toBe(
+        score === 1 ? null : 'eval-failed',
+      );
+    }
+    expect(
+      await storeCliEval({
+        baseUrl: 'http://127.0.0.1:1/v1',
+        model: 'unregistered',
+        entry,
+        ranAt: new Date(),
+        result: { score: 1, cases: [], latencyMsP50: null, tokensPerSecond: null },
+      }),
+    ).toBe(false);
+  });
 
   it('reads the server, gates a class on its eval, and lets the master switch in and out', async () => {
     const { asOwner, asRunner, agent, server } = await setup();

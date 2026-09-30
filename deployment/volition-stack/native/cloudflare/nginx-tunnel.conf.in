@@ -57,6 +57,18 @@ server {
         proxy_set_header Cookie $http_cookie;
     }
 
+    location = /sw.js {
+        auth_request off;
+        proxy_pass http://127.0.0.1:3001/sw.js;
+        proxy_set_header Host $host;
+        proxy_set_header Cookie "";
+        proxy_set_header Authorization "";
+        proxy_set_header X-Helena-Entry "";
+        proxy_redirect off;
+        add_header Cache-Control "no-cache" always;
+        add_header Service-Worker-Allowed "/" always;
+    }
+
     location = /browser {
         include /etc/nginx/snippets/helena-tunnel-headers.conf;
         return 301 /browser/;

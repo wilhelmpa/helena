@@ -35,7 +35,7 @@ def render(tunnel: str, certs: pathlib.Path, snippet: pathlib.Path = SNIPPET) ->
         raise ValueError('expected one tunnel server block')
     server = tunnel[tunnel.index(marker):].replace('@HOST@', HOST)
     if server.count('    server_name helena.volition.one;\n') != 1 or \
-            server.count('auth_request off;') != 3 or \
+            server.count('auth_request off;') != 4 or \
             '$helena_owner_capability' in server:
         raise ValueError('tunnel routing no longer matches the strict LAN security anchors')
     changes = {
