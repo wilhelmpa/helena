@@ -11,7 +11,7 @@ import { retryLocalAiEval, type EvalRetry } from './local-ai-eval-retry';
 //   bun apps/api/src/scripts/local-ai-eval.ts --base http://127.0.0.1:13305/api/v1 \
 //     --key-file /etc/helena/local-ai.key --model Qwen3.6-35B-A3B-GGUF \
 //     [--embed-model Qwen3-Embedding-0.6B-GGUF] [--classes triage,summaries] \
-//     [--thinking off|low|medium|high] [--json out.json | --json -]
+//     [--thinking off|low|medium|high] [--display-name Ava] [--json out.json | --json -]
 //     [--npu --npu-backend fastflowlm --npu-timeout-ms 30000]
 // Backend/model defaults: VOLITION_NPU_DECISION_TIMEOUTS_MS='{"fastflowlm":{"gemma4-it:e2b":30000}}'.
 //
@@ -126,6 +126,7 @@ for (const entry of [...BUILTIN_TASK_CLASSES, DECISIONS_LOCAL_AI_CLASS]) {
           judge = openAiEvalContext({ baseUrl: judgeBase, key: judgeKey, model: judgeModel }).chat;
         return evaluate(
           openAiEvalContext({
+            displayName: argument('display-name') ?? 'Ava',
             baseUrl: base,
             key,
             model: target,

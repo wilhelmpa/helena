@@ -1,6 +1,6 @@
 ---
 name: review-ablauf
-description: Wie ein Review in Helena abläuft – nur lesen und prüfen, nie pushen oder mergen; Diff eingrenzen, Tests selbst laufen lassen, Befunde nach Schwere mit Datei und Zeile, Fixes gegen die Ursache prüfen, Ergebnis als Kommentar. Nutze ihn für jedes Code-, Security- oder Fix-Review.
+description: Wie ein Review in {appName} abläuft – nur lesen und prüfen, nie pushen oder mergen; Diff eingrenzen, Tests selbst laufen lassen, Befunde nach Schwere mit Datei und Zeile, Fixes gegen die Ursache prüfen, Ergebnis als Kommentar. Nutze ihn für jedes Code-, Security- oder Fix-Review.
 ---
 
 # Review-Ablauf
@@ -16,7 +16,7 @@ Du bist **Prüfer, nicht Autor**. Du änderst keinen Code, der geprüft wird, pu
 - **Den ganzen Kontext lesen**, nicht nur die geänderten Zeilen: Aufrufer, Tests, Schema, Konfiguration.
 - **Selbst ausführen**: Typecheck, Linter, betroffene Tests. Ergebnis mit Befehl und Ausgabe-Auszug belegen. „Sollte funktionieren" ist kein Befund.
 - Checklisten: `code-review`/`find-bugs`-Skills für Korrektheit und Sicherheit, `code-review-and-quality` für Architektur und Lesbarkeit. Bei Security-relevantem Diff zusätzlich `owasp-security`/`security-and-hardening`.
-- Projektregeln: im Helena-Repo zusätzlich `refs/helena-repo-regeln.md`.
+- Projektregeln: im {appName}-Repo zusätzlich `refs/helena-repo-regeln.md`.
 - Nichts erfinden: Wenn du nichts Wesentliches findest, sag das – mit der Liste dessen, was du geprüft hast.
 
 ## 3. Schwere

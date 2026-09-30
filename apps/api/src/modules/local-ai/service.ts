@@ -1,3 +1,4 @@
+import { getDisplayName } from '@repo/db';
 import { verifyNpuDecisionReadout } from './npu-eval';
 import { globalModelStatus } from './global-model';
 import {
@@ -476,6 +477,7 @@ async function evaluateInto(
     const judge = await currentJudge();
     const result = await entry.evaluate!(
       openAiEvalContext({
+        displayName: await getDisplayName(),
         baseUrl: server.baseUrl,
         key,
         model: model.id,

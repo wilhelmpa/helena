@@ -39,7 +39,7 @@ export const RunnerRunResponse = t.Object({
     minimum: 0,
     maximum: 3,
     description:
-      "The Autopilot level the run works at. Helena's policy engine decides every tool call " +
+      "The Autopilot level the run works at. {appName}'s policy engine decides every tool call " +
       "by it (POST /agent-policy/decide); a runner maps it onto its runtime's permission mode.",
   }),
 });
@@ -122,7 +122,7 @@ export const resultBody = t.Object({
       },
       {
         description:
-          "The task Helena's own loop handed to a bigger model: Helena queues the follow-up run.",
+          "The task {appName}'s own loop handed to a bigger model: {appName} queues the follow-up run.",
       },
     ),
   ),

@@ -297,7 +297,7 @@ export function validateBlueprint(blueprint: ProjectBlueprint): string[] {
 export function parseBlueprintJson(text: string): ProjectBlueprint {
   const blueprint = JSON.parse(text) as ProjectBlueprint;
   if (!blueprint || typeof blueprint !== 'object' || !blueprint.project) {
-    throw new Error('Not a Helena project blueprint');
+    throw new Error('Not a project blueprint');
   }
   const problems = validateBlueprint(blueprint);
   if (problems.length > 0) throw new Error(`Invalid blueprint:\n- ${problems.join('\n- ')}`);

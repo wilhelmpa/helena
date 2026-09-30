@@ -1,3 +1,4 @@
+import { renderDisplayName } from '@helena/sdk';
 import {
   consoleLogger,
   SchemaError,
@@ -222,6 +223,7 @@ export async function callConfiguredTool(
   }
   try {
     const result = await tool.handler(input, {
+      displayName: await getDisplayName(),
       agent: agentRef,
       project: projectRef,
       credential,
@@ -240,6 +242,6 @@ export async function callConfiguredTool(
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     await audit('called', category, `${tool.name} failed: ${message}`);
-    return refusal(502, message.slice(0, 500));
+    return refusal(502, renderDisplayName(message.slice(0, 500), await getDisplayName()));
   }
 }

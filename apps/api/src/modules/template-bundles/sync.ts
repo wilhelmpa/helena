@@ -10,6 +10,7 @@
 // it. Skills and MCP servers are only ever added to an agent, never removed.
 
 import {
+  renderDisplayName,
   BUNDLE_FORMAT,
   BUNDLE_FORMAT_VERSION,
   type BundleAgent,
@@ -642,8 +643,13 @@ export async function importBundle(
   log: SyncLog,
   teamId: number,
   bundle: TemplateBundle,
-  options: { skipAgents?: boolean } = {},
+  options: { skipAgents?: boolean; displayName?: string } = {},
 ): Promise<{ skillIds: Map<string, number>; serverIds: Map<string, number> }> {
+  bundle = {
+    ...renderDisplayName(bundle, options.displayName),
+    agents: bundle.agents,
+    skills: bundle.skills,
+  };
   log.log(`\n== Bundle ${bundle.name} ${bundle.version}: skills ==`);
   const skillIds = await importSkills(log, teamId, bundle.skills);
   log.log('\n== MCP servers ==');

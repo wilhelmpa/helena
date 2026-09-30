@@ -29,6 +29,7 @@ export interface LoopInput {
   config: AgentRuntimeConfig;
   prompt: string;
   system: string;
+  displayName?: string;
   sessionId: string | null;
   labels?: string[];
   models: ResolvedModel[];
@@ -119,6 +120,7 @@ function shrinkOld(entries: SessionItem[], currentStep: number): ModelMessage[] 
 
 export async function runLoop(input: LoopInput): Promise<LoopResult> {
   const { config, sink, sessions } = input;
+  const displayName = input.displayName ?? config.displayName ?? 'Ava';
   const now = input.now ?? Date.now;
   const started = now();
   let budgetStarted = started;
@@ -272,7 +274,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
       .slice(-15)
       .map((part) => `- ${part.toolName} ${JSON.stringify(part.input).slice(0, 200)}`);
     return [
-      `Übergabe von Helenas lokaler Laufzeit (${chain[0]!.id}), Grund: ${escalation.reason} (${escalation.detail}).`,
+      `Übergabe von ${displayName}s lokaler Laufzeit (${chain[0]!.id}), Grund: ${escalation.reason} (${escalation.detail}).`,
       `Aufgabe:\n${input.prompt.slice(0, 6000)}`,
       summary ? `Zusammenfassung:\n${summary.slice(0, 3000)}` : '',
       `Verlauf:\n${entries
@@ -345,7 +347,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
       [
         {
           role: 'user',
-          content: `(Helena) Die Aufgabe wird an ein stärkeres Modell übergeben (${escalation.reason}: ${escalation.detail}). Mach mit dem bisherigen Verlauf weiter und bring sie zu Ende.`,
+          content: `(${displayName}) Die Aufgabe wird an ein stärkeres Modell übergeben (${escalation.reason}: ${escalation.detail}). Mach mit dem bisherigen Verlauf weiter und bring sie zu Ende.`,
         },
       ],
       step + 1,
@@ -663,8 +665,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
           [
             {
               role: 'user',
-              content:
-                '(Helena) Du hast nur angekündigt, was du tun willst. Tu es jetzt mit deinen Werkzeugen und antworte erst, wenn es erledigt ist.',
+              content: `(${displayName}) Du hast nur angekündigt, was du tun willst. Tu es jetzt mit deinen Werkzeugen und antworte erst, wenn es erledigt ist.`,
             },
           ],
           step,
@@ -678,8 +679,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
             [
               {
                 role: 'user',
-                content:
-                  '(Helena) Das Werkzeug hat geantwortet, aber deine Antwort ist leer. Verwende sein Ergebnis und beantworte die Aufgabe jetzt.',
+                content: `(${displayName}) Das Werkzeug hat geantwortet, aber deine Antwort ist leer. Verwende sein Ergebnis und beantworte die Aufgabe jetzt.`,
               },
             ],
             step,
@@ -746,8 +746,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
       }
       const verdict = watch!.call(call.name, call.input ?? {}, result.output);
       if (verdict === 'warn') {
-        warning =
-          '(Helena) Du wiederholst Aufrufe, die nichts ändern. Geh anders vor oder beende den Zug mit dem, was du hast.';
+        warning = `(${displayName}) Du wiederholst Aufrufe, die nichts ändern. Geh anders vor oder beende den Zug mit dem, was du hast.`;
       }
       if (verdict === 'loop') looping = true;
       deferCalls ||= endTurn || (await instructionsPending());

@@ -90,7 +90,7 @@ export const agentProposalRoutes = new Elysia({
       detail: {
         summary: "List the versions of an agent's memory",
         description:
-          'Every version of MEMORY.md and USER.md Helena has seen, newest first: written by ' +
+          'Every version of MEMORY.md and USER.md {appName} has seen, newest first: written by ' +
           'the agent and approved, written by a person, or found in the runtime.',
       },
     },

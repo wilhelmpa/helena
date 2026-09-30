@@ -5,7 +5,7 @@ description: Das Trading-Regelwerk lesen, anwenden und weiterentwickeln – Risi
 
 # Regelwerk und Positionsgröße
 
-`Projects/<KEY>/Docs/Regelwerk.md` ist das **gültige** Regelwerk. Es gilt über jeder Strategie. Die **harten Grenzen** stehen zusätzlich in der Paper-Verbindung (vom Owner gesetzt) und werden von Helena vor jeder Order erzwungen; `alpaca_paper_account` zeigt sie.
+`Projects/<KEY>/Docs/Regelwerk.md` ist das **gültige** Regelwerk. Es gilt über jeder Strategie. Die **harten Grenzen** stehen zusätzlich in der Paper-Verbindung (vom Owner gesetzt) und werden von {appName} vor jeder Order erzwungen; `alpaca_paper_account` zeigt sie.
 
 ## 1. Anwenden
 Vor jedem geplanten Trade die Checkliste des Regelwerks durchgehen und jede Regel mit „erfüllt / nicht erfüllt / nicht prüfbar“ beantworten. Für einzelne Regeln kann `trading_classify` (kind `rule`, der Regeltext wörtlich) schnell helfen – nur `decided` zählt, die harten Zahlen rechnest du selbst.
@@ -26,7 +26,7 @@ Positionswert neu  = vorhandener Wert + Orderwert → muss ≤ maxPositionValueU
 Nachkaufen im Minus, Stop weiter weg schieben, Trades ohne Stop, „Aufholen“ nach Verlusten, Einstieg entgegen dem Regelwerk-Zeitfenster, mehrere korrelierte Positionen über die Grenze, Leerverkäufe.
 
 ## 4. Abgleich mit den harten Grenzen
-`alpaca_paper_account` → `limits`. Weicht das Regelwerk davon ab (z. B. Regelwerk 1 % = 1.000 USD, Grenze 50 USD), gilt **die strengere Zahl**; die Abweichung wird dem Owner gemeldet. Fehlt eine Grenze (`missingLimits`), öffnet Helena keine Position – melden.
+`alpaca_paper_account` → `limits`. Weicht das Regelwerk davon ab (z. B. Regelwerk 1 % = 1.000 USD, Grenze 50 USD), gilt **die strengere Zahl**; die Abweichung wird dem Owner gemeldet. Fehlt eine Grenze (`missingLimits`), öffnet {appName} keine Position – melden.
 
 ## 5. Regelwerk ändern
 Nur als Vorschlag: neue Fassung als Entwurf im Abschnitt „Vorschläge“ des Regelwerks mit Begründung (Review-Befund, Backtest), dann `request_approval`. Erst nach Freigabe die gültige Fassung ändern (Version + Datum im Front Matter, Änderung in „Änderungen“ protokollieren). Grenzen der Verbindung ändert nur der Owner.

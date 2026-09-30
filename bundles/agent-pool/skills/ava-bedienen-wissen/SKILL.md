@@ -1,6 +1,6 @@
 ---
 name: ava-bedienen-wissen
-description: Helena-Wissen im Vault suchen, lesen, versionieren und pflegen.
+description: {appName}-Wissen im Vault suchen, lesen, versionieren und pflegen.
 ---
 
 # Ava bedienen: Wissen

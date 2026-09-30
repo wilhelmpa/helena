@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:helena:schema:template-bundle:v1",
-  "title": "Helena template bundle",
+  "title": "Template bundle",
   "type": "object",
   "properties": {
     "format": {

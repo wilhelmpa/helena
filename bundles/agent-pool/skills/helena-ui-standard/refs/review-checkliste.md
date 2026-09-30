@@ -1,4 +1,4 @@
-# Checkliste Design-Review Helena
+# Checkliste Design-Review {appName}
 
 Pro Seite abhaken; jeder Haken ohne Befund, jeder offene Punkt mit Ort und Screenshot.
 
@@ -41,7 +41,7 @@ Pro Seite abhaken; jeder Haken ohne Befund, jeder offene Punkt mit Ort und Scree
 
 ## Texte
 - [ ] Alle Texte aus i18n, in allen Sprachdateien vorhanden; keine englischen Reste in der deutschen Oberfläche.
-- [ ] Produktname nur „Helena", kein anderer Produkt- oder Firmenname.
+- [ ] Produktname nur „{appName}", kein anderer Produkt- oder Firmenname.
 - [ ] Kurz, konkret, Du-Form wie im Rest der App; keine Floskeln.
 
 ## Konsole und Technik

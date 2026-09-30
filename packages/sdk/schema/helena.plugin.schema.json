@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:helena:schema:plugin-manifest:v1",
-  "title": "Helena plugin manifest",
+  "title": "Plugin manifest",
   "type": "object",
   "properties": {
     "$schema": {

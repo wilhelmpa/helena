@@ -22,11 +22,11 @@ Mischformen trennen: Eine How-to-Seite verlinkt die Erklärung, statt sie zu ent
 - Kurze Sätze, aktiv, Imperativ in Schritten („Öffne …", „Run …"). Ein Schritt = eine Handlung + erwartetes Ergebnis.
 - Befehle und Code in Codeblöcken mit Sprache; Platzhalter als `<name>` und darunter erklärt. Nichts, was Secrets enthält – Beispiele mit `itp_…`/`sk-…`-Platzhaltern.
 - UI-Beschriftungen **genau so**, wie sie in der Oberfläche stehen (Deutsch: „Agentenpool", „Spezialisten aus Vorlage hinzufügen").
-- Produktname ist nur **Helena** – ohne Zusatz und ohne andere Produkt- oder Firmennamen.
+- Produktname ist nur **{appName}** – ohne Zusatz und ohne andere Produkt- oder Firmennamen.
 - Screenshots nur, wenn sie etwas zeigen, das Text nicht kann; mit Datum/Version im Dateinamen.
 
 ## 3. Deutsch und Englisch
-- Deutsch: Du-Form wie in der Oberfläche von Helena; neutrale, klare Sprache; Fachwörter, die im Team üblich sind, nicht zwanghaft eindeutschen (Branch, Commit, Deploy), aber einheitlich.
+- Deutsch: Du-Form wie in der Oberfläche von {appName}; neutrale, klare Sprache; Fachwörter, die im Team üblich sind, nicht zwanghaft eindeutschen (Branch, Commit, Deploy), aber einheitlich.
 - Englisch: plain English, US-Schreibweise, gleiche Struktur und Überschriften wie die deutsche Fassung.
 - **Parität**: Beide Fassungen haben dieselben Abschnitte, Befehle, Beispiele und Stand-Datum. Ändert sich eine, änderst du die andere mit – oder markierst sie sichtbar als veraltet.
 - Begriffe in einer kleinen Tabelle pflegen (Glossar im Projektwissen), damit „Vorlage/Template", „Kopie/Copy", „Freigabe/Approval" überall gleich übersetzt sind.

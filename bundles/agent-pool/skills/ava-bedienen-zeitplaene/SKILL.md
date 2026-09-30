@@ -1,6 +1,6 @@
 ---
 name: ava-bedienen-zeitplaene
-description: Helena-Routinen und geplante Agentenarbeit lesen, prüfen und verwalten.
+description: {appName}-Routinen und geplante Agentenarbeit lesen, prüfen und verwalten.
 ---
 
 # Ava bedienen: Zeitpläne

@@ -31,7 +31,7 @@ Gegen den Backtest der Version stellen (gleiche Kennzahlen). Unter 20 Trades: Er
 
 ## 4. Lernen (Hermes)
 - **Lehren, die bleiben sollen** (z. B. „Setup X versagt bei hoher Volatilität“, „Owner will keine Trades vor der Fed“), als kurze Memory-Einträge vorschlagen – der Owner bestätigt sie (Memory-Freigabe ist an). Keine Einzeltrade-Details ins Memory.
-- **Wiederkehrende Abläufe** (ein Auswertungsschritt, den du jede Woche gleich machst) als Skill-Vorschlag festhalten; Helena zeigt gelernte Skills dem Owner zur Übernahme.
+- **Wiederkehrende Abläufe** (ein Auswertungsschritt, den du jede Woche gleich machst) als Skill-Vorschlag festhalten; {appName} zeigt gelernte Skills dem Owner zur Übernahme.
 - **Verbesserungsideen** als Aufgabe an @strategy-developer-<key> (neue Version), nie als direkte Änderung einer gehandelten Version.
 
 ## 5. Ziele

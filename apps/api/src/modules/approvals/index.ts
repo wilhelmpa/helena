@@ -72,7 +72,7 @@ export const approvalRoutes = new Elysia({
           'Ask a person to approve an action before you take it: sending a ' +
           'message or email, publishing, paying, or deleting something. Describe the action ' +
           'in one line, state its scope, and give every detail the person needs to decide. Then end your run ' +
-          'without taking the action: Helena starts a new run of yours with the decision and ' +
+          'without taking the action: {appName} starts a new run of yours with the decision and ' +
           'its note once the request is approved or rejected. When a terminal command or ' +
           'execute_code call was blocked for approval, pass exactly what it was about to run ' +
           'in command: the run with the approval may run exactly that. Returns the request ' +

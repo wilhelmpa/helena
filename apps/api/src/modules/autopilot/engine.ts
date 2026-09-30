@@ -225,7 +225,7 @@ export async function decide(input: DecideInput): Promise<EngineDecision> {
     decision = {
       outcome: 'deny',
       reason: 'policy',
-      detail: 'Recurring work is a routine in Helena.',
+      detail: 'Recurring work is a routine in the application.',
       policyIds: [],
     };
   } else {

@@ -58,7 +58,7 @@ export const templateBundleRoutes = new Elysia({
     teamPermission: ['ai_agents', 'read'],
     response: { 200: t.Array(BundleOfferView), ...accessErrors },
     detail: {
-      summary: 'List the template bundles on offer (Helena and plugins)',
+      summary: 'List the template bundles on offer ({appName} and plugins)',
       description:
         "The repository's bundles (the agent pool) and those plugins register, with how many agent templates, skills and MCP servers each holds.",
     },

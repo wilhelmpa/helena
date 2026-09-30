@@ -41,7 +41,7 @@ const Hit = t.Object({
   id: t.String(),
   title: t.String(),
   snippet: t.String({ description: 'Where it matched, matches in **bold**.' }),
-  href: t.String({ description: 'Where the item opens in Helena.' }),
+  href: t.String({ description: 'Where the item opens in {appName}.' }),
   url: t.String({ description: 'The same as an absolute link.' }),
   cite: t.String({ description: 'A Markdown link to put into an answer as its source.' }),
   path: t.Nullable(t.String({ description: 'The vault path, for notes and files.' })),
@@ -171,7 +171,7 @@ export const captureBody = t.Object({
   text: t.String({ maxLength: 500_000, description: 'Markdown.' }),
   origin: t.Optional(t.String({ maxLength: 2000, description: 'The page or mail it came from.' })),
   from: t.Optional(
-    t.String({ maxLength: 1100, description: 'The Helena item it came from, `<source>:<id>`.' }),
+    t.String({ maxLength: 1100, description: 'The {appName} item it came from, `<source>:<id>`.' }),
   ),
   projectKey: t.Optional(
     t.String({ maxLength: 32, description: "The project's Inbox; Home's without one." }),

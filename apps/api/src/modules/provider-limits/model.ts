@@ -31,7 +31,7 @@ export const ProviderLimitWindow = t.Object({
   agentTokens: t.Nullable(
     t.Number({
       description:
-        "Tokens Helena's agents on this account spent since the window started (agent_usage)",
+        "Tokens {appName}'s agents on this account spent since the window started (agent_usage)",
     }),
   ),
 });

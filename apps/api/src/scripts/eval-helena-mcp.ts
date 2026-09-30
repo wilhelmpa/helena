@@ -13,6 +13,7 @@ import {
   aiAgent,
   cycle,
   db,
+  getDisplayName,
   helenaDecision,
   helenaGoalTask,
   helenaReceipt,
@@ -398,7 +399,12 @@ async function seedProject(
   const createdProject = existingAgentId === null;
   const projectRow = createdProject
     ? await createProject(
-        { key, name: 'EVAL', description: 'Disposable Helena MCP evaluation', locale: 'en' },
+        {
+          key,
+          name: 'EVAL',
+          description: `Disposable ${await getDisplayName()} MCP evaluation`,
+          locale: 'en',
+        },
         owner.ownerId,
         owner.teamId,
       )
@@ -1038,7 +1044,7 @@ async function runCase(seed: Seed, task: Case, model: string, dry: boolean): Pro
             issueId: null,
             sourceActivityId: null,
             trigger: 'manual',
-            prompt: `${task.prompt(seed)} Use Helena MCP for project data. Complete this one task only.`,
+            prompt: `${task.prompt(seed)} Use ${await getDisplayName()} MCP for project data. Complete this one task only.`,
           },
           tx,
         );

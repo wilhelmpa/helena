@@ -140,7 +140,7 @@ export const app = new Elysia()
       },
       documentation: {
         info: {
-          title: 'Helena API',
+          title: '{appName} API',
           version: pkg.version,
           description: apiDescription,
         },
@@ -247,7 +247,8 @@ export const app = new Elysia()
           },
           {
             name: 'Workflow builder',
-            description: 'Workflows members put together in Helena, which the Helena engine runs',
+            description:
+              'Workflows members put together in {appName}, which the {appName} engine runs',
           },
           { name: 'Webhooks', description: 'Outgoing webhook subscriptions' },
           {
@@ -258,7 +259,7 @@ export const app = new Elysia()
           {
             name: 'Routines',
             description:
-              'Tasks created or reopened for an agent on a schedule, run by the Helena engine',
+              'Tasks created or reopened for an agent on a schedule, run by the {appName} engine',
           },
           { name: 'Dashboards', description: 'Saved analytics dashboards' },
           { name: 'Knowledge', description: 'The knowledge vault: Docs notes, files and search' },
@@ -297,7 +298,7 @@ export const app = new Elysia()
           },
           {
             name: 'Approvals',
-            description: 'Agent requests to act outside Helena and the decisions on them',
+            description: 'Agent requests to act outside {appName} and the decisions on them',
           },
           { name: 'Sync', description: 'Change markers a client polls for live refresh' },
           {
@@ -459,7 +460,7 @@ export const app = new Elysia()
         description:
           "Answers 204 for the instance owner's signed-in session, 401 without a session and " +
           '403 for anyone else or for a request that carries an API key, with no user data: ' +
-          "nginx's auth_request asks it before it exposes the local tools under the Helena origin.",
+          "nginx's auth_request asks it before it exposes the local tools under the {appName} origin.",
       },
     },
   )

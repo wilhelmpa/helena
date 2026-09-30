@@ -53,7 +53,7 @@ export const ActivityPageResponse = t.Object({
   notice: t.Nullable(
     t.Union([t.Literal('workflow-runs-unavailable'), t.Literal('workflow-runs-limited')], {
       description:
-        'Why workflow runs may be missing from the page. The engine keeps them in Helena, ' +
+        'Why workflow runs may be missing from the page. The engine keeps them in {appName}, ' +
         'so this is null; kept for clients that read it.',
     }),
   ),

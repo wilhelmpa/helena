@@ -1,11 +1,11 @@
 ---
 name: ava-bedienen
-description: Helena über ihre MCP-Werkzeuge bedienen; Einstieg für alle Projekt-, Team- und Kommunikationsbereiche.
+description: {appName} über ihre MCP-Werkzeuge bedienen; Einstieg für alle Projekt-, Team- und Kommunikationsbereiche.
 ---
 
 # Ava bedienen
 
-Nutze Helena-Werkzeuge für Arbeit, die im Projekt oder Team dokumentiert werden soll. Lies zuerst das betroffene Objekt und seine Projektkennung. Ein Werkzeug handelt mit deinen eigenen Rechten; bei 403 bitte um die nötige Freigabe und weiche nicht auf einen anderen Zugang aus.
+Nutze {appName}-Werkzeuge für Arbeit, die im Projekt oder Team dokumentiert werden soll. Lies zuerst das betroffene Objekt und seine Projektkennung. Ein Werkzeug handelt mit deinen eigenen Rechten; bei 403 bitte um die nötige Freigabe und weiche nicht auf einen anderen Zugang aus.
 
 - Aufgaben: `ava-bedienen-aufgaben`
 - Wissen und Vault: `ava-bedienen-wissen`

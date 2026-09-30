@@ -124,6 +124,7 @@ export class HelenaClient implements HelenaApi {
       messageId: null,
     },
     private readonly fetchImpl: typeof fetch = fetch,
+    private readonly displayName = 'Ava',
   ) {
     this.base = url.replace(/\/+$/, '');
   }
@@ -147,7 +148,7 @@ export class HelenaClient implements HelenaApi {
       redirect: 'error',
     });
     if (!response.ok) {
-      let message = `Helena answered ${response.status}`;
+      let message = `${this.displayName} answered ${response.status}`;
       try {
         const payload = (await response.json()) as { message?: string; error?: string };
         message = payload.message ?? payload.error ?? message;
@@ -214,12 +215,15 @@ export class HelenaClient implements HelenaApi {
       );
       return answer.outcome === 'allow'
         ? { allowed: true, message: '' }
-        : { allowed: false, message: answer.message || "BLOCKED by Helena's Autopilot." };
+        : {
+            allowed: false,
+            message: answer.message || `BLOCKED by ${this.displayName}'s Autopilot.`,
+          };
     } catch (error) {
       return {
         allowed: false,
         message:
-          `BLOCKED: Helena could not decide on this call (${error instanceof Error ? error.message : 'unknown error'}). ` +
+          `BLOCKED: ${this.displayName} could not decide on this call (${error instanceof Error ? error.message : 'unknown error'}). ` +
           'Do not run it or reach the same result another way; end the turn and report the problem.',
       };
     }

@@ -1,3 +1,4 @@
+import { renderDisplayName } from '@helena/sdk';
 import {
   median,
   type LocalAiChatAnswer,
@@ -779,9 +780,11 @@ export async function evaluateReflection(
   for (const item of REFLECTION_CASES.filter((entry) => !caseIds || caseIds.includes(entry.id))) {
     const answer = await context.chat({
       system:
-        'Du bist ein Agent in Helena. Die Sitzung unten hast du gerade beendet; jetzt hast du ' +
-        'nur noch deine Werkzeuge memory und skill_manage.',
-      prompt: `<session>\n${item.session}\n</session>\n\n${reflectionPrompt(item.reason)}`,
+        renderDisplayName(
+          'Du bist ein Agent in {appName}. Die Sitzung unten hast du gerade beendet; jetzt hast du ',
+          context.displayName,
+        ) + 'nur noch deine Werkzeuge memory und skill_manage.',
+      prompt: `<session>\n${item.session}\n</session>\n\n${reflectionPrompt(item.reason, context.displayName)}`,
       tools: REFLECTION_TOOLS,
       // A skill's SKILL.md in one call fits; without thinking nothing else needs room.
       maxTokens: 2_000,
@@ -927,9 +930,11 @@ export async function evaluateCoordinatorTriage(
     const stage = { phase: 'coordinate' as const, team, agent: team.coordinator };
     const answer = await context.chat({
       system:
-        'Du bist der Koordinator des Projekts VERVE in Helena. Du planst die Arbeit für die ' +
-        'Spezialisten deines Teams.',
-      prompt: stagePrompt(stage, 'project:VERVE'),
+        renderDisplayName(
+          'Du bist der Koordinator des Projekts VERVE in {appName}. Du planst die Arbeit für die ',
+          context.displayName,
+        ) + 'Spezialisten deines Teams.',
+      prompt: stagePrompt(stage, 'project:VERVE', [], context.displayName),
       maxTokens: 3_000,
     });
     tokens += answer.outputTokens ?? 0;

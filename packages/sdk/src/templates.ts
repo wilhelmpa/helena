@@ -334,7 +334,7 @@ export function validateBundle(bundle: TemplateBundle): string[] {
 export function parseBundleJson(text: string): TemplateBundle {
   const bundle = JSON.parse(text) as TemplateBundle;
   if (!bundle || typeof bundle !== 'object' || !Array.isArray(bundle.agents)) {
-    throw new Error('Not a Helena template bundle');
+    throw new Error('Not a template bundle');
   }
   const problems = validateBundle(bundle);
   if (problems.length > 0) throw new Error(`Invalid bundle:\n- ${problems.join('\n- ')}`);

@@ -177,7 +177,7 @@ export const factCorrectionBody = t.Object({
 });
 
 export const RuntimesResponse = t.Object({
-  helena: t.Boolean({ description: "Whether Helena's own agent loop can run an agent here." }),
+  helena: t.Boolean({ description: "Whether {appName}'s own agent loop can run an agent here." }),
 });
 
 export const nativeSkillWriteBody = t.Object({

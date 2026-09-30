@@ -146,7 +146,7 @@ export function checkBundle(raw: unknown): TemplateBundle {
     const issues = result.error.issues.map(
       (issue) => `${issue.path.join('.') || '(root)'}: ${issue.message}`,
     );
-    throw new Error(`Not a Helena template bundle: ${issues.join('; ')}`);
+    throw new Error(`Not a template bundle: ${issues.join('; ')}`);
   }
   const bundle = result.data as TemplateBundle;
   const problems = validateBundle(bundle);
@@ -159,7 +159,7 @@ export function bundleJsonSchema(): Record<string, unknown> {
   return {
     $schema: schema.$schema,
     $id: 'urn:helena:schema:template-bundle:v1',
-    title: 'Helena template bundle',
+    title: 'Template bundle',
     ...schema,
   };
 }

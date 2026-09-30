@@ -56,7 +56,7 @@ export const importPricesBody = t.Object({
   from: t.Union([t.Literal('models.dev'), t.Literal('snapshot')], {
     description:
       'models.dev reads the current list from https://models.dev/api.json; snapshot the list ' +
-      'that ships with Helena.',
+      'that ships with {appName}.',
   }),
 });
 

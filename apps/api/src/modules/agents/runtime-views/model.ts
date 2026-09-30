@@ -36,7 +36,7 @@ export const SessionSummary = t.Object({
           chatThreadId: t.Nullable(t.String()),
           chatTitle: t.Nullable(t.String()),
         },
-        { description: 'The run or the chat of Helena the session belongs to, when known.' },
+        { description: 'The run or the chat of {appName} the session belongs to, when known.' },
       ),
     ),
   ),

@@ -30,7 +30,7 @@ export const learnedSkill = t.Object({
   ),
   otherFiles: t.Integer({
     minimum: 0,
-    description: "Files Helena's skill library does not hold, such as scripts.",
+    description: "Files {appName}'s skill library does not hold, such as scripts.",
   }),
   truncated: t.Boolean({ description: 'Too large to report, so its content is left out.' }),
 });

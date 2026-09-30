@@ -141,7 +141,7 @@ function brandDescriptions(value: unknown, displayName: string): void {
   if (!value || typeof value !== 'object') return;
   for (const [key, item] of Object.entries(value)) {
     if (typeof item === 'string' && ['description', 'summary', 'title'].includes(key)) {
-      (value as Record<string, unknown>)[key] = item.replaceAll('Helena', displayName);
+      (value as Record<string, unknown>)[key] = item.replaceAll('{appName}', displayName);
     } else if (item && typeof item === 'object') {
       brandDescriptions(item, displayName);
     }

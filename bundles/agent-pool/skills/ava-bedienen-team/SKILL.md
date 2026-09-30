@@ -1,6 +1,6 @@
 ---
 name: ava-bedienen-team
-description: Helena-Team und Agenten prüfen und berechtigte Agentenverwaltung durchführen.
+description: {appName}-Team und Agenten prüfen und berechtigte Agentenverwaltung durchführen.
 ---
 
 # Ava bedienen: Team und Agenten

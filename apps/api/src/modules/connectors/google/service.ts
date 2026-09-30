@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { db, connectorAuthSession, mailAccount, project } from '@repo/db';
+import { db, getDisplayName, connectorAuthSession, mailAccount, project } from '@repo/db';
 import { decryptSecret, encryptSecret, secretContext } from '@repo/crypto';
 import {
   ClientJsonError,
@@ -662,6 +662,7 @@ async function finishWith(
   try {
     const code = codeFromRedirect(pasted.redirectUrl, pasted.state);
     grant = await finishGoogleAuth(client, {
+      displayName: await getDisplayName(),
       code,
       codeVerifier: payload.codeVerifier!,
       redirectUri: payload.redirectUri!,

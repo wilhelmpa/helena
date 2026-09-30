@@ -446,3 +446,4 @@ export {
 export { runtimeToolObservation, toolsFullyObserved } from './runtime-profile';
 export * from './escalation';
 export * from './context-limits';
+export { renderDisplayName } from './display-name';

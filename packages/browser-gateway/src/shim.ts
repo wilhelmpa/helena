@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { renderDisplayName } from '@helena/sdk';
 // The stdio MCP server every runtime (Hermes, Claude Code, Codex) reaches the browser gateway
 // through (design volition-design-browser-gateway.md §3: "Der Shim reicht nur weiter und hat
 // selbst keine Rechte"). Built into one file and installed, owned by root, at
@@ -30,7 +31,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   const tools = offered
     ? BROWSER_TOOLS.filter((tool) => offered.includes(tool.name))
     : BROWSER_TOOLS.filter((tool) => !TASK_TOOLS.has(tool.name));
-  return { tools: tools.map(mcpToolOf) };
+  return { tools: renderDisplayName(tools.map(mcpToolOf), process.env.VOLITION_DISPLAY_NAME) };
 });
 
 server.setRequestHandler(CallToolRequestSchema, async (request) =>

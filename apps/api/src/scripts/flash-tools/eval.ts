@@ -1,7 +1,7 @@
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { toMcpTool } from '@helena/sdk';
+import { renderDisplayName, toMcpTool } from '@helena/sdk';
 import { db } from '@repo/db';
 import { AjvJsonSchemaValidator } from '@modelcontextprotocol/sdk/validation/ajv';
 import type { JsonSchemaType } from '@modelcontextprotocol/sdk/validation/types.js';
@@ -27,6 +27,7 @@ type Case = {
   alternates?: string[];
   chain?: string[];
   results?: Record<string, string>;
+  expectedInput?: Record<string, Record<string, unknown>>;
   profile?: 'recherche' | 'coder-lite';
   prompt: string;
   result: string;
@@ -150,6 +151,13 @@ function definitions(fixture: Case): AgentTool[] {
         }
         const active = currentCase;
         if (!active) return { text: 'No active fixture.', isError: true };
+        const expected = active.expectedInput?.[entry.name];
+        if (expected && Object.entries(expected).some(([key, value]) => input[key] !== value))
+          return {
+            text: 'Invalid fixture arguments: the delegation target or task is wrong.',
+            isError: true,
+          };
+
         if (active.results?.[entry.name])
           return { text: active.results[entry.name], changed: !entry.readOnly };
         if (entry.name === 'get_project')
@@ -267,6 +275,7 @@ async function main(): Promise<void> {
     );
     const tools = definitions(fixture);
     const config: AgentRuntimeConfig = {
+      displayName: option('display-name') ?? 'Ava',
       model: `${provider}/${model}`,
       servers: [
         { provider, kind: 'openai-compatible', baseUrl, local: true, thinkingSwitch: true },
@@ -287,7 +296,7 @@ async function main(): Promise<void> {
       try {
         result = await runAgent({
           config,
-          prompt: fixture.prompt,
+          prompt: renderDisplayName(fixture.prompt, config.displayName),
           sink,
           env: process.env,
           signal: new AbortController().signal,

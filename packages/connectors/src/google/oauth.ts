@@ -107,7 +107,7 @@ export interface GoogleGrant {
 // granted, from Google's token info.
 export async function finishGoogleAuth(
   client: GoogleOAuthClient,
-  options: { code: string; codeVerifier: string; redirectUri: string },
+  options: { code: string; codeVerifier: string; redirectUri: string; displayName?: string },
 ): Promise<GoogleGrant> {
   const oauth = googleOAuthClient(client, options.redirectUri);
   let tokens;
@@ -122,7 +122,7 @@ export async function finishGoogleAuth(
   }
   if (!tokens.refresh_token) {
     throw new GoogleAuthError(
-      'Google returned no refresh token. Remove Helena under myaccount.google.com → Security → Third-party access and sign in again.',
+      `Google returned no refresh token. Remove ${options.displayName ?? 'Ava'} under myaccount.google.com → Security → Third-party access and sign in again.`,
     );
   }
   if (!tokens.access_token) throw new GoogleAuthError('Google returned no access token.');

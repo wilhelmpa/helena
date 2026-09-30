@@ -132,7 +132,7 @@ export class AlpacaPaperClient {
   ) {
     if (!isPaperKeyId(keys.keyId)) {
       throw new NotPaperError(
-        'The key ID is not an Alpaca paper key (paper keys start with PK). Helena trades only in a paper account.',
+        'The key ID is not an Alpaca paper key (paper keys start with PK). Only paper-account trading is supported.',
       );
     }
     if (!keys.secretKey) throw new NotPaperError('The paper connection has no secret key.');

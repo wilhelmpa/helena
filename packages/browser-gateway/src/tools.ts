@@ -663,7 +663,7 @@ const DEFINED_TOOLS: ToolDef[] = [
     title: 'Ask the owner to take over',
     description:
       'Ask the owner to take over (a CAPTCHA, a question only they can answer). Shows a ' +
-      'card in the live view and in Helena, and waits up to timeoutSec until the owner ' +
+      'card in the live view and in {appName}, and waits up to timeoutSec until the owner ' +
       'has taken over and given control back.',
     inputSchema: schema(
       {

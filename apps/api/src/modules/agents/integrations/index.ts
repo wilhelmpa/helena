@@ -1,3 +1,4 @@
+import { getDisplayName } from '@repo/db';
 import { Elysia, t } from 'elysia';
 import { noContent } from '#shared/http';
 import { guards } from '#shared/guards';
@@ -51,6 +52,7 @@ export const integrationRoutes = new Elysia({
     async ({ user, request }) =>
       integrationCatalog(
         user ? await preferredLocale(user.id, browserLocale(request)) : browserLocale(request),
+        await getDisplayName(),
       ),
     {
       params: teamParams,

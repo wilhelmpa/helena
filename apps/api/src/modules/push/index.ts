@@ -187,9 +187,9 @@ export const pushRoutes = new Elysia({ name: 'push', detail: { tags: ['Notificat
       body: PresenceBody,
       response: { 204: t.Void(), ...commonErrors },
       detail: {
-        summary: 'Report that Helena is visible',
+        summary: 'Report that {appName} is visible',
         description:
-          "A visible page of Helena reports itself every minute; an agent's chat answer is " +
+          "A visible page of {appName} reports itself every minute; an agent's chat answer is " +
           'pushed only while none is.',
       },
     },

@@ -8,7 +8,7 @@ const mode = t.Union([t.Literal('off'), t.Literal('prefer'), t.Literal('only')],
 
 const path = t.Object({
   mode,
-  local: t.Boolean({ description: 'Whether Helena sends this work to a local model right now' }),
+  local: t.Boolean({ description: 'Whether {appName} sends this work to a local model right now' }),
   reason: t.Nullable(
     t.String({
       description:
@@ -114,7 +114,7 @@ export const VoiceSettingsResponse = t.Object({
   defaultPronunciations: t.Array(t.Object({ word: t.String(), pronunciation: t.String() })),
   suggestedAliases: t.Array(t.Object({ heard: t.String(), written: t.String() })),
   helenaWords: t.Array(t.String(), {
-    description: 'The names Helena adds to the vocabulary itself (agents, projects)',
+    description: 'The names {appName} adds to the vocabulary itself (agents, projects)',
   }),
   voices: t.Array(t.String(), { description: 'The voices the local speech server offers' }),
   replyModels: t.Array(

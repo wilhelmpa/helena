@@ -502,7 +502,7 @@ export const serverRoutes = new Elysia({ name: 'server', detail: { tags: ['Serve
       detail: {
         summary: 'Show the backup password, until the owner confirms he wrote it down',
         description:
-          'Without this password the backup cannot be read, also not by Helena after a ' +
+          'Without this password the backup cannot be read, also not by {appName} after a ' +
           'reinstall. After the confirmation it is never shown again (root can still read ' +
           'it on the machine).',
       },
@@ -549,7 +549,7 @@ export const serverRoutes = new Elysia({ name: 'server', detail: { tags: ['Serve
         summary: 'Add or change an offsite target (S3), behind HELENA_BACKUP_REMOTE=1',
         description:
           'Every backup run copies its snapshot there (restic copy). The key goes to the ' +
-          "host helper, which keeps it root-only; Helena's database never holds it.",
+          "host helper, which keeps it root-only; {appName}'s database never holds it.",
       },
     },
   )

@@ -54,7 +54,7 @@ export const UpdateItem = t.Object({
   sourceUrl: t.Nullable(t.String()),
   notesUrl: t.Nullable(t.String()),
   group: t.Nullable(t.String()),
-  applicable: t.Boolean({ description: 'Helena can apply it (a helper does the work)' }),
+  applicable: t.Boolean({ description: '{appName} can apply it (a helper does the work)' }),
   hint: t.Nullable(localized),
   detail: t.Nullable(t.String()),
   modelNotice: t.Optional(t.Nullable(ModelNotice)),

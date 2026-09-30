@@ -215,7 +215,7 @@ export const ChatCatalogResponse = t.Object({
         local: t.Optional(
           t.Boolean({
             description:
-              "A model of Helena's local AI (`helena-<slug>/<id>`): runs on the owner's own " +
+              "A model of {appName}'s local AI (`helena-<slug>/<id>`): runs on the owner's own " +
               'machine and costs nothing per token.',
           }),
         ),
@@ -251,7 +251,7 @@ export const sendChatBody = t.Object({
     t.Literal('voice', {
       description:
         'Said in the conversation mode: the answer is read aloud, so the agent is asked to ' +
-        'answer short and speakable (and Helena’s voice reply may answer it, where switched on).',
+        'answer short and speakable (and {appName}’s voice reply may answer it, where switched on).',
     }),
   ),
   parentId: t.Optional(

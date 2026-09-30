@@ -72,7 +72,7 @@ export const modelPriceRoutes = new Elysia({
       detail: {
         summary: 'Reset the price of a model',
         description:
-          "Removes the owner's price; the models.dev price takes its place where Helena knows one.",
+          "Removes the owner's price; the models.dev price takes its place where {appName} knows one.",
       },
     },
   )

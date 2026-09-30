@@ -249,7 +249,7 @@ export class GatewayDispatcher {
       resolved = await this.#helena.resolve(request.agentKey, slug, this.#ownSlug);
     } catch (error) {
       if (error instanceof HelenaApiError) return { ok: false, error: error.message };
-      return { ok: false, error: 'Could not reach Helena.' };
+      return { ok: false, error: 'Could not reach the application.' };
     }
     if (!resolved.browserGatewayEnabled) {
       return { ok: false, error: 'The Projekt-Browser tool is not enabled for this agent.' };
@@ -549,7 +549,8 @@ export class GatewayDispatcher {
         messageId: request.messageId,
       });
     } catch (error) {
-      const message = error instanceof HelenaApiError ? error.message : 'Helena did not answer';
+      const message =
+        error instanceof HelenaApiError ? error.message : 'The application did not answer';
       return { refusal: { ok: false, error: `Not done: ${message}.` } };
     }
     if (answer.effect === 'allow') return { category };
@@ -698,7 +699,7 @@ export class GatewayDispatcher {
           content:
             `The owner did not take over within ${timeoutSec} s. ` +
             (card?.approvalId
-              ? 'The request stays open in Helena (Freigaben); when the owner has done it, you are told in a new run. Stop here for now.'
+              ? `The request stays open in ${resolved.displayName ?? 'Ava'} (Freigaben); when the owner has done it, you are told in a new run. Stop here for now.`
               : 'Try again later or stop here.'),
         };
   }

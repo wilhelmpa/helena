@@ -78,6 +78,7 @@ export interface EscalationSettings {
 }
 
 export interface AgentRuntimeConfig {
+  displayName?: string;
   model: string;
   reasoning?: string | null;
   fallbackModels?: string[];

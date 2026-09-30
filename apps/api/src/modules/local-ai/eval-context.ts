@@ -1,3 +1,4 @@
+import { renderDisplayName } from '@helena/sdk';
 import {
   isLocalHalogenUrl,
   localThinkingFields,
@@ -34,6 +35,7 @@ export function openAiEvalContext(options: {
   baseUrl: string;
   key: string | null;
   model: string;
+  displayName?: string;
   // The class's level of thinking; a request may name another.
   thinking?: LocalAiThinking;
   signal?: AbortSignal;
@@ -60,6 +62,7 @@ export function openAiEvalContext(options: {
   };
   return {
     model: options.model,
+    displayName: options.displayName,
     signal: options.signal,
     judge: options.judge,
     runCodingTask: options.runCodingTask,
@@ -116,9 +119,11 @@ export function openAiEvalContext(options: {
       });
     },
     async chat(request: LocalAiChatRequest): Promise<LocalAiChatAnswer> {
+      request = renderDisplayName(request, options.displayName);
       const started = Date.now();
       const body = (await post('/chat/completions', {
         model: options.model,
+        displayName: options.displayName,
         messages: [
           ...(request.system ? [{ role: 'system', content: request.system }] : []),
           { role: 'user', content: request.prompt },

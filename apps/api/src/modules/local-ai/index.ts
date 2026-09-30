@@ -153,7 +153,7 @@ export const localAiRoutes = new Elysia({
         summary: 'Change the local AI policy',
         description:
           'The master switch, the units local work may use, a preset, and the mode and model ' +
-          'of each task class. A class leaves `off` only when Helena sends its work to local AI ' +
+          'of each task class. A class leaves `off` only when {appName} sends its work to local AI ' +
           'and its model passed the class eval (409 otherwise). Switching the master off takes ' +
           'every local route out at once; nothing of it stays in the agents’ profiles.',
       },
@@ -173,7 +173,7 @@ export const localAiRoutes = new Elysia({
         summary: 'Add a local model server',
         description:
           'Lemonade on this machine by default (http://127.0.0.1:13305/api/v1, key from ' +
-          '/etc/helena/local-ai.key). Helena reads its status and models at once.',
+          '/etc/helena/local-ai.key). {appName} reads its status and models at once.',
       },
     },
   )
