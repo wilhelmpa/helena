@@ -259,6 +259,7 @@ export async function noticeRecipients(
 }
 
 interface AgentFacts {
+  role: string;
   id: number;
   teamId: number;
   userId: string;
@@ -271,6 +272,7 @@ async function agentFacts(agentId: number, database: Database = db): Promise<Age
   const [row] = await database
     .select({
       id: aiAgent.id,
+      role: aiAgent.agentRole,
       teamId: aiAgent.teamId,
       userId: aiAgent.userId,
       ownerUserId: aiAgent.ownerUserId,
@@ -502,7 +504,7 @@ export async function enforceBudgets(
   });
   if (statuses.length === 0) return null;
   const agent = await agentFacts(agentId);
-  if (!agent) return null;
+  if (!agent || agent.role === 'home') return null;
   const key = projectId == null ? null : await projectKeyOf(projectId);
 
   for (const status of statuses) {
@@ -613,6 +615,7 @@ export async function useGrace(
   projectId: number,
   runId: number,
 ): Promise<boolean> {
+  if ((await agentFacts(agentId))?.role === 'home') return true;
   const department = await departmentOfWork(agentId, projectId);
   const issueId = await issueIdOfRun(runId);
   const goalIds = await goalIdsOfIssue(issueId);
@@ -665,6 +668,7 @@ export async function useGrace(
 // The projects whose budgets are used up without a run left to continue on, among the
 // given ones. A claim skips their runs, so the agent still works in its other projects.
 export async function heldProjects(projectIds: number[], agentId?: number): Promise<number[]> {
+  if (agentId != null && (await agentFacts(agentId))?.role === 'home') return [];
   if (projectIds.length === 0) return [];
   const assignments = await db
     .select({
@@ -712,6 +716,7 @@ export async function budgetExhausted(
   projectId: number | null,
   runId?: number | null,
 ): Promise<BudgetStatus | null> {
+  if (agentId != null && (await agentFacts(agentId))?.role === 'home') return null;
   const department = agentId == null ? null : await departmentOfWork(agentId, projectId);
   const issueId = await issueIdOfRun(runId);
   const goalIds = await goalIdsOfIssue(issueId);

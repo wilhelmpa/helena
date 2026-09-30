@@ -9,7 +9,7 @@ export default function GodRootAccess() {
   const { settings, audit, update } = useRootAccess();
   return (
     <SettingsGroup title={t('title')} description={t('boundary')}>
-      {(['enabled', 'directOnly'] as const).map((key) => (
+      {(['enabled', 'directOnly', 'unrestricted'] as const).map((key) => (
         <SettingsRow key={key} label={t(key)} htmlFor={`root-${key}`}>
           <Switch
             id={`root-${key}`}

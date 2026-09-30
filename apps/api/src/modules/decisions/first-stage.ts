@@ -132,10 +132,14 @@ export async function firstStageView(teamId: number): Promise<FirstStageView> {
       effectiveThreshold(cls, setting),
       setting.threshold,
     );
+    const threshold =
+      cls.id === BROWSER_CLASS
+        ? Math.max(calibrated.threshold, effectiveThreshold(cls, setting))
+        : calibrated.threshold;
     const unavailableReason = calibrated.enabled ? 'no_connection' : 'jev_calibration_abstains';
     const allowed =
       policy.credentialId && calibrated.enabled
-        ? await evalAllows(teamId, cls.id, policy.credentialId, calibrated.threshold)
+        ? await evalAllows(teamId, cls.id, policy.credentialId, threshold)
         : { ok: false as const, reason: unavailableReason };
     const latest = policy.credentialId
       ? await latestEval(teamId, cls.id, policy.credentialId)

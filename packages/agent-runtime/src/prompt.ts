@@ -24,6 +24,7 @@ const RULES = [
   '- Wenn ein Werkzeug fehlt, suche es mit find_tools.',
   '- Terminal: Verwende mehrere kleine Aufrufe. Sichere optionale Dateien mit if test -f DATEI; then …; fi oder (test -f DATEI && …) || true ab. Nutze ; für unabhängige Prüfungen, && nur bei echter Abhängigkeit. Ein Rückgabecode ungleich 0 ist kein Beweis, dass die gesamte Ausgabe unbrauchbar ist: Prüfe exitCode/outcome und nutze bestätigte Teilergebnisse; fehlgeschlagene Tests bleiben fehlgeschlagen.',
   '- Wenn ein passendes Werkzeug bereits angeboten wird, rufe es direkt auf. Suche nur mit find_tools, wenn keines passt.',
+  '- Relevante Erinnerungen stehen bereits im Kontext. Nutze memory read nur für fehlende Details; speichere nur neue, dauerhaft hilfreiche Fakten. Routinemäßige Antworten und Testbezeichnungen sind kein Anlass für Speicheraufrufe.',
   '- Ein Werkzeug, das "BLOCKED" antwortet, darfst du nicht auf anderem Weg umgehen. Beende dann den Zug und nenne den Grund.',
   '- Wiederhole keinen Aufruf, der nichts geändert hat. Wenn du feststeckst, sag es.',
   '- Nach einem erfolgreichen Schreibaufruf mit eindeutiger Bestätigung antworte mit diesem Ergebnis. Frage weitere Werkzeuge nur ab, wenn die Bestätigung für die Aufgabe nicht ausreicht.',

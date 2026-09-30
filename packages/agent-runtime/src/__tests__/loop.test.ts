@@ -30,15 +30,23 @@ function selectionClient(selectTools: NonNullable<HelenaApi['selectTools']>): He
   };
 }
 
-test('tool preselection narrows the model catalog and keeps find_tools', async () => {
+test('tool preselection keeps the profile core and find_tools', async () => {
   const { primary, result } = await run([{ text: 'Done.' }], {
     prompt: 'Read the file.',
     helena: selectionClient(async () => ({ names: ['read_file'] })),
   });
   expect(result.status).toBe('success');
   expect(primary.doStreamCalls[0]!.tools?.map((tool) => tool.name).sort()).toEqual([
+    'clarify',
+    'edit_file',
     'find_tools',
+    'list_files',
+    'memory',
     'read_file',
+    'search_files',
+    'search_sessions',
+    'shell',
+    'write_file',
   ]);
 });
 
@@ -379,7 +387,7 @@ describe('agent loop', () => {
     });
     expect(result.status).toBe('success');
     const stored = await sessions.load(result.sessionId);
-    expect(stored!.summary).toContain('## Stand\nZusammenfassung.');
+    expect(stored!.summary).toBe('Zusammenfassung.');
     expect(stored!.compactedThrough).toBeGreaterThan(0);
   });
 
@@ -431,7 +439,7 @@ describe('agent loop', () => {
     });
     const stored = await sessions.load(result.sessionId);
     expect(result.status).toBe('success');
-    expect(stored!.summary).toContain('## Stand');
+    expect(stored!.summary).toBe('Zusammenfassung.');
     expect(stored!.items.length).toBeGreaterThan(24);
     const lastPrompt = JSON.stringify(primary.doStreamCalls.at(-1)!.prompt);
     expect(lastPrompt).toContain('long-23.txt');

@@ -235,7 +235,10 @@ it('persists one policy, preserves defaults and selects the native optional stag
   const stored = await firstStagePolicy(fixture.teamId);
   expect(stored.revision).toBeString();
   expect(await firstStagePolicy(fixture.teamId)).toEqual(stored);
-  expect((await firstStageView(fixture.teamId)).effective[BROWSER_CLASS]?.enabled).toBe(true);
+  expect((await firstStageView(fixture.teamId)).effective[BROWSER_CLASS]).toEqual({
+    enabled: true,
+    reason: null,
+  });
   expect(await getInstanceBrowserControl()).toEqual(defaults);
   const task = await opened(fixture);
   const [row] = await db

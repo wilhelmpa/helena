@@ -443,3 +443,12 @@ test('native queue status reaches the event stream without entering the answer',
     { type: 'TEXT_MESSAGE_CONTENT', messageId: 'msg-run', delta: 'Done' },
   ]);
 });
+
+test('native Home root tool is carried directly through the full profile', () => {
+  const config = helenaAgentConfig(
+    { ...snapshot, helena: { toolProfile: 'voll', coreTools: ['run_as_root'] } },
+    [],
+    { url: 'http://localhost:3000' },
+  );
+  expect(config.tools).toMatchObject({ profile: 'voll', core: ['run_as_root'] });
+});

@@ -31,6 +31,7 @@ import { notHomeAgent } from './home-agent';
 import { nextHeartbeatAt, validateHeartbeatClock, type HeartbeatClock } from './heartbeat-time';
 import { copyAgentBudgets, copyAgentLevel } from '#modules/autopilot/copy';
 import { agentModelRefusal } from '#modules/model-availability/service';
+import { inferModelRole } from '#modules/model-schemas/roles';
 import { initialAgentModel, syncAgentModel } from '#modules/model-schemas/service';
 import {
   onTemplateRelevantChange,
@@ -1355,6 +1356,12 @@ export async function createAgent(
   const roleId = await getDefaultRoleId(teamId);
   const schemaModel = await initialAgentModel({
     home: input.agentRole === 'home',
+    ...(!input.sourceTemplateId && {
+      role: inferModelRole(
+        { agentRole: input.agentRole ?? 'agent', username: input.username },
+        { role: null, roleTitle: input.roleTitle ?? '', capabilities: input.capabilities ?? [] },
+      ),
+    }),
     projectIds,
     projectScope: input.projectScope,
     sourceTemplateId: input.sourceTemplateId,
@@ -1633,6 +1640,8 @@ export async function updateAgent(
       const policy = normalizeRuntimePolicy(patch.runtimePolicy);
       overrides.runtime = policy.runtime ?? 'hermes';
       overrides.reasoning = policy.reasoningEffort;
+      if (policy.helena?.toolProfile) overrides.toolProfile = policy.helena.toolProfile;
+      else delete overrides.toolProfile;
       if (policy.escalation) {
         overrides.escalation = policy.escalation;
       }

@@ -51,6 +51,52 @@ test('successful admissions consume the shared wait budget across turns', async 
   expect(sink.of('status')[0]!.retryAfterMs).toBeLessThanOrEqual(30);
 });
 
+test('backend backoff uses the wait budget left by previous admissions', async () => {
+  const sink = new MemorySink();
+  const retry = new LocalQueueRetry(80, sink);
+  await retry.run('local/flash', new AbortController().signal, async (queue) => {
+    queue.admitted(50);
+  });
+  const unavailable = new APICallError({
+    message: 'Halogen backend is unavailable',
+    url: 'http://fixture/v1/chat/completions',
+    requestBodyValues: {},
+    statusCode: 502,
+    responseBody: JSON.stringify({ error: { code: 'backend_unavailable' } }),
+  });
+  let attempts = 0;
+  await expect(
+    retry.run('local/flash', new AbortController().signal, async () => {
+      attempts++;
+      throw unavailable;
+    }),
+  ).rejects.toBe(unavailable);
+  expect(attempts).toBe(1);
+  expect(sink.of('status')[0]!.retryAfterMs).toBeLessThanOrEqual(30);
+});
+
+test('backend errors after admission are not replayed', async () => {
+  const sink = new MemorySink();
+  const retry = new LocalQueueRetry(5000, sink);
+  const unavailable = new APICallError({
+    message: 'Halogen backend is unavailable',
+    url: 'http://fixture/v1/chat/completions',
+    requestBodyValues: {},
+    statusCode: 502,
+    responseBody: JSON.stringify({ error: { code: 'backend_unavailable' } }),
+  });
+  let attempts = 0;
+  await expect(
+    retry.run('local/flash', new AbortController().signal, async (queue) => {
+      attempts++;
+      queue.admitted(10);
+      throw unavailable;
+    }),
+  ).rejects.toBe(unavailable);
+  expect(attempts).toBe(1);
+  expect(sink.of('status')).toHaveLength(0);
+});
+
 function completion(text = 'Done') {
   return new Response(
     [
@@ -241,26 +287,124 @@ test('run budget also cancels queue backoff', async () => {
 });
 
 for (const local of [true, false]) {
-  test(`backend failure and generic 503 do not enter the local queue retry (local: ${local})`, async () => {
-    for (const [status, code] of [
-      [502, 'backend_unavailable'],
-      [503, 'backend_unavailable'],
-    ] as const) {
-      let attempts = 0;
-      const sink = new MemorySink();
-      const result = await withFetch(
-        async () => {
-          attempts++;
-          return Response.json({ error: { code } }, { status });
-        },
-        () => run({ servers: [{ ...config.servers[0]!, local }] }, sink),
-      );
-      expect(result.reason).toBe('model-unavailable');
-      expect(attempts).toBe(1);
-      expect(sink.of('status')).toHaveLength(0);
-    }
+  test(`generic 503 responses do not enter local retry (local: ${local})`, async () => {
+    let attempts = 0;
+    const sink = new MemorySink();
+    const result = await withFetch(
+      async () => {
+        attempts++;
+        return Response.json({ error: { code: 'unrelated_failure' } }, { status: 503 });
+      },
+      () => run({ servers: [{ ...config.servers[0]!, local }] }, sink),
+    );
+    expect(result.reason).toBe('model-unavailable');
+    expect(attempts).toBe(1);
+    expect(sink.of('status')).toHaveLength(0);
   });
 }
+
+for (const status of [502, 503]) {
+  test(`short local backend outage (${status}) retries before cloud fallback`, async () => {
+    let attempts = 0;
+    let cloud = 0;
+    const sink = new MemorySink();
+    const result = await withFetch(
+      async (url) => {
+        if (url.includes('fixture.invalid')) {
+          cloud++;
+          return completion('Cloud');
+        }
+        if (++attempts <= 2)
+          return Response.json({ error: { code: 'backend_unavailable' } }, { status });
+        return completion('Local');
+      },
+      () => run({ fallbackModels: ['cloud/model'] }, sink),
+    );
+    expect(result.exitCode).toBe(0);
+    expect(result.text).toBe('Local');
+    expect(attempts).toBe(3);
+    expect(cloud).toBe(0);
+    expect(sink.of('status').map((event) => event.retryAfterMs)).toEqual([1000, 2000]);
+  });
+}
+
+test('persistent local backend outage is limited to three attempts and preserves cloud fallback', async () => {
+  let attempts = 0;
+  let cloud = 0;
+  const result = await withFetch(
+    async (url) => {
+      if (url.includes('fixture.invalid')) {
+        cloud++;
+        return completion('Cloud');
+      }
+      attempts++;
+      return Response.json({ error: { code: 'backend_unavailable' } }, { status: 502 });
+    },
+    () => run({ fallbackModels: ['cloud/model'] }),
+  );
+  expect(result.text).toBe('Cloud');
+  expect(attempts).toBe(3);
+  expect(cloud).toBe(1);
+});
+
+for (const target of [undefined, 'runtime:codex']) {
+  test(`backend retry respects the shared wait budget and preserves failure (${target ?? 'none'})`, async () => {
+    const sink = new MemorySink();
+    let attempts = 0;
+    const result = await withFetch(
+      async () => {
+        attempts++;
+        return Response.json({ error: { code: 'backend_unavailable' } }, { status: 502 });
+      },
+      () =>
+        run(
+          { limits: { localModelQueueSeconds: 0.06 }, ...(target && { runtimeFallback: target }) },
+          sink,
+        ),
+    );
+    expect(attempts).toBe(1);
+    expect(result.reason).toBe(target ? 'escalated' : 'model-unavailable');
+    expect(sink.of('status')[0]!.retryAfterMs).toBeLessThanOrEqual(60);
+    if (target) expect(sink.of('escalate')[0]!.detail).toBe('model-unavailable');
+  });
+}
+
+test('cloud backend outage is not retried by the local policy', async () => {
+  let attempts = 0;
+  const sink = new MemorySink();
+  const result = await withFetch(
+    async () => {
+      attempts++;
+      return Response.json({ error: { code: 'backend_unavailable' } }, { status: 502 });
+    },
+    () => run({ servers: [{ ...config.servers[0]!, local: false }] }, sink),
+  );
+  expect(result.reason).toBe('model-unavailable');
+  expect(attempts).toBe(1);
+  expect(sink.of('status')).toHaveLength(0);
+});
+
+test('stop during backend backoff cancels without escalation or another attempt', async () => {
+  const controller = new AbortController();
+  const sink = new MemorySink();
+  const emit = sink.emit.bind(sink);
+  sink.emit = (event) => {
+    emit(event);
+    if (event.type === 'status') controller.abort();
+  };
+  let attempts = 0;
+  const result = await withFetch(
+    async () => {
+      attempts++;
+      return Response.json({ error: { code: 'backend_unavailable' } }, { status: 502 });
+    },
+    () => run({ runtimeFallback: 'runtime:codex' }, sink, controller.signal),
+  );
+  expect(result.reason).toBe('aborted');
+  expect(result.exitCode).toBe(130);
+  expect(attempts).toBe(1);
+  expect(sink.of('escalate')).toHaveLength(0);
+});
 
 test('cloud busy responses are not retried by the local queue policy', async () => {
   let attempts = 0;

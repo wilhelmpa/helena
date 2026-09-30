@@ -1,3 +1,5 @@
+import { aiAgent, db } from '@repo/db';
+import { and, eq } from 'drizzle-orm';
 import { HttpError } from './lib';
 import {
   getProjectById,
@@ -102,6 +104,28 @@ export async function assertProjectAdmin(
   if ((await getMembership(project.id, current.id)) === 'owner') return;
   if (runsTeam(await getTeamMembership(project.teamId, current.id))) return;
   throw new HttpError(403, 'Only a project owner or a team owner or manager can do this');
+}
+
+export async function requireReceiptReader(projectKey: string, user: AuthUser | undefined | null) {
+  const current = requireUser(user);
+  const project = await requireProject(projectKey);
+  const membership = await getMembership(project.id, current.id);
+  if (membership === 'owner' || runsTeam(await getTeamMembership(project.teamId, current.id)))
+    return project;
+  if (!membership) throw new HttpError(403, 'You do not have access to this project');
+  const [agent] = await db
+    .select({ role: aiAgent.modelRole })
+    .from(aiAgent)
+    .where(
+      and(
+        eq(aiAgent.userId, current.id),
+        eq(aiAgent.teamId, project.teamId),
+        eq(aiAgent.template, false),
+      ),
+    );
+  if (agent?.role !== 'finance')
+    throw new HttpError(403, 'Receipt reading requires a finance agent or project administrator');
+  return project;
 }
 
 // Resolves the :projectKey path param to a project the caller's team runs: an owner

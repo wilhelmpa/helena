@@ -130,6 +130,7 @@ describe('projects', () => {
           projects: [expect.objectContaining({ id: created.data!.id, key: 'MKT' })],
           model: 'volition-local-default',
           runtimePolicy: {
+            helena: { toolProfile: 'voll' },
             reasoningEffort: 'high',
             escalation: {
               target: 'codex',

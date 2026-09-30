@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { and, eq, inArray, isNull, or, sql } from 'drizzle-orm';
 import {
   aiAgent,
+  appSetting,
   db,
   helenaFact,
   helenaFactEntity,
@@ -15,6 +16,7 @@ import {
   sameFact,
   type FactRow,
 } from '@helena/facts';
+import { HttpError } from '#shared/lib';
 import { registerSystemJob, type SystemJobContext } from '#modules/engine/system-jobs';
 import { memoryBaseline } from '../memory/service';
 import { nativeRuntimeEnabled, normalizeRuntimePolicy } from '../core/service';
@@ -39,10 +41,23 @@ export function consolidateNotes(
   let duplicates = 0;
   let conflicts = 0;
   let omitted = 0;
+  let filtered = 0;
   for (const note of notes) {
+    let skipEntry = false;
     for (const raw of note.split('\n')) {
+      if (/^-\s+\d{2}:\d{2}\s+/.test(raw)) skipEntry = false;
       const content = raw.replace(/^-\s+\d{2}:\d{2}\s+/, '').trim();
       if (!content) continue;
+      if (
+        /\[compaction:[^\]]*\]|battle[ -]?(?:test|notiz)|(?:test|batch)[ -]?(?:notiz|note)|(?:INJECT|REPLACE|AFTER)-OK-\d+/i.test(
+          content,
+        )
+      )
+        skipEntry = true;
+      if (skipEntry) {
+        filtered++;
+        continue;
+      }
       if (looksSecret(content)) {
         omitted++;
         continue;
@@ -80,10 +95,10 @@ export function consolidateNotes(
       facts = [...facts, candidate];
     }
   }
-  return { content: lines.join('\n'), duplicates, conflicts, omitted };
+  return { content: lines.join('\n'), duplicates, conflicts, omitted, filtered };
 }
 
-export async function consolidateAgentMemory(agentId: number, now = new Date()) {
+async function consolidateMemory(agentId: number, now = new Date(), includeToday = false) {
   const [agent] = await db.select().from(aiAgent).where(eq(aiAgent.id, agentId));
   if (!agent || normalizeRuntimePolicy(agent.runtimePolicy).runtime !== 'helena') return null;
   const projects = await db
@@ -121,12 +136,14 @@ export async function consolidateAgentMemory(agentId: number, now = new Date()) 
   const before =
     (await memoryBaseline(agentId)).find((file) => file.file === 'MEMORY.md')?.content ?? '';
   const today = noteFile(now).slice(6, -3);
-  const notes = (await listNotes(agentId, 200)).filter((note) => note.day < today).reverse();
+  const notes = (await listNotes(agentId, 200))
+    .filter((note) => note.day < today || (includeToday && note.day === today))
+    .reverse();
   const result = consolidateNotes(
     before,
     notes.map((note) => note.content),
     facts,
-    (await agentContextLimits(agentId)).memory,
+    (await agentContextLimits(agentId)).memory - 1,
   );
   if (result.content.trim() === before.trim()) return { ...result, status: 'unchanged' };
   return {
@@ -138,6 +155,95 @@ export async function consolidateAgentMemory(agentId: number, now = new Date()) 
       createHash('sha256').update(before).digest('hex'),
     )),
   };
+}
+
+type DreamEntry = {
+  startedAt: string;
+  finishedAt: string | null;
+  trigger: 'manual' | 'schedule';
+  status: 'running' | 'succeeded' | 'failed';
+  result?: {
+    status: string;
+    duplicates: number;
+    conflicts: number;
+    omitted: number;
+    filtered: number;
+  };
+  error?: string;
+};
+const dreamKey = (agentId: number) => `volition.agent.${agentId}.dreams`;
+
+export async function dreamHistory(agentId: number): Promise<DreamEntry[]> {
+  const [row] = await db
+    .select({ value: appSetting.value })
+    .from(appSetting)
+    .where(eq(appSetting.key, dreamKey(agentId)));
+  return Array.isArray(row?.value) ? (row.value as DreamEntry[]) : [];
+}
+
+export async function consolidateAgentMemory(
+  agentId: number,
+  now = new Date(),
+  trigger: 'manual' | 'schedule' = 'schedule',
+) {
+  const entry: DreamEntry = {
+    startedAt: new Date().toISOString(),
+    finishedAt: null,
+    trigger,
+    status: 'running',
+  };
+  const history = await db.transaction(async (tx) => {
+    const [agent] = await tx
+      .select({ policy: aiAgent.runtimePolicy })
+      .from(aiAgent)
+      .where(eq(aiAgent.id, agentId))
+      .for('update');
+    if (!agent) throw new HttpError(404, 'Agent not found');
+    if (normalizeRuntimePolicy(agent.policy).runtime !== 'helena') {
+      if (trigger === 'manual') throw new HttpError(409, 'Dreaming requires the native runtime');
+      return null;
+    }
+    const [row] = await tx
+      .select({ value: appSetting.value })
+      .from(appSetting)
+      .where(eq(appSetting.key, dreamKey(agentId)));
+    const previous = Array.isArray(row?.value) ? (row.value as DreamEntry[]) : [];
+    if (
+      previous[0]?.status === 'running' &&
+      Date.now() - Date.parse(previous[0].startedAt) < 3600000
+    )
+      throw new HttpError(409, 'Memory consolidation is already running');
+    const next = [entry, ...previous].slice(0, 20);
+    await tx
+      .insert(appSetting)
+      .values({ key: dreamKey(agentId), value: next })
+      .onConflictDoUpdate({ target: appSetting.key, set: { value: next } });
+    return next;
+  });
+  if (!history) return null;
+  try {
+    const result = await consolidateMemory(agentId, now, trigger === 'manual');
+    if (!result) throw new HttpError(409, 'Agent runtime changed during consolidation');
+    entry.status = 'succeeded';
+    entry.result = {
+      status: result.status,
+      duplicates: result.duplicates,
+      conflicts: result.conflicts,
+      omitted: result.omitted,
+      filtered: result.filtered,
+    };
+    return result;
+  } catch (error) {
+    entry.status = 'failed';
+    entry.error = error instanceof HttpError ? error.message : 'Memory consolidation failed';
+    throw error;
+  } finally {
+    entry.finishedAt = new Date().toISOString();
+    await db
+      .update(appSetting)
+      .set({ value: history })
+      .where(eq(appSetting.key, dreamKey(agentId)));
+  }
 }
 
 export async function runMemoryConsolidation(context: SystemJobContext): Promise<void> {
@@ -156,6 +262,7 @@ export async function runMemoryConsolidation(context: SystemJobContext): Promise
 
 registerSystemJob({
   id: 'helena.memory-consolidation',
+  runWhenNew: true,
   schedule: async () => ({
     enabled: nativeRuntimeEnabled(),
     cron: '0 3 * * *',

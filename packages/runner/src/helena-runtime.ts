@@ -156,6 +156,7 @@ export function helenaAgentConfig(
     mcpServers: specs,
     tools: {
       profile: helena.toolProfile ?? 'assistent',
+      ...(helena.coreTools && { core: helena.coreTools }),
       ...(helena.browserBudgetSeconds && { browserBudgetSeconds: helena.browserBudgetSeconds }),
     },
     skills: (snapshot.skills ?? []).map((skill) => ({

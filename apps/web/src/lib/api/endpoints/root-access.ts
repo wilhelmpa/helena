@@ -1,6 +1,11 @@
 import { request } from '../core/client';
 
-export type RootSettings = { enabled: boolean; directOnly: boolean; epoch: number };
+export type RootSettings = {
+  enabled: boolean;
+  directOnly: boolean;
+  unrestricted: boolean;
+  epoch: number;
+};
 export type RootAuditEntry = {
   id: string;
   agentId: number | null;
@@ -24,6 +29,10 @@ export const getRootSettings = () => request<RootSettings>('/god/root-access');
 export const updateRootSettings = (body: RootSettings) =>
   request<RootSettings>('/god/root-access', {
     method: 'PUT',
-    body: JSON.stringify({ enabled: body.enabled, directOnly: body.directOnly }),
+    body: JSON.stringify({
+      enabled: body.enabled,
+      directOnly: body.directOnly,
+      unrestricted: body.unrestricted,
+    }),
   });
 export const getRootAudit = () => request<RootAuditEntry[]>('/god/root-access/audit');

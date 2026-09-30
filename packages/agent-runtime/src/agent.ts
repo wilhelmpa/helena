@@ -33,8 +33,27 @@ import type { AgentTool, PolicyQuestion } from './tools/types';
 // role (Helena's MCP server, the project browser, files and shell in the working folder, the
 // loop's own), its memory and skills in the system prompt, and the session store.
 
-// Task-matched Helena tools are offered directly; the rest are found with find_tools.
-export const CORE_HELENA_TOOLS: string[] = [];
+export const CORE_HELENA_TOOLS = [
+  'list_projects',
+  'get_project',
+  'list_issues',
+  'search_issues',
+  'get_issue',
+  'get_issue_by_number',
+  'create_issue',
+  'update_issue',
+  'add_comment',
+  'search_knowledge_vault',
+  'read_document',
+  'list_folder',
+];
+
+const PROFILE_TOOLS: Record<ToolProfile, string[]> = {
+  'coder-lite': [],
+  recherche: ['capture_web_page'],
+  assistent: ['search_mail', 'read_mail', 'draft_reply', 'request_mail_send'],
+  voll: ['capture_web_page', 'search_mail', 'read_mail', 'draft_reply', 'request_mail_send'],
+};
 
 const LOOP_TOOLS = ['clarify', 'find_tools', 'load_skill', 'memory', 'search_sessions'];
 const FILE_TOOL_NAMES = FILE_TOOLS.map((entry) => entry.name);
@@ -43,15 +62,18 @@ const FILE_TOOL_NAMES = FILE_TOOLS.map((entry) => entry.name);
 export function directTools(
   profile: ToolProfile,
   all: AgentTool[],
-  core: string[] = CORE_HELENA_TOOLS,
+  core: string[] = [],
 ): Set<string> {
   const names = new Set<string>();
   for (const entry of all) {
-    if (LOOP_TOOLS.includes(entry.name) || core.includes(entry.name)) names.add(entry.name);
     if (
-      (profile === 'recherche' || profile === 'voll') &&
-      ['browser_navigate', 'browser_snapshot'].includes(entry.name)
+      LOOP_TOOLS.includes(entry.name) ||
+      CORE_HELENA_TOOLS.includes(entry.name) ||
+      core.includes(entry.name) ||
+      PROFILE_TOOLS[profile].includes(entry.name)
     )
+      names.add(entry.name);
+    if ((profile === 'recherche' || profile === 'voll') && entry.kind === 'browser')
       names.add(entry.name);
     if (
       (profile === 'coder-lite' || profile === 'voll') &&
@@ -225,10 +247,6 @@ export async function runAgent(input: AgentRunInput): Promise<LoopResult> {
       );
     let memory: MemoryState | null = null;
     if (helena && config.memory?.enabled !== false) {
-      tools.push(
-        memoryTool(helena, () => learningSession),
-        sessionSearchTool(helena),
-      );
       if (helena.saveSkill)
         tools.push(
           learnSkillTool(helena, {
@@ -240,6 +258,10 @@ export async function runAgent(input: AgentRunInput): Promise<LoopResult> {
         process.stderr.write(`helena-agent: memory unavailable: ${String(error)}\n`);
         return null;
       });
+      tools.push(
+        memoryTool(helena, () => learningSession, memory),
+        sessionSearchTool(helena),
+      );
     }
     tools.push(...(input.extraTools ?? []));
     const direct = input.env?.VOLITION_VOICE === '1'

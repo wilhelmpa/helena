@@ -18,11 +18,16 @@ import { HttpError } from '#shared/lib';
 import { persistenceMarkers, rootDecision } from './policy';
 import { workProvenance, type Work } from './provenance';
 
-export type RootSettings = { enabled: boolean; directOnly: boolean; epoch: number };
+export type RootSettings = {
+  enabled: boolean;
+  directOnly: boolean;
+  unrestricted: boolean;
+  epoch: number;
+};
 export const rootSettings = () => hostd<RootSettings>('RootSettings');
 
 export async function setRootSettings(
-  input: { enabled: boolean; directOnly: boolean },
+  input: { enabled: boolean; directOnly: boolean; unrestricted?: boolean },
   userId: string,
 ) {
   const settings = await hostd<RootSettings>(
@@ -92,7 +97,12 @@ export async function requestRoot(
   if (!toolsFullyObserved(provenance.runtime ?? '')) sources.push('Laufzeit nicht beobachtbar');
   const id = randomUUID().replaceAll('-', '');
   const requiresApproval =
-    rootDecision({ ...provenance, directOnly: settings.directOnly }) === 'approval';
+    rootDecision({
+      ...provenance,
+      directOnly: settings.directOnly,
+      unrestricted: settings.unrestricted,
+      agentRole: agent.agentRole,
+    }) === 'approval';
   const [approvalProject] = await db
     .select({ id: project.id })
     .from(project)
