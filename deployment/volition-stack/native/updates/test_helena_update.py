@@ -478,6 +478,8 @@ class RuntimeTest(unittest.TestCase):
             answer = helper.perform(self.config, {"action": "cli-runtime", "runtime": runtime,
                                                   "version": version})
             self.assertFalse(answer["ok"], (runtime, version))
+            self.assertEqual(json.loads(self.state.read_text()),
+                             {"codex": {"current": "1.0.0", "intact": True}})
 
     def test_model_failure_rolls_back_and_tests_the_restored_runtime(self):
         self.smoke_mock.side_effect = [helper.UpdateError('Modell nicht unterstützt'), None]
