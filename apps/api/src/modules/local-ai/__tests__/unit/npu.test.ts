@@ -41,13 +41,8 @@ it('labels FLM as NPU and keeps large task classes on GPU', async () => {
     slug: 'local',
     npu: 'qwen3.5:2b' as const,
   };
-  for (const classId of [
-    'routines',
-    'reflection',
-    'hermes-helpers',
-    'voice-reply',
-    'summaries',
-    'agentic-coding',
-  ])
+  for (const classId of ['triage', 'routines', 'hermes-helpers'])
+    expect(npuClassModel(target, classId)).toBe('qwen3.5:2b');
+  for (const classId of ['reflection', 'voice-reply', 'summaries', 'agentic-coding'])
     expect(npuClassModel(target, classId)).toBeNull();
 });

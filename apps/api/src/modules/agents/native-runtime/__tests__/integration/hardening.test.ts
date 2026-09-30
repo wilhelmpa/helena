@@ -347,7 +347,17 @@ describe('native runtime hardening', () => {
   });
 
   it('registers the nightly engine job and records one consolidation step per native agent', async () => {
-    const { agent, owner } = await setup();
+    const { agent, owner, api, project, other } = await setup();
+    const coordinators = (
+      await api.teams({ teamId: project.teamId })['ai-agents'].get()
+    ).data!.filter((candidate) =>
+      ['mem-koordinator', 'oth-koordinator'].includes(candidate.username),
+    );
+    expect(coordinators).toHaveLength(2);
+    expect(coordinators.map((candidate) => candidate.projects[0]!.id)).toEqual([
+      project.id,
+      other.id,
+    ]);
     await approvedNote(
       agent.id,
       owner.userId,
@@ -370,7 +380,12 @@ describe('native runtime hardening', () => {
       },
       sleep: async () => {},
     });
-    expect(steps).toEqual(['date', 'agents', `memory:${agent.id}`]);
+    expect(steps).toEqual([
+      'date',
+      'agents',
+      ...coordinators.map((candidate) => `memory:${candidate.id}`),
+      `memory:${agent.id}`,
+    ]);
     const proposal = (await db.select().from(agentProposal)).find(
       (row) => row.status === 'pending',
     )!;

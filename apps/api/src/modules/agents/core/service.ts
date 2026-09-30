@@ -1805,6 +1805,15 @@ export async function copyTemplateIntoProject(
     agentToolIds: agentTools.map(({ agentToolId }) => agentToolId),
     sourceTemplateId: template.id,
   });
+  if (refusal) {
+    await db
+      .update(aiAgent)
+      .set({
+        model: null,
+        runtimePolicy: { ...created.agent.runtimePolicy, reasoningEffort: null },
+      })
+      .where(eq(aiAgent.id, created.agent.id));
+  }
   // The Autopilot level ('approvals' group) and the budgets ('budgets' group) follow the
   // template like the rest of its configuration.
   await copyAgentLevel(template.id, created.agent.id);

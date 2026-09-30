@@ -3,6 +3,7 @@ import { apiKeyApi, authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
+import type { AgentRuntimePolicy, AgentHelenaSettings } from '../../../core/service';
 
 // Helena's own agent loop (docs/helena-decisions/zentrale-laufzeit.md): its sessions and
 // memory, reached with the agent's key, and the fact store every runtime reaches through
@@ -242,16 +243,15 @@ describe("Helena's own runtime", () => {
   });
 
   describe('the runtime and its hand-over', () => {
-    const policy = (runtime: string, helena?: Record<string, unknown>) =>
-      ({
-        reasoningEffort: null,
-        toolAllow: [],
-        toolDeny: [],
-        mcpGrants: [],
-        files: [],
-        runtime,
-        ...(helena && { helena }),
-      }) as never;
+    const policy = (runtime: AgentRuntimePolicy['runtime'], helena?: AgentHelenaSettings) => ({
+      reasoningEffort: null,
+      toolAllow: [],
+      toolDeny: [],
+      mcpGrants: [],
+      files: [],
+      runtime,
+      ...(helena && { helena }),
+    });
 
     it('knows the runtime helena only while HELENA_NATIVE_RUNTIME is on', async () => {
       const owner = await signUpTestUser({ name: 'Owner' });
@@ -270,16 +270,31 @@ describe("Helena's own runtime", () => {
         const on = await createAgent(asOwner, 'MKT', {
           name: 'On',
           username: 'on',
-          runtimePolicy: policy('helena', {
-            toolProfile: 'recherche',
-            escalation: { target: 'runtime:claude', taskKinds: ['recht'] },
-          }),
+          runtimePolicy: {
+            ...policy('helena', { toolProfile: 'recherche' }),
+            escalation: {
+              target: 'claude',
+              model: null,
+              afterFailures: 2,
+              onResumeLimit: true,
+              onRequest: true,
+              maxDepth: 1,
+            },
+          },
         });
         expect(on.data!.agent.runtimePolicy.runtime).toBe('helena');
+        expect(on.data!.agent.runtimePolicy.escalation).toEqual({
+          target: 'claude',
+          model: null,
+          afterFailures: 2,
+          onResumeLimit: true,
+          onRequest: true,
+          maxDepth: 1,
+        });
         const snapshot = await apiKeyApi(on.data!.apiKey!)['agent-runtime'].policy.get();
         expect(snapshot.data!.helena).toMatchObject({
           toolProfile: 'recherche',
-          escalation: { target: 'runtime:claude', mode: 'auto', central: { enabled: false } },
+          escalation: { mode: 'auto', central: { enabled: false } },
         });
       } finally {
         if (before === undefined) delete process.env.HELENA_NATIVE_RUNTIME;
@@ -300,6 +315,17 @@ describe("Helena's own runtime", () => {
         kind: 'external',
         triggerOnAssign: true,
         delegationDelaySec: 0,
+        runtimePolicy: {
+          ...policy('hermes'),
+          escalation: {
+            target: 'claude',
+            model: null,
+            afterFailures: 2,
+            onResumeLimit: true,
+            onRequest: true,
+            maxDepth: 1,
+          },
+        },
       });
       const big = await createAgent(asOwner, 'MKT', {
         name: 'Gross',

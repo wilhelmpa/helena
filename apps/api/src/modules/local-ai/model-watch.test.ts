@@ -178,7 +178,14 @@ describe('configured model observation', () => {
       kind: 'fastflowlm',
       enabled: true,
       name: 'NPU',
-      models: [],
+      models: [
+        {
+          id: 'fixture-npu:unknown',
+          name: 'fixture-npu:unknown',
+          loaded: true,
+          capabilities: ['chat'],
+        },
+      ],
       slug: 'volition-npu',
     } as unknown as ModelServerRow;
     const sources = await configuredModelWatch([server], [], {
@@ -199,7 +206,11 @@ describe('configured model observation', () => {
       'qwen-tokenizer-12hz-Q8_0.gguf',
     ]);
     expect(sources.some((source) => source.repo === 'Qwen/Qwen3-Embedding-0.6B-GGUF')).toBe(true);
-    const unknown = sources.find((source) => source.name === 'qwen3.5:4b')!;
+    expect(sources.find((source) => source.repo === 'FastFlowLM/Qwen3.5-2B-NPU2')).toMatchObject({
+      files: ['model.q4nx'],
+      revision: 'b85f86abae7a8beed58f1dabb21baff99e50455a',
+    });
+    const unknown = sources.find((source) => source.name === 'fixture-npu:unknown')!;
     const { ctx, requests } = context();
     const [result] = await checkWatchedModels([unknown], ctx);
     expect(result!.data?.modelNotice).toMatchObject({ fits: false, repository: null });

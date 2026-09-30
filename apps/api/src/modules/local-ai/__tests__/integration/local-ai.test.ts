@@ -57,7 +57,11 @@ let answerWrong = false;
 function chatAnswer(body: { messages: { role: string; content: string }[] }) {
   const prompt = body.messages.find((m) => m.role === 'user')?.content ?? '';
   const item = COMPRESSION_CASES.find((entry) => entry.conversation === prompt);
-  const content = item && !answerWrong ? item.facts.map((any) => any[0]).join('; ') : 'ok';
+  const content =
+    item && !answerWrong
+      ? 'Ziel\nStand\nEntscheidungen\nOffene Aufgaben\nWichtige Referenzen\n' +
+        item.facts.map((any) => any[0]).join('; ')
+      : 'ok';
   return {
     choices: [{ message: { role: 'assistant', content } }],
     usage: { prompt_tokens: 50, completion_tokens: 12 },
@@ -182,7 +186,7 @@ describe('local AI', () => {
       classId: 'hermes-helpers',
       modelId: 'helena-local/Qwen3.6-35B-A3B-GGUF',
     });
-    expect(evaluated).toMatchObject({ status: 'done', passed: true, score: 1, cases: 3 });
+    expect(evaluated).toMatchObject({ status: 'done', passed: true, score: 1, cases: 30 });
     expect(evaluated.finishedAt).not.toBeNull();
     // The helper class runs without thinking, and its eval asks the model for exactly that.
     expect(helpers.thinking).toBe('off');

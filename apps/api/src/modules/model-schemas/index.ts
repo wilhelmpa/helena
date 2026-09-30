@@ -47,7 +47,14 @@ export const modelSchemaRoutes = new Elysia({
       ]);
       return { ...matrix, local, decisions, browser };
     },
-    { query: t.Object({ teamId: t.Optional(t.Numeric()), projectId: t.Optional(t.Numeric()) }) },
+    {
+      query: t.Object({ teamId: t.Optional(t.Numeric()), projectId: t.Optional(t.Numeric()) }),
+      detail: {
+        summary: 'Get the model matrix',
+        description:
+          'Read model assignments and their schema, project or owner source, with local model and browser configuration.',
+      },
+    },
   )
   .post(
     '/god/model-schemas/preview',
@@ -55,7 +62,14 @@ export const modelSchemaRoutes = new Elysia({
       requireGod(user);
       return previewMatrix(body as MatrixPatch);
     },
-    { body: patchBody },
+    {
+      body: patchBody,
+      detail: {
+        summary: 'Preview model matrix changes',
+        description:
+          'Preview the affected agents and effective model settings without applying the proposed matrix changes.',
+      },
+    },
   )
   .post(
     '/god/model-schemas/apply',
@@ -63,5 +77,12 @@ export const modelSchemaRoutes = new Elysia({
       requireGod(user);
       return applyMatrix(body as MatrixPatch);
     },
-    { body: patchBody },
+    {
+      body: patchBody,
+      detail: {
+        summary: 'Apply model matrix changes',
+        description:
+          'Apply model schema and assignment changes after checking the expected matrix revision.',
+      },
+    },
   );

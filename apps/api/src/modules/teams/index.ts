@@ -139,6 +139,10 @@ export const teamRoutes = new Elysia({ name: 'teams', detail: { tags: ['Teams'] 
       teamMember: true,
       params: teamParams,
       response: { 200: agentContextLimitsBody, ...errors(401, 403, 404) },
+      detail: {
+        summary: 'Get agent context limits',
+        description: 'Read the effective team-wide limits for agent context and memory areas.',
+      },
     },
   )
   .put(
@@ -156,6 +160,11 @@ export const teamRoutes = new Elysia({ name: 'teams', detail: { tags: ['Teams'] 
       params: teamParams,
       body: agentContextLimitsBody,
       response: { 200: agentContextLimitsBody, ...errors(400, 401, 403, 404) },
+      detail: {
+        summary: 'Set agent context limits',
+        description:
+          'Set team-wide agent context and memory limits as a team owner and return the effective limits.',
+      },
     },
   )
 

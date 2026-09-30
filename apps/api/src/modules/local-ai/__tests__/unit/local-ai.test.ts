@@ -446,7 +446,11 @@ describe('the evals', () => {
   });
 
   it('keeps the right fact in a reflection, nothing of a trivial task, and never a secret', async () => {
-    const byCase = (prompt: string) => REFLECTION_CASES.find((c) => prompt.includes(c.session))!;
+    const byCase = (prompt: string) =>
+      [...REFLECTION_CASES]
+        .sort((a, b) => b.session.length - a.session.length)
+        .find((c) => prompt.includes(c.session))!;
+    const baseId = (id: string) => id.split('-trap-')[0]!;
     const keep: Record<string, [string, object][]> = {
       f1: [
         ['memory', { action: 'add', target: 'user', content: 'Berichte auf Deutsch, Stichpunkte' }],
@@ -491,7 +495,7 @@ describe('the evals', () => {
     };
     const right = await evaluateReflection(
       fakeContext((prompt) => {
-        const tools = keep[byCase(prompt).id]!;
+        const tools = keep[baseId(byCase(prompt).id)]!;
         return tools.length ? { tools } : { text: 'Nothing to save.' };
       }),
     );
@@ -500,23 +504,29 @@ describe('the evals', () => {
     const careless = await evaluateReflection(
       fakeContext((prompt) => {
         const item = byCase(prompt);
-        if (item.id === 'f5')
+        if (baseId(item.id) === 'f5')
           return {
             tool: ['memory', { action: 'add', target: 'memory', content: 'FAM-11 renamed' }],
           };
-        if (item.id === 'f6')
+        if (baseId(item.id) === 'f6')
           return {
             tool: [
               'memory',
               { action: 'add', target: 'memory', content: 'X-Api-Key sk-live-4f9a2b7c1d' },
             ],
           };
-        return { tools: keep[item.id]! };
+        return { tools: keep[baseId(item.id)]! };
       }),
     );
     expect(careless.cases.filter((c) => !c.passed).map((c) => [c.id, c.detail])).toEqual([
-      ['f5', 'kept 1 entries of a trivial task'],
-      ['f6', 'kept a secret'],
+      ...REFLECTION_CASES.filter((item) => baseId(item.id) === 'f5').map((item) => [
+        item.id,
+        'kept 1 entries of a trivial task',
+      ]),
+      ...REFLECTION_CASES.filter((item) => baseId(item.id) === 'f6').map((item) => [
+        item.id,
+        'kept a secret',
+      ]),
     ]);
   });
 

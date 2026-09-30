@@ -193,7 +193,12 @@ describe('matrix escalation policy', () => {
       (
         await matrix.apply.post({
           expectedRevision: initial.revision,
-          agents: [{ agentId: created.agent.id, values: { escalation: own } }],
+          agents: [
+            {
+              agentId: created.agent.id,
+              values: { model: 'helena-halogen/halogen-qwen3.8-flash-next', escalation: own },
+            },
+          ],
         })
       ).status,
     ).toBe(200);

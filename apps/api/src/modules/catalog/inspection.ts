@@ -95,7 +95,8 @@ export function inspectSkillFiles(
     });
   for (const file of ordered) {
     const content = file.bytes.toString('utf8');
-    if (isDisallowedRef(file.path) || file.bytes.subarray(0, 2).toString() === '#!') {
+    const executable = isDisallowedRef(file.path) || file.bytes.subarray(0, 2).toString() === '#!';
+    if (executable) {
       findings.push({
         code: 'executable',
         severity: 'review',
@@ -127,7 +128,7 @@ export function inspectSkillFiles(
       /(?:\b(?:curl|wget|nc|ncat|ssh|scp)\b|https?:\/\/|\b(?:exec|spawn|subprocess|os\.system|child_process)\b)/i.test(
         content,
       ) &&
-      isDisallowedRef(file.path)
+      executable
     ) {
       findings.push({
         code: 'network-shell',

@@ -34,6 +34,17 @@ async function setup() {
     instructions: 'Alter Text',
   });
   const agent = created.data!.agent;
+  expect(
+    (
+      await api
+        .teams({ teamId })
+        ['ai-agents']({ agentId: agent.id })
+        .patch({
+          model: null,
+          runtimePolicy: { ...agent.runtimePolicy, reasoningEffort: null },
+        })
+    ).status,
+  ).toBe(200);
   const target: TuningTarget = {
     projects: [{ key: 'VOL', instructions: { text: 'Arbeitsordner: /srv/…/vol', replaces: [] } }],
     agents: [

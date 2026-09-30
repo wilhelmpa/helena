@@ -182,6 +182,11 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
       return agentContextSizeView(params.agentId, membership.teamId);
     },
     {
+      detail: {
+        summary: 'Get agent context sizes',
+        description:
+          'Read current sizes, effective limits and truncation details for each context area of a visible agent.',
+      },
       params: agentParams,
       teamPermission: ['ai_agents', 'read'],
       response: {

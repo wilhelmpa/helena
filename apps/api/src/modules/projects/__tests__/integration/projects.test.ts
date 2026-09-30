@@ -128,8 +128,17 @@ describe('projects', () => {
           triggerOnAssign: true,
           delegationDelaySec: 0,
           projects: [expect.objectContaining({ id: created.data!.id, key: 'MKT' })],
+          model: 'volition-local-default',
           runtimePolicy: {
-            reasoningEffort: null,
+            reasoningEffort: 'high',
+            escalation: {
+              target: 'codex',
+              model: 'gpt-6.1-sol',
+              afterFailures: 2,
+              onResumeLimit: true,
+              onRequest: true,
+              maxDepth: 1,
+            },
             toolAllow: [],
             toolDeny: [],
             mcpGrants: ['itsaplan'],

@@ -886,6 +886,7 @@ describe('ai agents', () => {
       'GET /teams/:teamId/ai-agents/:agentId/chat/:messageId/stream',
       'GET /teams/:teamId/ai-agents/:agentId/chat/catalog',
       'GET /teams/:teamId/ai-agents/:agentId/chat/model-picker',
+      'GET /teams/:teamId/ai-agents/:agentId/context-sizes',
       'GET /teams/:teamId/ai-agents/:agentId/facts',
       'GET /teams/:teamId/ai-agents/:agentId/learned-skills/history',
       'GET /teams/:teamId/ai-agents/:agentId/memory/notes',

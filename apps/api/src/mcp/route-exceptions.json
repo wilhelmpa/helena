@@ -2245,5 +2245,67 @@
     "/teams/:teamId/catalog/proposals/:proposalId/decision",
     "admin",
     "Nur Team-Owner dürfen einen Skill-Vorschlag entscheiden und übernehmen."
+  ],
+  ["GET", "/agent-runtime/model-matrix", "intern", "Runner model configuration protocol."],
+  [
+    "GET",
+    "/god/model-schemas/matrix",
+    "admin",
+    "Instance model schema administration; /god has no individual MCP tools (118b)."
+  ],
+  [
+    "GET",
+    "/issues/:issueId/autopilot/budgets",
+    "admin",
+    "Autopilot budget configuration for the owner settings editor."
+  ],
+  [
+    "GET",
+    "/teams/:teamId/agent-context-limits",
+    "admin",
+    "Team-wide agent context configuration; read by the settings editor."
+  ],
+  [
+    "GET",
+    "/teams/:teamId/ai-agents/:agentId/context-sizes",
+    "UI-only",
+    "Agent context usage counters for the settings editor."
+  ],
+  [
+    "GET",
+    "/teams/:teamId/budget-summary",
+    "UI-only",
+    "Aggregated budget display; no independent agent action."
+  ],
+  [
+    "GET",
+    "/teams/:teamId/organization/goals/:goalId/budgets",
+    "admin",
+    "Organization goal budget configuration for the settings editor."
+  ],
+  [
+    "POST",
+    "/god/model-schemas/apply",
+    "admin",
+    "Apply instance model schema changes; /god administration (118b)."
+  ],
+  [
+    "POST",
+    "/god/model-schemas/preview",
+    "admin",
+    "Preview instance model schema changes; /god administration (118b)."
+  ],
+  ["PUT", "/issues/:issueId/autopilot/budgets", "admin", "Autopilot budget administration."],
+  [
+    "PUT",
+    "/teams/:teamId/agent-context-limits",
+    "admin",
+    "Owner configuration of team-wide agent context limits."
+  ],
+  [
+    "PUT",
+    "/teams/:teamId/organization/goals/:goalId/budgets",
+    "admin",
+    "Organization goal budget administration."
   ]
 ]

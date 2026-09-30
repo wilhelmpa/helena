@@ -72,6 +72,7 @@ describe('delegated escalation', () => {
     expect(
       (
         await originRoute.patch({
+          model: 'helena-halogen/halogen-qwen3.8-flash-next',
           runtimePolicy: {
             ...original,
             escalation: {
