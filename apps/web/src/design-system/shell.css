@@ -1076,7 +1076,15 @@
    middle ~70% of its box, so a 52px box is a ~36px orb in the 56px bar; the bar keeps that room free
    (the spacer after its controls) and the page's content never meets it. */
 @media (max-width: 899px) {
+  /* Not fixed (owner 01.10., "oben die Unschärfe auf dem Handy"): the iPhone's Safari treats a
+     fixed element at the top edge as a bar that content scrolls under and draws its soft
+     edge blur there. The frame never scrolls (it is one screen high), so the orb can simply
+     sit in it, and the top bar stays the clear, opaque bar of the page background. */
+  .ds-app {
+    position: relative;
+  }
   .ds-dock {
+    position: absolute;
     top: calc(env(safe-area-inset-top, 0px) + 2px);
     right: calc(var(--page-pad-x) - 8px + env(safe-area-inset-right, 0px));
     bottom: auto;
