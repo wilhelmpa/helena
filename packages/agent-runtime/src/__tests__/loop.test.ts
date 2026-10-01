@@ -261,11 +261,16 @@ describe('agent loop', () => {
     for (const requested of [undefined, 64]) {
       const { result, primary } = await run([{ text: 'ok' }], {
         config: {
-          servers: [{
-            provider: 'local', kind: 'openai-compatible', baseUrl: 'http://127.0.0.1:1/v1',
-            local: true, contextLength: 65536,
-            models: [{ id: 'flash', contextLength: 8192, maxOutputTokens: 1024 }],
-          }],
+          servers: [
+            {
+              provider: 'local',
+              kind: 'openai-compatible',
+              baseUrl: 'http://127.0.0.1:1/v1',
+              local: true,
+              contextLength: 65536,
+              models: [{ id: 'flash', contextLength: 8192, maxOutputTokens: 1024 }],
+            },
+          ],
           limits: { maxOutputTokens: requested },
         },
       });

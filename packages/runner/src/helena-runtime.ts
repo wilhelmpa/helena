@@ -11,10 +11,10 @@ import type { RunnerConfig } from './config';
 import { collectProfile, mcpSecretVariable, type CollectedProfile } from './contributions';
 import { digest } from './files';
 import { isolationEnabled } from './isolation';
+import { localKeyVariables } from './local-ai';
 import type { WorkRef } from './logins';
 import type { RuntimeActionResult } from './learning';
 import type { RuntimePolicyClient, RuntimePolicySnapshot, RuntimeStatus } from './policy';
-import { localKeyVariables } from './local-ai';
 import {
   profileDigest,
   type McpServerSpec,

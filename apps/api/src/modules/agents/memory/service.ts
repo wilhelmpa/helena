@@ -57,7 +57,9 @@ export async function recordObservedMemory(
       .where(eq(aiAgent.id, agentId))
       .for('update');
     if (!agent || (agent.policy as { runtime?: string })?.runtime === 'helena') return;
-    const baseline = new Map((await memoryBaseline(agentId, tx)).map((entry) => [entry.file, entry]));
+    const baseline = new Map(
+      (await memoryBaseline(agentId, tx)).map((entry) => [entry.file, entry]),
+    );
     for (const entry of inventory.memory) {
       if (entry.truncated || !FILES.includes(entry.file)) continue;
       const before = baseline.get(entry.file);

@@ -300,7 +300,15 @@ describe('native runtime hardening', () => {
     expect(await db.select().from(agentMemoryRevision)).toHaveLength(1);
     await completeMemoryWrites(
       agent.id,
-      [{ id: 1, kind: 'write-memory', target: 'MEMORY.md', payload: { content: '' }, userId: owner.userId }],
+      [
+        {
+          id: 1,
+          kind: 'write-memory',
+          target: 'MEMORY.md',
+          payload: { content: '' },
+          userId: owner.userId,
+        },
+      ],
       [{ id: 1, error: null }],
     );
     expect((await memoryState(agent.id)).files[0]!.content).toBe('');

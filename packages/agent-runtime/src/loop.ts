@@ -824,10 +824,9 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     leftMs: number,
     queue?: QueueAttempt,
   ) {
-    const firstChunkMs = (
-      config.limits?.firstChunkSeconds ??
-      (model.local ? DEFAULTS.localFirstChunkSeconds : DEFAULTS.firstChunkSeconds)
-    ) * 1000;
+    const firstChunkMs =
+      (config.limits?.firstChunkSeconds ??
+        (model.local ? DEFAULTS.localFirstChunkSeconds : DEFAULTS.firstChunkSeconds)) * 1000;
     const signal = stepSignal();
     const controller = new AbortController();
     let why: StepAbort['why'] | null = null;

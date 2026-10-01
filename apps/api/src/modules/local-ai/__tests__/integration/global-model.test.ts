@@ -16,6 +16,13 @@ import { api, authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
+import { getRunnerAgent } from '#modules/agents/runner/service';
+import { runtimePolicySnapshot } from '#modules/agents/runtime-policy/service';
+import {
+  publishChatCatalog,
+  readChatCatalog,
+  readTeamChatCatalog,
+} from '#modules/agents/chat/service';
 import { useHostdTransport } from '#modules/server/hostd';
 import { chooseModelNow } from '../../service';
 import {
@@ -58,7 +65,7 @@ function pairedCatalogs() {
     const url = String(input instanceof Request ? input.url : input);
     return Response.json(
       url.includes('13309')
-        ? { data: [{ id: 'qwen3.5:2b' }] }
+        ? { data: [{ id: 'gemma4-it:e2b' }] }
         : {
             status: 'ok',
             data: [{ id: 'Qwen3.8-27B-GGUF', downloaded: true, labels: ['tool-calling'] }],
@@ -171,13 +178,53 @@ async function fixture() {
 }
 
 describe('global local model API', () => {
+  it('resolves the local default in native runner configuration after each switch', async () => {
+    const { agent } = await fixture();
+    await db
+      .update(aiAgent)
+      .set({ model: LOCAL_DEFAULT, runtimePolicy: { ...agent.runtimePolicy, runtime: 'helena' } })
+      .where(eq(aiAgent.id, agent.id));
+    const runner = await getRunnerAgent(agent.userId);
+    expect(runner).not.toBeNull();
+    const before = await runtimePolicySnapshot(runner!);
+    expect(before.model).toBe('helena-halogen/Flash');
+    await setSetting(DEFAULT_KEY, 'helena-local/Qwen27B');
+    const after = await runtimePolicySnapshot(runner!);
+    expect(after.model).toBe('helena-local/Qwen27B');
+    expect(after.revision).not.toBe(before.revision);
+  });
+
+  it('offers the switched local default to Helena chats with a stale runner catalog', async () => {
+    const { client, agent, teamId } = await fixture();
+    await db
+      .update(aiAgent)
+      .set({ runtimePolicy: { ...agent.runtimePolicy, runtime: 'helena' } })
+      .where(eq(aiAgent.id, agent.id));
+    const expected = 'helena-halogen/Flash';
+    expect((await readChatCatalog(agent.id)).models.some((model) => model.id === expected)).toBe(
+      true,
+    );
+    await publishChatCatalog(agent.id, []);
+    expect((await readChatCatalog(agent.id)).models.some((model) => model.id === expected)).toBe(
+      true,
+    );
+    expect((await readTeamChatCatalog(teamId)).models.some((model) => model.id === expected)).toBe(
+      true,
+    );
+    const sent = await client.teams({ teamId })['ai-agents']({ agentId: agent.id }).chat.post({
+      prompt: 'Which local model answers?',
+      model: LOCAL_DEFAULT,
+    });
+    expect(sent.status).toBe(200);
+  });
+
   it('previews and begins the paired profile with empty catalogs and no NPU registration', async () => {
     await db
       .update(helenaModelServer)
       .set({ models: [] })
       .where(eq(helenaModelServer.slug, 'local'));
     const preview = await previewGlobalModel('helena-local/Qwen3.8-27B-GGUF', 'local-27b-npu');
-    expect(preview.target).toMatchObject({ server: 'lemonade', npu: 'qwen3.5:2b' });
+    expect(preview.target).toMatchObject({ server: 'lemonade', npu: 'gemma4-it:e2b' });
     expect((await readMaintenance())?.operation).toBeNull();
     expect((await db.select().from(helenaModelServer)).some((s) => s.slug === 'volition-npu')).toBe(
       false,
@@ -448,7 +495,7 @@ it('pairs only the 27B GPU with NPU, gates classes and restores both server flag
   expect(preview.status).toBe(200);
   expect(preview.data).toMatchObject({
     npuClasses: ['triage', 'routines', 'hermes-helpers'],
-    target: { npu: 'qwen3.5:2b' },
+    target: { npu: 'gemma4-it:e2b' },
   });
   const policy = await readLocalAiPolicy();
   policy.classes.triage = { mode: 'prefer', model: null };
@@ -456,7 +503,7 @@ it('pairs only the 27B GPU with NPU, gates classes and restores both server flag
   await setSetting('localAi.policy', policy);
   await beginGlobalModel('helena-local/Qwen3.8-27B-GGUF', 'local-27b-npu');
   let pending = (await readMaintenance())!;
-  pending.operation!.target.npu = 'qwen3.5:2b';
+  pending.operation!.target.npu = 'gemma4-it:e2b';
   pending.operation!.phase = 'commit';
   await save(pending);
   pairedCatalogs();
@@ -474,7 +521,7 @@ it('pairs only the 27B GPU with NPU, gates classes and restores both server flag
     await db.insert(helenaLocalAiEval).values({
       classId,
       serverId: small ? npu!.id : gpu!.id,
-      model: small ? 'qwen3.5:2b' : 'Qwen3.8-27B-GGUF',
+      model: small ? 'gemma4-it:e2b' : 'Qwen3.8-27B-GGUF',
       score: classId === 'hermes-helpers' ? 0 : 1,
       threshold: 0.85,
       passed: classId !== 'hermes-helpers',
@@ -490,12 +537,12 @@ it('pairs only the 27B GPU with NPU, gates classes and restores both server flag
   await resumeGlobalModel();
   expect((await readLocalAiPolicy()).classes.triage).toEqual({
     mode: 'prefer',
-    model: 'helena-volition-npu/qwen3.5:2b',
+    model: 'helena-volition-npu/gemma4-it:e2b',
   });
   expect((await readLocalAiPolicy()).classes['hermes-helpers']?.mode).toBe('off');
   expect(await localDefaultClassFallback('hermes-helpers')).toBe(true);
   expect((await readLocalAiPolicy()).classes.routines?.model).toBe(
-    'helena-volition-npu/qwen3.5:2b',
+    'helena-volition-npu/gemma4-it:e2b',
   );
   pending = (await readMaintenance())!;
   pending.operation!.phase = 'rollback-commit';

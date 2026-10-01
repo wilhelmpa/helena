@@ -123,7 +123,7 @@ export async function previewGlobalModel(
     const npu = (await listModelServers()).find((row) => row.slug === NPU_SLUG);
     if (npu && (npu.kind !== 'fastflowlm' || npu.baseUrl !== NPU_BASE))
       throw new HttpError(400, 'The NPU slug belongs to another server');
-    target.npu = npuModel ?? NPU_CHAT_MODELS[0];
+    target.npu = npuModel ?? 'gemma4-it:e2b';
   }
   if (profile) target.profile = profile;
   const agents = await db
