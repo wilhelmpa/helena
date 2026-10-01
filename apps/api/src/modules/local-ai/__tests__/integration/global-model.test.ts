@@ -21,6 +21,7 @@ import {
   beginGlobalModel,
   bulkLocalDefault,
   localDefaultClassFallback,
+  previewGlobalModel,
   resumeGlobalModel,
 } from '../../global-model';
 import {
@@ -51,6 +52,20 @@ const state = (phase = 'done'): MaintenanceState => ({
 const save = (value: MaintenanceState) =>
   writeFile(process.env.VOLITION_MODEL_MAINTENANCE_STATE!, JSON.stringify(value));
 
+function pairedCatalogs() {
+  globalThis.fetch = (async (input) => {
+    const url = String(input instanceof Request ? input.url : input);
+    return Response.json(
+      url.includes('13309')
+        ? { data: [{ id: 'qwen3.5:2b' }] }
+        : {
+            status: 'ok',
+            data: [{ id: 'Qwen3.8-27B-GGUF', downloaded: true, labels: ['tool-calling'] }],
+          },
+    );
+  }) as typeof fetch;
+}
+
 beforeAll(async () => {
   directory = await mkdtemp(join(tmpdir(), 'volition-model-test-'));
   process.env.VOLITION_MODEL_MAINTENANCE_STATE = join(directory, 'state.json');
@@ -79,6 +94,11 @@ beforeEach(async () => {
       next.operation!.previous = parameters.previous as NonNullable<MaintenanceState['active']>;
       await save(next);
       return next;
+    }
+    if (parameters.action === 'rollback') {
+      current.operation!.phase = 'rollback-pause';
+      await save(current);
+      return current;
     }
     const phases = [
       'drain',
@@ -150,6 +170,115 @@ async function fixture() {
 }
 
 describe('global local model API', () => {
+  it('previews and begins the paired profile with empty catalogs and no NPU registration', async () => {
+    await db
+      .update(helenaModelServer)
+      .set({ models: [] })
+      .where(eq(helenaModelServer.slug, 'local'));
+    const preview = await previewGlobalModel('helena-local/Qwen3.8-27B-GGUF', 'local-27b-npu');
+    expect(preview.target).toMatchObject({ server: 'lemonade', npu: 'qwen3.5:2b' });
+    expect((await readMaintenance())?.operation).toBeNull();
+    expect((await db.select().from(helenaModelServer)).some((s) => s.slug === 'volition-npu')).toBe(
+      false,
+    );
+    expect(
+      (await beginGlobalModel('helena-local/Qwen3.8-27B-GGUF', 'local-27b-npu')).operation?.phase,
+    ).toBe('drain');
+  });
+
+  it('registers missing paired servers after startup without replacing embeddings', async () => {
+    await db
+      .update(helenaModelServer)
+      .set({ kind: 'openai-compatible', baseUrl: 'http://127.0.0.1:13308/v1', models: [] })
+      .where(eq(helenaModelServer.slug, 'local'));
+    await beginGlobalModel('helena-volition-lemonade/Qwen3.8-27B-GGUF', 'local-27b-npu');
+    const pending = (await readMaintenance())!;
+    pending.operation!.phase = 'commit';
+    await save(pending);
+    await resumeGlobalModel();
+    expect((await readMaintenance())?.operation?.phase).toBe('commit');
+    expect(await readUncachedSetting<string>(DEFAULT_KEY)).toBe('helena-halogen/Flash');
+    // Tests use anonymous fixture servers; no host credentials are read.
+    await db
+      .update(helenaModelServer)
+      .set({ keySource: 'none', keyFile: null })
+      .where(eq(helenaModelServer.kind, 'lemonade'));
+    await db
+      .update(helenaModelServer)
+      .set({ keySource: 'none', keyFile: null })
+      .where(eq(helenaModelServer.kind, 'fastflowlm'));
+    pairedCatalogs();
+    await resumeGlobalModel();
+    expect((await readMaintenance())?.operation?.phase).toBe('release');
+    expect(await readUncachedSetting<string>(DEFAULT_KEY)).toBe(
+      'helena-volition-lemonade/Qwen3.8-27B-GGUF',
+    );
+    const servers = await db.select().from(helenaModelServer);
+    expect(servers.find((s) => s.slug === 'local')).toMatchObject({
+      kind: 'openai-compatible',
+      baseUrl: 'http://127.0.0.1:13308/v1',
+    });
+    expect(servers.find((s) => s.slug === 'volition-npu')).toMatchObject({ enabled: true });
+  });
+
+  it('rejects bootstrap targets outside the managed profile', async () => {
+    for (const model of ['helena-unmanaged/Qwen3.8-27B-GGUF', 'helena-local/other'])
+      await expect(previewGlobalModel(model, 'local-27b-npu')).rejects.toThrow();
+    await db
+      .update(helenaModelServer)
+      .set({ baseUrl: 'http://127.0.0.1:9999/v1', models: [] })
+      .where(eq(helenaModelServer.slug, 'local'));
+    await expect(
+      previewGlobalModel('helena-local/Qwen3.8-27B-GGUF', 'local-27b-npu'),
+    ).rejects.toThrow();
+  });
+
+  it('rolls back a catalog timeout before publishing the new default', async () => {
+    await db
+      .update(helenaModelServer)
+      .set({ models: [] })
+      .where(eq(helenaModelServer.slug, 'local'));
+    await db
+      .insert(helenaModelServer)
+      .values({
+        slug: 'volition-npu',
+        name: 'NPU',
+        kind: 'fastflowlm',
+        baseUrl: 'http://127.0.0.1:13309/v1',
+        keySource: 'none',
+        enabled: false,
+      });
+    await beginGlobalModel('helena-local/Qwen3.8-27B-GGUF', 'local-27b-npu');
+    const pending = (await readMaintenance())!;
+    pending.operation!.phase = 'commit';
+    await save(pending);
+    const job = (await readUncachedSetting<Record<string, unknown>>(MAINTENANCE_KEY))!;
+    await setSetting(MAINTENANCE_KEY, { ...job, catalogStartedAt: Date.now() - 240_001 });
+    expect((await resumeGlobalModel())?.operation?.phase).toBe('rollback-pause');
+    expect(await readUncachedSetting<string>(DEFAULT_KEY)).toBe('helena-halogen/Flash');
+  });
+
+  it('accepts an explicit Gemma selection only in the paired profile', async () => {
+    const { client } = await fixture();
+    expect(
+      (
+        await client.god['local-ai'].default.preview.post({
+          model: 'helena-local/Qwen3.8-27B-GGUF',
+          profile: 'local-27b-npu',
+          npuModel: 'gemma4-it:e4b',
+        })
+      ).data?.target.npu,
+    ).toBe('gemma4-it:e4b');
+    expect(
+      (
+        await client.god['local-ai'].default.preview.post({
+          model: 'helena-halogen/Flash',
+          profile: 'local-halogen',
+          npuModel: 'gemma4-it:e2b',
+        })
+      ).status,
+    ).toBe(400);
+  });
   it('requires owner access and validates targets without host side effects', async () => {
     expect((await api.god['local-ai'].default.get()).status).toBe(401);
     const { client } = await fixture();
@@ -318,6 +447,7 @@ it('pairs only the 27B GPU with NPU, gates classes and restores both server flag
   pending.operation!.target.npu = 'qwen3.5:2b';
   pending.operation!.phase = 'commit';
   await save(pending);
+  pairedCatalogs();
   await resumeGlobalModel();
   expect(
     (await db.select().from(helenaModelServer).where(eq(helenaModelServer.id, npu!.id)))[0]

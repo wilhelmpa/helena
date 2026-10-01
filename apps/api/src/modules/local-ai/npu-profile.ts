@@ -4,7 +4,13 @@ export const NPU_SLUG = 'volition-npu';
 export const NPU_BASE = 'http://127.0.0.1:13309/v1';
 export const NPU_EMBED = 'embed-gemma:300m';
 // Combo eval 29.09.: the 4B NPU model failed, the 2B carries triage, routines and helpers.
-export const NPU_CHAT_MODELS = ['qwen3.5:2b'] as const;
+export const NPU_CHAT_MODELS = [
+  'qwen3.5:2b',
+  'qwen3.5:4b',
+  'gemma4-it:e2b',
+  'gemma4-it:e4b',
+] as const;
+export type NpuChatModel = (typeof NPU_CHAT_MODELS)[number];
 export const MODEL_MEMORY = { capacityBytes: 124_000_000_000, reserveGiB: 12 } as const;
 export const NPU_CLASSES = ['triage', 'routines', 'hermes-helpers'] as const;
 export type LocalProfile = 'local-halogen' | 'local-27b-npu';

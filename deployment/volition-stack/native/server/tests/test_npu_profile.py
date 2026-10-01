@@ -30,8 +30,8 @@ class NpuProfileTest(unittest.TestCase):
         p.parent.mkdir(exist_ok=True)
         p.write_text(f'MemTotal: {128 * 1024**2} kB\nMemAvailable: {available * 1024**2} kB\nMlocked: {locked * 1024**2} kB\n')
 
-    def begin_pair(self):
-        return m.switch(self.host, {'id': 'one', 'action': 'begin', 'target': PAIR, 'previous': OLD}, self.driver)
+    def begin_pair(self, model='qwen3.5:4b'):
+        return m.switch(self.host, {'id': 'one', 'action': 'begin', 'target': {**PAIR, 'npu': model}, 'previous': OLD}, self.driver)
 
     def test_memory_4b_2b_and_rejection(self):
         self.assertEqual(m.select_npu(self.host, OLD), 'qwen3.5:4b')
@@ -46,8 +46,10 @@ class NpuProfileTest(unittest.TestCase):
 
     def test_pair_commit_retry_and_halogen_rollback(self):
         self.set_memory(46)
-        self.assertEqual(self.begin_pair()['operation']['target']['npu'], 'qwen3.5:2b')
-        self.assertEqual(self.begin_pair()['operation']['target']['npu'], 'qwen3.5:2b')
+        self.assertEqual(self.begin_pair('qwen3.5:2b')['operation']['target']['npu'], 'qwen3.5:2b')
+        self.assertEqual(self.begin_pair('qwen3.5:2b')['operation']['target']['npu'], 'qwen3.5:2b')
+        with self.assertRaises(HostError):
+            self.begin_pair('gemma4-it:e2b')
         done = self.finish()
         self.assertEqual(done['active']['npu'], 'qwen3.5:2b')
         self.assertTrue(m.may_start(self.host, m.NPU_UNIT))
@@ -70,6 +72,11 @@ class NpuProfileTest(unittest.TestCase):
             m.validate_target({**PAIR, 'server': 'halogen'})
 
     def test_runtime_memory_recheck(self):
+        self.set_memory(11)
+        driver = m.Driver(self.host)
+        with patch.object(driver, 'ctl') as ctl, self.assertRaises(HostError):
+            driver.perform('start', OLD, {'operation': {}})
+        ctl.assert_not_called()
         self.set_memory(13)
         driver = m.Driver(self.host)
         with patch.object(driver, 'ctl') as ctl, self.assertRaises(HostError):
@@ -92,6 +99,24 @@ class NpuProfileTest(unittest.TestCase):
         self.assertEqual(request.call_args.args[0].full_url,
                          'http://127.0.0.1:13310/v1/chat/completions')
 
+    def test_gemma_selection_requires_installed_model_and_memory(self):
+        for model in ('gemma4-it:e2b', 'gemma4-it:e4b'):
+            self.assertEqual(m.validate_target({**PAIR, 'npu': model})['npu'], model)
+            self.set_memory(60)
+            self.assertEqual(m.select_npu(self.host, OLD, model), model)
+        self.set_memory(49)
+        with self.assertRaises(HostError):
+            m.select_npu(self.host, OLD, 'gemma4-it:e4b')
+
+    def test_health_waits_for_downloaded_lemonade_catalog_before_loading(self):
+        driver = m.Driver(self.host)
+        with patch.object(driver, 'http', side_effect=[{'status': 'ok'}, {'data': []}, {'status': 'ok'}, {'data': [{'id': PAIR['model'], 'downloaded': True}]}]) as request, patch.object(self.host, 'sleep') as sleep:
+            driver.perform('health', PAIR, {'operation': {}})
+        self.assertEqual(request.call_count, 4)
+        sleep.assert_called_once_with(2)
+        with patch.object(driver, 'http', side_effect=[{'status': 'ok'}, {'data': [{'id': PAIR['model'], 'downloaded': False}]}]), self.assertRaises(HostError):
+            driver.perform('health', PAIR, {'operation': {}})
+
     def test_stop_npu_before_gpu_and_unit_isolation(self):
         driver = m.Driver(self.host)
         with patch.object(driver, 'ctl') as ctl:
@@ -99,7 +124,7 @@ class NpuProfileTest(unittest.TestCase):
         self.assertEqual(ctl.call_args_list[0].args, ('stop', *m.NPU_SOCKETS, m.NPU_UNIT))
         unit = (Path(__file__).resolve().parents[2] / 'local-ai/systemd/volition-npu.service').read_text()
         for text in ('InaccessiblePaths=-/dev/kfd -/dev/dri', 'DevicePolicy=closed',
-                     'DeviceAllow=/dev/accel/accel0 rw', 'MemorySwapMax=0', 'MemoryMax=8G'):
+                     'DeviceAllow=/dev/accel/accel0 rw', 'MemorySwapMax=0', 'MemoryMax=12G'):
             self.assertIn(text, unit)
         self.assertNotIn('DeviceAllow=/dev/kfd', unit)
 
