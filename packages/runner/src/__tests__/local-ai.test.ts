@@ -48,6 +48,12 @@ function snapshot(localAi: RuntimeLocalAi | null): RuntimePolicySnapshot {
 }
 
 describe('local AI in the runner', () => {
+  it('preserves the local provider for native CLI overrides while legacy CLIs receive server model ids', () => {
+    const qualified = 'helena-local/Qwen3.6-35B-A3B-GGUF';
+    expect(runtimeModel(qualified, 'helena')).toBe(qualified);
+    expect(runtimeModel(qualified, 'hermes')).toBe('Qwen3.6-35B-A3B-GGUF');
+    expect(runtimeModel('gpt-6-luna', 'helena')).toBe('gpt-6-luna');
+  });
   it('uses the host proxy outside isolation and leaves the isolated port for socket routing', () => {
     const halogen: RuntimeLocalAi = {
       servers: [

@@ -1,12 +1,11 @@
-// A clipped JSON document loses both its structure and the number of returned items.
-// Keep collection counts separate from the preview so a counting task can finish.
+// Explicit collection counts avoid recounting rows, and survive shortened context history.
 export function boundedToolResult(text: string, limit: number): string {
-  if (text.length <= limit) return text;
   const suffix = '\n… (gekürzt)';
   let parsed: unknown;
   try {
     parsed = JSON.parse(text);
   } catch {
+    if (text.length <= limit) return text;
     return text.slice(0, Math.max(0, limit - suffix.length)) + suffix.slice(0, limit);
   }
   const returnedCounts: Record<string, number> = {};
@@ -26,6 +25,12 @@ export function boundedToolResult(text: string, limit: number): string {
     for (const [key, value] of Object.entries(parsed)) {
       if (Array.isArray(value)) returnedCounts[key] = value.length;
     }
+  }
+  if (text.length <= limit) {
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed) && Object.keys(returnedCounts).length) {
+      const annotated = JSON.stringify({ ...parsed, returnedCounts });
+      if (annotated.length <= limit) return annotated;
+    } else return text;
   }
   const render = (length: number) =>
     JSON.stringify({

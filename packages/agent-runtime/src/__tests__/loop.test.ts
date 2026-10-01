@@ -15,6 +15,25 @@ async function workdir(): Promise<string> {
   return mkdtemp(join(tmpdir(), 'helena-agent-test-'));
 }
 
+test('computes integer totals exactly without rounding large intermediate results', async () => {
+  const { sink } = await run([
+    { calls: [{ name: 'sum_integers', input: { values: [Number.MAX_SAFE_INTEGER, 2, -1] } }] },
+    { text: 'Done.' },
+  ]);
+  const result = sink.of('tool-result')[0]!;
+  expect(result.isError).not.toBe(true);
+  expect(JSON.parse(result.output)).toEqual({ sum: '9007199254740992', count: 3 });
+});
+
+test('refuses unsafe numbers rather than producing a rounded financial total', async () => {
+  const { sink } = await run([
+    { calls: [{ name: 'sum_integers', input: { values: [Number.MAX_SAFE_INTEGER + 1] } }] },
+    { text: 'Done.' },
+  ]);
+  expect(sink.of('tool-result')[0]!.isError).toBe(true);
+  expect(sink.of('tool-result')[0]!.output).toContain('exact safe integers');
+});
+
 function selectionClient(selectTools: NonNullable<HelenaApi['selectTools']>): HelenaApi {
   return {
     selectTools,
@@ -46,6 +65,7 @@ test('tool preselection keeps the profile core and find_tools', async () => {
     'search_files',
     'search_sessions',
     'shell',
+    'sum_integers',
     'write_file',
   ]);
 });
@@ -866,55 +886,58 @@ test('two searches keep the first discovered tool available', async () => {
   expect(sink.of('tool-result')[2]!.output).toBe('found tool worked');
 });
 
-test('preserves returned collection counts and valid JSON when a tool response exceeds the context limit', async () => {
-  const receipts = Array.from({ length: 120 }, (_, id) => ({ id, text: 'synthetic '.repeat(80) }));
-  const { sessions, primary } = await run(
-    [
-      { calls: [{ name: 'find_tools', input: { query: 'list_receipts' } }] },
-      { calls: [{ name: 'list_receipts', input: {} }] },
-      ...Array.from({ length: 5 }, (_, index) => ({
-        calls: [{ name: 'write_file', input: { path: `probe${index}.txt`, content: 'synthetic' } }],
-      })),
-      { text: '120 receipts returned.' },
-    ],
-    {
-      config: { tools: { profile: 'voll' } },
-      extraTools: [
-        {
-          name: 'list_receipts',
-          description: 'List synthetic receipts',
-          readOnly: true,
-          inputSchema: { type: 'object', properties: {} },
-          async execute() {
-            return { text: JSON.stringify({ receipts }) };
-          },
-        },
+for (const count of [5, 120]) {
+  test(`preserves returned collection counts for ${count} items across the context limit`, async () => {
+    const receipts = Array.from({ length: count }, (_, id) => ({ id, text: 'synthetic '.repeat(80) }));
+    const { sessions, primary } = await run(
+      [
+        { calls: [{ name: 'find_tools', input: { query: 'list_receipts' } }] },
+        { calls: [{ name: 'list_receipts', input: {} }] },
+        ...Array.from({ length: 5 }, (_, index) => ({
+          calls: [{ name: 'write_file', input: { path: `probe${index}.txt`, content: 'synthetic' } }],
+        })),
+        { text: `${count} receipts returned.` },
       ],
-    },
-  );
-  const session = [...sessions.sessions.values()][0]!;
-  const message = session.items.find(
-    (entry) =>
-      entry.message.role === 'tool' &&
-      entry.message.content.some(
-        (part) => part.type === 'tool-result' && part.toolName === 'list_receipts',
-      ),
-  )!.message;
-  if (message.role !== 'tool') throw new Error('Missing tool response');
-  const part = message.content[0]!;
-  if (part.type !== 'tool-result') throw new Error('Missing tool result');
-  const output = part.output;
-  if (output.type !== 'text') throw new Error('Missing text response');
-  const bounded = JSON.parse(output.value);
-  expect(bounded.truncated).toBe(true);
-  expect(bounded.returnedCounts).toEqual({ receipts: 120 });
-  expect(output.value.length).toBeLessThanOrEqual(32_000);
-  const old = primary.doStreamCalls
-    .at(-1)!
-    .prompt.flatMap((message) => (message.role === 'tool' ? message.content : []))
-    .find((part) => part.type === 'tool-result' && part.toolName === 'list_receipts')!;
-  if (old.type !== 'tool-result' || old.output.type !== 'text')
-    throw new Error('Missing old result');
-  expect(JSON.parse(old.output.value).returnedCounts).toEqual({ receipts: 120 });
-  expect(old.output.value.length).toBeLessThanOrEqual(2000);
-});
+      {
+        config: { tools: { profile: 'voll' } },
+        extraTools: [
+          {
+            name: 'list_receipts',
+            description: 'List synthetic receipts',
+            readOnly: true,
+            inputSchema: { type: 'object', properties: {} },
+            async execute() {
+              return { text: JSON.stringify({ receipts }) };
+            },
+          },
+        ],
+      },
+    );
+    const session = [...sessions.sessions.values()][0]!;
+    const message = session.items.find(
+      (entry) =>
+        entry.message.role === 'tool' &&
+        entry.message.content.some(
+          (part) => part.type === 'tool-result' && part.toolName === 'list_receipts',
+        ),
+    )!.message;
+    if (message.role !== 'tool') throw new Error('Missing tool response');
+    const part = message.content[0]!;
+    if (part.type !== 'tool-result') throw new Error('Missing tool result');
+    const output = part.output;
+    if (output.type !== 'text') throw new Error('Missing text response');
+    const bounded = JSON.parse(output.value);
+    expect(bounded.truncated === true).toBe(count === 120);
+    expect(bounded.returnedCounts).toEqual({ receipts: count });
+    if (count === 5) expect(bounded.receipts).toEqual(receipts);
+    expect(output.value.length).toBeLessThanOrEqual(32_000);
+    const old = primary.doStreamCalls
+      .at(-1)!
+      .prompt.flatMap((message) => (message.role === 'tool' ? message.content : []))
+      .find((part) => part.type === 'tool-result' && part.toolName === 'list_receipts')!;
+    if (old.type !== 'tool-result' || old.output.type !== 'text')
+      throw new Error('Missing old result');
+    expect(JSON.parse(old.output.value).returnedCounts).toEqual({ receipts: count });
+    expect(old.output.value.length).toBeLessThanOrEqual(2000);
+  });
+}

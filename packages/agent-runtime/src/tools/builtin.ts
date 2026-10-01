@@ -6,6 +6,32 @@ import { error, text, type AgentTool } from './types';
 // The loop's own tools: asking the person (clarify), finding more tools, loading a skill,
 // the agent's memory and the search over past sessions.
 
+export const sumIntegersTool: AgentTool = {
+  name: 'sum_integers',
+  readOnly: true,
+  description:
+    'Compute an exact total of integer counts or amounts in cents from tool results. Returns the sum as a decimal string; use this instead of mental arithmetic.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      values: { type: 'array', items: { type: 'integer' }, minItems: 1, maxItems: 1000 },
+    },
+    required: ['values'],
+  },
+  async execute(input) {
+    const values = input.values;
+    if (
+      !Array.isArray(values) ||
+      values.length < 1 ||
+      values.length > 1000 ||
+      values.some((value) => typeof value !== 'number' || !Number.isSafeInteger(value))
+    )
+      return error('Provide between 1 and 1000 exact safe integers; express money in cents.');
+    const sum = values.reduce<bigint>((total, value) => total + BigInt(value), 0n);
+    return { text: JSON.stringify({ sum: sum.toString(), count: values.length }) };
+  },
+};
+
 export const clarifyTool: AgentTool = {
   name: 'clarify',
   kind: 'clarify',
