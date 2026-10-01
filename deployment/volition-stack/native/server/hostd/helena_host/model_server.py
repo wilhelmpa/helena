@@ -15,7 +15,8 @@ SERVERS = {'halogen': 'helena-halogen.service', 'lemonade': 'lemond.service'}
 COMPANIONS = ('helena-embed.service', 'helena-voice-stt.service', 'helena-voice-tts.service')
 NPU_UNIT = 'volition-npu.service'
 NPU_SOCKETS = ('volition-npu-proxy.socket', 'volition-npu-proxy.service')
-NPU_MODELS = {'qwen3.5:4b': 7 * 1024**3, 'qwen3.5:2b': 5 * 1024**3}
+NPU_MODELS = {'qwen3.5:4b': 7 * 1024**3, 'qwen3.5:2b': 5 * 1024**3,
+              'gemma4-it:e2b': 7 * 1024**3, 'gemma4-it:e4b': 10 * 1024**3}
 RESERVE = 12 * 1024**3
 GPU_27B_BUDGET = 28 * 1024**3
 
@@ -91,7 +92,7 @@ def memory(host):
     return values
 
 
-def select_npu(host, previous):
+def select_npu(host, previous, requested=None):
     values = memory(host)
     # Estimate Halogen's released lock; startup rechecks actual free memory.
     reclaim = min(values['Mlocked'], 72 * 1024**3) if previous['server'] == 'halogen' else 0
@@ -100,6 +101,10 @@ def select_npu(host, previous):
         budget -= GPU_27B_BUDGET
     installed = json.loads(host.read('/var/lib/volition-npu/installed.json') or '{}').get('models', [])
     tags = {row.get('name') for row in installed}
+    if requested:
+        if requested in tags and 'embed-gemma:300m' in tags and budget >= NPU_MODELS[requested]:
+            return requested
+        raise HostError('CheckFailed', 'Requested NPU model is unavailable or exceeds memory')
     for model, footprint in NPU_MODELS.items():
         if budget >= footprint and model in tags and 'embed-gemma:300m' in tags:
             return model
@@ -170,6 +175,8 @@ class Driver:
                 except (FileNotFoundError, ProcessLookupError):
                     continue
         elif phase == 'start':
+            if memory(self.host)['MemAvailable'] < RESERVE:
+                raise HostError('CheckFailed', 'GPU memory reserve is unavailable')
             if target.get('npu') and memory(self.host)['MemAvailable'] < RESERVE + GPU_27B_BUDGET + NPU_MODELS[target['npu']]:
                 raise HostError('CheckFailed', 'GPU/NPU pair exceeds available memory')
             self.ctl('start', SERVERS[target['server']])
@@ -179,6 +186,13 @@ class Driver:
                 try:
                     data = self.http(target, '/health')
                     if target['server'] != 'halogen' or (data.get('status') == 'ok' and data.get('responds') is True):
+                        if target.get('profile') == 'local-27b-npu':
+                            catalog = self.http(target, '/models?show_all=true')
+                            model = next((row for row in catalog.get('data', []) if row.get('id') == target['model']), None)
+                            if model is None:
+                                raise ValueError('Waiting for the local model catalog')
+                            if model.get('downloaded') is not True:
+                                raise HostError('CheckFailed', 'The profile model must already be downloaded')
                         break
                 except (OSError, ValueError):
                     pass
@@ -242,7 +256,7 @@ def switch(host: Host, params: dict, driver=None) -> dict:
             raise HostError('InvalidParameter', 'Invalid operation id', parameter='id')
         if action == 'begin':
             if op and op['id'] == identity:
-                if {k: v for k, v in op['target'].items() if k != 'npu'} != {k: v for k, v in params['target'].items() if k != 'npu'}:
+                if op['target'] != params['target']:
                     raise HostError('InvalidParameter', 'Operation target cannot change', parameter='target')
                 return value
             if op and op['phase'] not in TERMINAL:
@@ -250,7 +264,7 @@ def switch(host: Host, params: dict, driver=None) -> dict:
             target = validate_target(params['target'])
             previous = value['active'] or validate_target(params['previous'])
             if target.get('profile') == 'local-27b-npu':
-                target['npu'] = select_npu(host, previous)
+                target['npu'] = select_npu(host, previous, target.get('npu'))
             if not value['active']:
                 if host.run(['systemctl', 'is-active', '--quiet', SERVERS[previous['server']]], timeout=10).returncode:
                     raise HostError('CheckFailed', 'Previous model server is not active')

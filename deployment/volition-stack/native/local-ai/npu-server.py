@@ -9,7 +9,8 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-MODELS = ('qwen3.5:4b', 'qwen3.5:2b')
+MODELS = {'qwen3.5:4b': 7 * 1024**3, 'qwen3.5:2b': 5 * 1024**3,
+          'gemma4-it:e2b': 7 * 1024**3, 'gemma4-it:e4b': 10 * 1024**3}
 EMBED = 'embed-gemma:300m'
 # Voice proxies occupy 13306/13307 in both local profiles.
 GATEWAY_PORT = 13309
@@ -94,7 +95,7 @@ def main():
         raise SystemExit('Only the small NPU models are allowed')
     memory = dict(line.split(':', 1) for line in Path('/proc/meminfo').read_text().splitlines())
     available = int(memory['MemAvailable'].split()[0]) * 1024
-    footprint = (7 if model.endswith('4b') else 5) * 1024**3
+    footprint = MODELS[model]
     if available < 12 * 1024**3 + footprint:
         raise SystemExit('NPU memory reserve is unavailable')
     installed = subprocess.run(['/usr/bin/flm', 'list', '--filter', 'installed', '--json'],

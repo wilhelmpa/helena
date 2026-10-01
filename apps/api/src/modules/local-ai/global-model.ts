@@ -7,6 +7,7 @@ import {
   MODEL_MEMORY,
   npuClassModel,
   type LocalProfile,
+  type NpuChatModel,
 } from './npu-profile';
 import { randomUUID } from 'node:crypto';
 import {
@@ -27,7 +28,8 @@ import { HttpError } from '#shared/lib';
 import { hostd } from '#modules/server/hostd';
 import { readModelOptions, saveModelOptions, type LocalModelOptions } from './model-options';
 import { localAiWorkActive } from './guard';
-import { evalById, refreshServer, startEval, taskClasses } from './service';
+import { DEFAULT_KEY_FILE, evalById, refreshServer, startEval, taskClasses } from './service';
+import { LEMONADE_DEFAULT_BASE_URL } from './server-types';
 import {
   ADMISSION_LOCK,
   DEFAULT_KEY,
@@ -53,7 +55,10 @@ interface ModelJob {
   evals: Record<string, number>;
   failedClasses: string[];
   done?: boolean;
+  catalogStartedAt?: number;
 }
+const LEMONADE_BASES = [LEMONADE_DEFAULT_BASE_URL, 'http://127.0.0.1:13305/v1'];
+
 export async function globalModelStatus() {
   return {
     profiles: LOCAL_PROFILES,
@@ -63,9 +68,20 @@ export async function globalModelStatus() {
   };
 }
 
-async function targetOf(modelId: string): Promise<ModelTarget> {
+async function targetOf(modelId: string, profile?: LocalProfile): Promise<ModelTarget> {
   const parsed = parseLocalModelId(modelId);
-  const server = parsed && (await listModelServers()).find((row) => row.slug === parsed.slug);
+  const servers = await listModelServers();
+  const server = parsed && servers.find((row) => row.slug === parsed.slug);
+  const pairedModel = LOCAL_PROFILES.find((entry) => entry.id === 'local-27b-npu')!.model;
+  if (profile === 'local-27b-npu' && parsed?.model === pairedModel) {
+    const defaultServer = servers.find((row) => row.slug === 'local');
+    const bootstrapSlug =
+      defaultServer && defaultServer.kind !== 'lemonade' ? 'volition-lemonade' : 'local';
+    if (!server && parsed.slug === bootstrapSlug)
+      return { server: 'lemonade', slug: parsed.slug, model: parsed.model };
+    if (server?.kind === 'lemonade' && LEMONADE_BASES.includes(server.baseUrl.replace(/\/$/, '')))
+      return { server: 'lemonade', slug: parsed.slug, model: parsed.model };
+  }
   const model = server && server.models.find((row) => row.id === parsed!.model);
   if (
     !server ||
@@ -78,7 +94,7 @@ async function targetOf(modelId: string): Promise<ModelTarget> {
   const allowed =
     server.kind === 'halogen'
       ? ['http://127.0.0.1:8731/v1', 'http://127.0.0.1:8741/v1']
-      : ['http://127.0.0.1:13305/api/v1', 'http://127.0.0.1:13305/v1'];
+      : LEMONADE_BASES;
   if (!allowed.includes(server.baseUrl.replace(/\/$/, '')))
     throw new HttpError(400, 'Only the managed local server can be switched');
   return { server: server.kind as ModelTarget['server'], slug: server.slug, model: model.id };
@@ -90,8 +106,14 @@ function switchedClasses(): string[] {
     .map((entry) => entry.id);
 }
 
-export async function previewGlobalModel(modelId: string, profile?: LocalProfile) {
-  const target = await targetOf(modelId);
+export async function previewGlobalModel(
+  modelId: string,
+  profile?: LocalProfile,
+  npuModel?: NpuChatModel,
+) {
+  if (npuModel && (profile !== 'local-27b-npu' || !NPU_CHAT_MODELS.includes(npuModel)))
+    throw new HttpError(400, 'NPU selection requires the paired local profile');
+  const target = await targetOf(modelId, profile);
   if (profile === 'local-halogen' && target.server !== 'halogen')
     throw new HttpError(400, 'The Halogen profile requires Halogen');
   if (profile === 'local-27b-npu') {
@@ -99,9 +121,9 @@ export async function previewGlobalModel(modelId: string, profile?: LocalProfile
     if (target.server !== 'lemonade' || target.model !== definition.model)
       throw new HttpError(400, 'The paired profile requires Qwen3.8-27B-GGUF');
     const npu = (await listModelServers()).find((row) => row.slug === NPU_SLUG);
-    if (npu?.kind !== 'fastflowlm' || npu.baseUrl !== NPU_BASE)
-      throw new HttpError(400, 'Register the managed NPU server first');
-    target.npu = NPU_CHAT_MODELS[0];
+    if (npu && (npu.kind !== 'fastflowlm' || npu.baseUrl !== NPU_BASE))
+      throw new HttpError(400, 'The NPU slug belongs to another server');
+    target.npu = npuModel ?? NPU_CHAT_MODELS[0];
   }
   if (profile) target.profile = profile;
   const agents = await db
@@ -123,13 +145,68 @@ export async function previewGlobalModel(modelId: string, profile?: LocalProfile
   };
 }
 
-export async function beginGlobalModel(modelId: string, profile?: LocalProfile) {
+async function refreshPairedCatalog(target: ModelTarget): Promise<boolean> {
+  await db
+    .insert(helenaModelServer)
+    .values([
+      {
+        slug: target.slug,
+        name: 'Lokale KI (Lemonade)',
+        kind: 'lemonade',
+        baseUrl: LEMONADE_DEFAULT_BASE_URL,
+        keySource: 'file',
+        keyFile: DEFAULT_KEY_FILE,
+        enabled: false,
+      },
+      {
+        slug: NPU_SLUG,
+        name: 'Local NPU',
+        kind: 'fastflowlm',
+        baseUrl: NPU_BASE,
+        keySource: 'file',
+        keyFile: '/etc/helena/volition-npu.key',
+        enabled: false,
+      },
+    ])
+    .onConflictDoNothing();
+  const servers = await listModelServers();
+  const gpu = servers.find((row) => row.slug === target.slug)!;
+  const npu = servers.find((row) => row.slug === NPU_SLUG)!;
+  if (
+    gpu.kind !== 'lemonade' ||
+    !LEMONADE_BASES.includes(gpu.baseUrl.replace(/\/$/, '')) ||
+    npu.kind !== 'fastflowlm' ||
+    npu.baseUrl !== NPU_BASE
+  )
+    throw new HttpError(400, 'The managed profile registration changed');
+  const gpuCatalog = await refreshServer(gpu.id);
+  const npuCatalog = await refreshServer(npu.id);
+  return (
+    !!gpuCatalog.status?.reachable &&
+    !!npuCatalog.status?.reachable &&
+    gpuCatalog.models.some(
+      (model) =>
+        model.id === target.model &&
+        model.downloaded === true &&
+        model.capabilities.includes('chat'),
+    ) &&
+    npuCatalog.models.some(
+      (model) => model.id === target.npu && model.capabilities.includes('chat'),
+    )
+  );
+}
+
+export async function beginGlobalModel(
+  modelId: string,
+  profile?: LocalProfile,
+  npuModel?: NpuChatModel,
+) {
   return db.transaction(async (tx) => {
     const gate = await tx.execute(
       sql`select pg_try_advisory_xact_lock(${ADMISSION_LOCK}) as acquired`,
     );
     if (!gate[0]?.acquired) throw new HttpError(409, 'Admission is busy; retry');
-    const preview = await previewGlobalModel(modelId, profile);
+    const preview = await previewGlobalModel(modelId, profile, npuModel);
     const status = await hostd<MaintenanceState>('ModelMaintenanceStatus');
     if (status.operation && !['done', 'rolled-back'].includes(status.operation.phase))
       throw new HttpError(409, 'A model operation is pending');
@@ -317,12 +394,27 @@ export async function resumeGlobalModel(rollback = false): Promise<MaintenanceSt
       await saveModelOptions(op.previous.model, job.modelOptions[op.previous.model]!);
     if (phase === 'commit' || phase === 'rollback-commit') {
       const reverse = phase === 'rollback-commit';
+      const target = reverse ? op.previous : op.target;
+      if (target.profile === 'local-27b-npu') {
+        if (!job.catalogStartedAt) {
+          job.catalogStartedAt = Date.now();
+          await setSetting(MAINTENANCE_KEY, job);
+        }
+        try {
+          if (!(await refreshPairedCatalog(target))) {
+            if (Date.now() - job.catalogStartedAt < 240_000 || reverse) return state;
+            return hostd<MaintenanceState>('SwitchModelServer', { id: op.id, action: 'rollback' });
+          }
+        } catch (error) {
+          if (reverse) throw error;
+          return hostd<MaintenanceState>('SwitchModelServer', { id: op.id, action: 'rollback' });
+        }
+      }
       if (!(reverse ? job.restored : job.committed)) await commitModel(state, job, reverse);
       await forgetSetting('localAi.policy');
-      const target = reverse ? op.previous : op.target;
       const server = (await listModelServers()).find((row) => row.slug === target.slug);
-      if (server) await refreshServer(server.id);
-      if (target.npu) {
+      if (server && target.profile !== 'local-27b-npu') await refreshServer(server.id);
+      if (target.npu && target.profile !== 'local-27b-npu') {
         const npu = (await listModelServers()).find((row) => row.slug === NPU_SLUG);
         if (npu) await refreshServer(npu.id);
       }

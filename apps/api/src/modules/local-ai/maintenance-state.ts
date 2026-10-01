@@ -2,6 +2,7 @@ import { HttpError } from '#shared/lib';
 import { readFile } from 'node:fs/promises';
 import { appSetting, db } from '@repo/db';
 import { eq, sql } from 'drizzle-orm';
+import type { NpuChatModel } from './npu-profile';
 
 export const LOCAL_DEFAULT = 'volition-local-default';
 export const DEFAULT_KEY = 'volition.localDefault';
@@ -12,7 +13,7 @@ export interface ModelTarget {
   slug: string;
   model: string;
   profile?: 'local-halogen' | 'local-27b-npu';
-  npu?: 'qwen3.5:4b' | 'qwen3.5:2b';
+  npu?: NpuChatModel;
 }
 export interface MaintenanceState {
   version: 1;

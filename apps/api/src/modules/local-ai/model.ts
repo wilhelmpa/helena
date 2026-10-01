@@ -477,6 +477,14 @@ export const judgeBody = t.Object({
 export const globalModelBody = t.Object({
   model: t.String({ minLength: 1, maxLength: 300 }),
   profile: t.Optional(t.Union([t.Literal('local-halogen'), t.Literal('local-27b-npu')])),
+  npuModel: t.Optional(
+    t.Union([
+      t.Literal('qwen3.5:2b'),
+      t.Literal('qwen3.5:4b'),
+      t.Literal('gemma4-it:e2b'),
+      t.Literal('gemma4-it:e4b'),
+    ]),
+  ),
 });
 export const globalModelResumeBody = t.Object({ rollback: t.Optional(t.Boolean()) });
 export const bulkLocalDefaultBody = t.Object({

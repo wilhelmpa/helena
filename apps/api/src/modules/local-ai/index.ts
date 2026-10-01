@@ -74,7 +74,7 @@ export const localAiRoutes = new Elysia({
   })
   .post(
     '/god/local-ai/default/preview',
-    ({ body }) => previewGlobalModel(body.model, body.profile),
+    ({ body }) => previewGlobalModel(body.model, body.profile, body.npuModel),
     {
       beforeHandle: ({ user }) => {
         requireGod(user);
@@ -83,13 +83,17 @@ export const localAiRoutes = new Elysia({
       detail: { summary: 'Preview affected agents, classes and the 72 GB weight lock' },
     },
   )
-  .post('/god/local-ai/default/apply', ({ body }) => beginGlobalModel(body.model, body.profile), {
-    beforeHandle: ({ user }) => {
-      requireGod(user);
+  .post(
+    '/god/local-ai/default/apply',
+    ({ body }) => beginGlobalModel(body.model, body.profile, body.npuModel),
+    {
+      beforeHandle: ({ user }) => {
+        requireGod(user);
+      },
+      body: globalModelBody,
+      detail: { summary: 'Begin a recoverable local model switch' },
     },
-    body: globalModelBody,
-    detail: { summary: 'Begin a recoverable local model switch' },
-  })
+  )
   .post('/god/local-ai/default/resume', ({ body }) => resumeGlobalModel(body.rollback), {
     beforeHandle: ({ user }) => {
       requireGod(user);

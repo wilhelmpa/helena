@@ -14,6 +14,12 @@ spec.loader.exec_module(npu)
 
 
 class NpuTest(unittest.TestCase):
+    def test_gemma_is_allowed_with_a_budget_that_fits_the_service(self):
+        for model in ('gemma4-it:e2b', 'gemma4-it:e4b'):
+            self.assertIn(model, npu.MODELS)
+            self.assertLessEqual(npu.MODELS[model] + 1024**3, 12 * 1024**3)
+        self.assertGreater(npu.MODELS['gemma4-it:e4b'], 8 * 1024**3)
+
     def test_start_and_gateway_leave_voice_ports_available(self):
         def contents(path):
             if str(path).endswith('model.json'):

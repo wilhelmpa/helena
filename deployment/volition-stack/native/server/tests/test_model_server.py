@@ -44,6 +44,9 @@ class ModelServerTest(unittest.TestCase):
         self.host = Host(root=self.tmp.name, run=lambda args, **kw: CommandResult(
             0 if args[-1] == m.SERVERS['halogen'] else 1, '', ''))
         self.driver = FakeDriver()
+        proc = Path(self.host.path('/proc'))
+        proc.mkdir()
+        (proc / 'meminfo').write_text(f'MemTotal: {128 * 1024**2} kB\nMemAvailable: {60 * 1024**2} kB\nMlocked: 0 kB\n')
 
     def begin(self):
         return m.switch(self.host, {'id': 'one', 'action': 'begin', 'target': NEW, 'previous': OLD}, self.driver)
