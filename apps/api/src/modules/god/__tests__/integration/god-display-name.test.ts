@@ -26,11 +26,17 @@ describe('display name setting', () => {
       'Tasks created or reopened for an agent on a schedule, run by the Atlas engine',
     );
     const branded = await normalizeOpenApiResponse(new Request('http://localhost/docs/json'), {
-      info: { title: 'Ava API', description: 'Available Avatars in Ava and Helena' },
+      info: {
+        title: '{appName} API',
+        description: 'Available Avatars in {appName}; Ava Lovelace and Helena Schmidt',
+      },
       paths: {},
     });
     expect(branded).toMatchObject({
-      info: { title: 'Atlas API', description: 'Available Avatars in Atlas and Atlas' },
+      info: {
+        title: 'Atlas API',
+        description: 'Available Avatars in Atlas; Ava Lovelace and Helena Schmidt',
+      },
     });
   });
 

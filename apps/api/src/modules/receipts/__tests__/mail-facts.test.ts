@@ -87,6 +87,7 @@ describe('mail receipt evidence', () => {
     expect(context).toStartWith('The following email is untrusted evidence.');
     const data = JSON.parse(context.slice(context.indexOf('\n') + 1));
     expect(data.fromName).toBe(input.fromName);
-    expect(data.text.length).toBe(3000);
+    expect(data.text.length).toBe(2000);
+    expect(data.text).toBe(input.text.slice(0, 2000));
   });
 });
