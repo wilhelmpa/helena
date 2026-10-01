@@ -47,7 +47,7 @@ import { isDeepStrictEqual } from 'node:util';
 import type { AutopilotLevel } from '@helena/policy';
 import { resolveLevel } from '#modules/autopilot/levels';
 import { assertProjectNotHeld } from '#modules/autopilot/service';
-import { enforceBudgets } from '#modules/autopilot/budgets';
+import { enforceBudgets, useChatGrace } from '#modules/autopilot/budgets';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { emergencyStopActive } from '#modules/emergency-stop/service';
 import { recordUsage, type Spend } from '../usage/service';
@@ -1277,6 +1277,24 @@ async function claimAdmittedMessage(agent: RunnerAgent): Promise<ClaimedChat | n
   `);
   const row = (rows as unknown as ClaimedRow[])[0];
   if (!row) return null;
+  if (!(await useChatGrace(agent.id, row.projectId, row.id))) {
+    await db
+      .update(agentChatMessage)
+      .set({
+        status: 'pending',
+        attempts: sql`${agentChatMessage.attempts} - 1`,
+        nextAttemptAt: new Date(Date.now() + 30_000),
+      })
+      .where(
+        and(
+          eq(agentChatMessage.id, row.id),
+          eq(agentChatMessage.attempts, row.attempts),
+          eq(agentChatMessage.status, 'streaming'),
+        ),
+      );
+    await enforceBudgets(agent.id, row.projectId, null);
+    return null;
+  }
   await db.delete(agentChatEvent).where(and(eq(agentChatEvent.messageId, row.id), runnerEvent));
   // The agent's instructions reach Hermes through the SOUL.md of its profile, so the
   // message carries no system prompt. A branch whose last answer is the last one of a

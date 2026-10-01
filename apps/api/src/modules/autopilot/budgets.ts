@@ -1,6 +1,8 @@
 import {
   db,
   agentRun,
+  agentChatMessage,
+  agentChatThread,
   aiAgent,
   approvalRequest,
   helenaGoalTask,
@@ -380,6 +382,16 @@ async function issueIdOfRun(runId: number | null | undefined): Promise<number | 
   return run?.issueId ?? null;
 }
 
+async function issueIdOfChat(messageId: number | null | undefined): Promise<number | null> {
+  if (messageId == null) return null;
+  const [row] = await db
+    .select({ issueId: agentChatThread.issueId })
+    .from(agentChatMessage)
+    .innerJoin(agentChatThread, eq(agentChatThread.id, agentChatMessage.threadId))
+    .where(eq(agentChatMessage.id, messageId));
+  return row?.issueId ?? null;
+}
+
 // Pauses the agent unless it already is. True when this call paused it.
 export async function pauseForBudget(
   agentId: number,
@@ -615,14 +627,31 @@ export async function useGrace(
   projectId: number,
   runId: number,
 ): Promise<boolean> {
+  return reserveBudgetGrace(agentId, projectId, runId, await issueIdOfRun(runId));
+}
+
+// Run ids are positive; negative message ids keep chat reservations in a separate namespace.
+export async function useChatGrace(
+  agentId: number,
+  projectId: number | null,
+  messageId: number,
+): Promise<boolean> {
+  return reserveBudgetGrace(agentId, projectId, -messageId, await issueIdOfChat(messageId));
+}
+
+async function reserveBudgetGrace(
+  agentId: number,
+  projectId: number | null,
+  workId: number,
+  issueId: number | null,
+): Promise<boolean> {
   if ((await agentFacts(agentId))?.role === 'home') return true;
   const department = await departmentOfWork(agentId, projectId);
-  const issueId = await issueIdOfRun(runId);
   const goalIds = await goalIdsOfIssue(issueId);
   const statuses = await budgetStatuses({
     issueIds: issueId == null ? [] : [issueId],
     agentIds: [agentId],
-    projectIds: [projectId],
+    projectIds: projectId == null ? [] : [projectId],
     departmentIds: department == null ? [] : [department.id],
     goalIds,
   });
@@ -638,14 +667,14 @@ export async function useGrace(
         if (!current) continue;
         if (
           sameStart(current.graceFor, new Date(status.periodStart)) &&
-          current.graceRunIds?.includes(runId)
+          current.graceRunIds?.includes(workId)
         )
           continue;
         const rows = await tx
           .update(helenaBudget)
           .set({
             graceRuns: sql`${helenaBudget.graceRuns} - 1`,
-            graceRunIds: sql`${helenaBudget.graceRunIds} || ${JSON.stringify([runId])}::jsonb`,
+            graceRunIds: sql`${helenaBudget.graceRunIds} || ${JSON.stringify([workId])}::jsonb`,
           })
           .where(
             and(
@@ -715,10 +744,12 @@ export async function budgetExhausted(
   agentId: number | null,
   projectId: number | null,
   runId?: number | null,
+  chatMessageId?: number | null,
 ): Promise<BudgetStatus | null> {
   if (agentId != null && (await agentFacts(agentId))?.role === 'home') return null;
   const department = agentId == null ? null : await departmentOfWork(agentId, projectId);
-  const issueId = await issueIdOfRun(runId);
+  const workId = runId ?? (chatMessageId == null ? null : -chatMessageId);
+  const issueId = runId == null ? await issueIdOfChat(chatMessageId) : await issueIdOfRun(runId);
   const goalIds = await goalIdsOfIssue(issueId);
   const statuses = await budgetStatuses({
     issueIds: issueId == null ? [] : [issueId],
@@ -729,7 +760,7 @@ export async function budgetExhausted(
   });
   return (
     statuses.find(
-      (status) => status.reached && !(runId != null && status.graceRunIds.includes(runId)),
+      (status) => status.reached && !(workId != null && status.graceRunIds.includes(workId)),
     ) ?? null
   );
 }

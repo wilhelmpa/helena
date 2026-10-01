@@ -422,6 +422,45 @@ describe('budgets', () => {
     return { ...s, run, issue, card, budget: budget! };
   }
 
+  it('reserves only one chat answer after continue once and permits its budgeted tools', async () => {
+    const s = await exhaustedBudget();
+    await s.asOwner.approvals({ approvalId: s.card.id }).budget.post({ action: 'once' });
+    const sent = [];
+    for (const prompt of ['First synthetic answer', 'Second synthetic answer']) {
+      const reply = await s.asOwner
+        .projects({ projectKey: 'MKT' })
+        ['ai-agents']({ agentId: s.agent.id })
+        .chat.post({ prompt });
+      expect(reply.status).toBe(200);
+      sent.push(reply.data!);
+    }
+    const first = (await s.asRunner['agent-chats'].claim.post()).data!.message!;
+    expect(first.id).toBe(sent[0]!.messageId);
+    const [budget] = await budgetStatuses({ agentIds: [s.agent.id] });
+    expect(budget!.graceRuns).toBe(0);
+    expect(budget!.graceRunIds).toEqual([-first.id]);
+    const allowed = await decide({
+      adapter: 'mcp',
+      agentId: s.agent.id,
+      projectId: s.projectId,
+      chatMessageId: first.id,
+      category: 'write',
+      scope: 'workspace',
+    });
+    expect(allowed.outcome).toBe('allow');
+    const other = await decide({
+      adapter: 'mcp',
+      agentId: s.agent.id,
+      projectId: s.projectId,
+      chatMessageId: sent[1]!.messageId,
+      category: 'write',
+      scope: 'workspace',
+    });
+    expect(other.reason).toBe('budget-exhausted');
+    const second = (await s.asRunner['agent-chats'].claim.post()).data!.message;
+    expect(second).toBeNull();
+  });
+
   it('reserves one grace run atomically across concurrent claims', async () => {
     const s = await exhaustedBudget();
     await continueOnce(s.budget.id);
