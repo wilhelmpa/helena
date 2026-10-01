@@ -63,8 +63,10 @@ export function deriveStatus({
   if (budget === true || budget === 'throttled' || budget === 'exhausted') return 'throttled';
   if (voicePhase === 'speaking') return 'speaking';
   if (voicePhase === 'listening' || voicePhase === 'hearing') return 'listening';
-  if (awaitingChoice || run === 'waiting' || chat === 'queued' || voicePhase === 'waiting')
-    return 'waiting';
+  if (awaitingChoice || run === 'waiting' || voicePhase === 'waiting') return 'waiting';
+  // A chat waiting for a free model slot is busy, not blocked: the orb keeps working
+  // instead of turning into a still waiting sphere (owner, 01.10.).
+  if (chat === 'queued') return 'thinking';
   if (tool) return 'tool';
   if (
     run === 'running' ||
