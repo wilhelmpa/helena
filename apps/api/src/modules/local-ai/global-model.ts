@@ -502,9 +502,8 @@ export async function bulkLocalDefault(ids: number[], apply: boolean) {
       .update(aiAgent)
       .set({
         model: LOCAL_DEFAULT,
-        modelOverrides: sql`${aiAgent.modelOverrides} || ${JSON.stringify({ model: LOCAL_DEFAULT, runtime: 'hermes' })}::jsonb`,
+        modelOverrides: sql`${aiAgent.modelOverrides} || ${JSON.stringify({ model: LOCAL_DEFAULT })}::jsonb`,
         templateOverrides: sql`CASE WHEN ${aiAgent.sourceTemplateId} IS NOT NULL AND NOT (${aiAgent.templateOverrides} @> '["model"]'::jsonb) THEN ${aiAgent.templateOverrides} || '["model"]'::jsonb ELSE ${aiAgent.templateOverrides} END`,
-        runtimePolicy: sql`jsonb_set(coalesce(${aiAgent.runtimePolicy}, '{}'::jsonb), '{runtime}', '"hermes"'::jsonb)`,
       })
       .where(inArray(aiAgent.id, ids));
   }
