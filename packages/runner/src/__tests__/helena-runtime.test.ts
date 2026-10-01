@@ -310,6 +310,50 @@ describe('the helena runtime', () => {
     expect(statuses[0]!.actions).toEqual([{ id: 5, error: null }]);
   });
 
+  it('reads only the configured local server keys before every native answer', async () => {
+    let reads = 0;
+    const client: RuntimePolicyClient = {
+      runtimePolicy: async () => ({
+        ...snapshot,
+        localAi: {
+          ...snapshot.localAi!,
+          servers: [{ ...snapshot.localAi!.servers[0]!, keyEnv: 'VOLITION_TEST_MODEL_KEY' }],
+        },
+      }),
+      reportRuntimeStatus: async () => {},
+      mcpSecrets: async () => ({}),
+      webLogins: async () => [],
+      modelServerKeys: async (): Promise<Record<string, string>> => {
+        reads++;
+        return reads === 1
+          ? { VOLITION_TEST_MODEL_KEY: 'test-only-model-key', UNRELATED_KEY: 'test-only-unrelated' }
+          : {};
+      },
+    };
+    const adapter = new HelenaRuntimeAdapter(
+      {
+        name: 'local-key-test',
+        url: 'http://127.0.0.1:3000',
+        apiKey: 'itp_test_key_for_the_adapter',
+        agent: 'helena',
+        args: [],
+        env: {},
+        concurrency: 1,
+        pollIntervalMs: 1000,
+        timeoutMs: 60_000,
+        outputFormat: 'helena-jsonl',
+        models: [],
+      },
+      client,
+    );
+    const first = await adapter.runSettings();
+    expect(first.env?.VOLITION_TEST_MODEL_KEY).toBe('test-only-model-key');
+    expect(first.env).not.toHaveProperty('UNRELATED_KEY');
+    const revoked = await adapter.runSettings();
+    expect(revoked.env?.VOLITION_TEST_MODEL_KEY).toBe('');
+    expect(reads).toBe(2);
+  });
+
   it('runs a subcommand of the runner with the task as JSON on stdin', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'helena-subcommand-'));
     // A stand-in for the runner bundle: it echoes what it was started with as helena-jsonl.
