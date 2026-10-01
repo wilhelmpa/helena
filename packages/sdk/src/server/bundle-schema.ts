@@ -51,7 +51,7 @@ const agent = z
 const budget = z
   .object({
     metric: z.enum(['tokens', 'cost', 'time']),
-    period: z.enum(['day', 'month']),
+    period: z.enum(['day', 'week', 'month']),
     limit: z.number().positive(),
   })
   .strict();

@@ -48,7 +48,7 @@ export interface DecisionConnection {
   // keySource 'local-ai': the model server of Helena's local AI whose address and key it uses.
   modelServer: string | null;
   localAiClassId?: string;
-  priority?: 'normal' | 'realtime';
+  priority?: 'normal' | 'realtime' | 'background';
   mailBudget?: { queueMs: number; generationMs: number };
   decisionSubject?: string | null;
 }

@@ -24,7 +24,12 @@ import { limitsCapable } from './limits';
 import type { WorkRef } from './logins';
 import { cliRuntimeEnv, readRuntimeAccount, signOutArgs } from './runtime-account';
 import type { RuntimePolicyClient, RuntimePolicySnapshot, RuntimeStatus } from './policy';
-import { normalizeRuntimeAccount, type RuntimeAccount } from '@helena/sdk';
+import {
+  effectiveContextLimits,
+  normalizeRuntimeAccount,
+  truncateContext,
+  type RuntimeAccount,
+} from '@helena/sdk';
 import {
   profileDigest,
   resolveMcpValue,
@@ -406,12 +411,25 @@ export async function ensureRuntimeDir(path: string): Promise<void> {
   if (info.isSymbolicLink() || !info.isDirectory()) throw new Error(`${path} is not a directory`);
 }
 
-// The agent's standing instructions: the SOUL.md Helena writes for Hermes.
+// Standing instructions and approved canonical memory follow the agent across runtimes.
 function instructionsOf(snapshot: RuntimePolicySnapshot): string {
-  return snapshot.runtimePolicy.files
+  const soul = snapshot.runtimePolicy.files
     .filter((file) => file.path === 'SOUL.md')
     .map((file) => file.content.trim())
     .join('\n\n');
+  const limits = effectiveContextLimits(
+    snapshot.contextLimits,
+    snapshot.runtimePolicy.contextLimits,
+  );
+  const memory =
+    snapshot.learning?.enabled === false
+      ? []
+      : (snapshot.memoryWrites?.baseline ?? []).flatMap((entry) => {
+          const limit = entry.file === 'USER.md' ? limits.user : limits.memory;
+          const content = truncateContext(entry.content.trim(), limit).content;
+          return content ? [`## ${entry.file} (approved agent memory)\n${content}`] : [];
+        });
+  return [soul, ...memory].filter(Boolean).join('\n\n');
 }
 
 // ── The runtime's program and its login ────────────────────────────────────────────────

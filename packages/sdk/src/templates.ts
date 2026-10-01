@@ -81,7 +81,7 @@ export interface BundleAgent {
 
 export interface BundleBudget {
   metric: 'tokens' | 'cost' | 'time';
-  period: 'day' | 'month';
+  period: 'day' | 'week' | 'month';
   limit: number;
 }
 

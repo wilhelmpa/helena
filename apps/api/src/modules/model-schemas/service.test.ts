@@ -33,6 +33,29 @@ const membership = (projectId: number) => ({
 });
 
 describe('model schema resolution', () => {
+  it('accepts, validates and resets an agent tool profile override', () => {
+    const state = defaultState();
+    const changed = changedRows([agent], [], state, state, [
+      { agentId: agent.id, values: { toolProfile: 'recherche' } },
+    ]);
+    expect(changed[0]?.after.toolProfile).toBe('recherche');
+    expect(changed[0]?.overrides?.toolProfile).toBe('recherche');
+    const reset = changedRows(
+      [{ ...agent, modelOverrides: { toolProfile: 'recherche' } }],
+      [],
+      state,
+      state,
+      [{ agentId: agent.id, values: { toolProfile: null } }],
+    );
+    expect(reset[0]?.after.toolProfile).toBe('voll');
+    expect(reset[0]?.overrides).toEqual({});
+    expect(() =>
+      changedRows([agent], [], state, state, [
+        { agentId: agent.id, values: { toolProfile: 'invalid' } },
+      ]),
+    ).toThrow('tool profile');
+  });
+
   it('sets role profiles and Codex/Claude escalation destinations in local schemas', () => {
     const roles = defaultState().schemas['nur-lokal']!.roles;
     expect(roles.coder!.toolProfile).toBe('voll');
