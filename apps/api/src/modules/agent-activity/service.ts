@@ -3,6 +3,7 @@ import {
   agentChatThread,
   agentRun,
   aiAgent,
+  getDisplayName,
   db,
   issue,
   project,
@@ -79,6 +80,7 @@ async function agentRunEntries(
       agentId: aiAgent.id,
       agentUsername: aiAgent.username,
       agentName: user.name,
+      agentRole: aiAgent.agentRole,
       issueId: issue.id,
       issueSequence: issue.sequenceNumber,
       issueTitle: issue.title,
@@ -99,6 +101,7 @@ async function agentRunEntries(
     )
     .orderBy(desc(key.at), desc(key.id))
     .limit(limit + 1);
+  const displayName = rows.some((row) => row.agentRole === 'home') ? await getDisplayName() : '';
   return rows.map((row) => ({
     ...emptyEntry,
     id: `run:${row.id}`,
@@ -107,7 +110,11 @@ async function agentRunEntries(
     status: runStatus(row),
     requiresAttention: row.requiresAttention,
     project: { id: row.projectId, key: row.projectKey, name: row.projectName },
-    agent: { id: row.agentId, username: row.agentUsername, name: row.agentName },
+    agent: {
+      id: row.agentId,
+      username: row.agentUsername,
+      name: row.agentRole === 'home' ? displayName : row.agentName,
+    },
     issue:
       row.issueId != null && row.issueSequence != null && row.issueTitle != null
         ? {
@@ -163,6 +170,7 @@ async function chatEntries(
       agentId: aiAgent.id,
       agentUsername: aiAgent.username,
       agentName: user.name,
+      agentRole: aiAgent.agentRole,
     })
     .from(agentChatMessage)
     .innerJoin(agentChatThread, eq(agentChatThread.id, agentChatMessage.threadId))
@@ -179,6 +187,7 @@ async function chatEntries(
     )
     .orderBy(desc(key.at), desc(key.id))
     .limit(limit + 1);
+  const displayName = rows.some((row) => row.agentRole === 'home') ? await getDisplayName() : '';
   return rows.map((row) => ({
     ...emptyEntry,
     id: `chat:${row.id}`,
@@ -187,7 +196,11 @@ async function chatEntries(
     status: row.status,
     requiresAttention: row.requiresAttention,
     project: within,
-    agent: { id: row.agentId, username: row.agentUsername, name: row.agentName },
+    agent: {
+      id: row.agentId,
+      username: row.agentUsername,
+      name: row.agentRole === 'home' ? displayName : row.agentName,
+    },
     threadId: row.threadId,
     durationMs: elapsed(row.startedAt, row.finishedAt),
   }));

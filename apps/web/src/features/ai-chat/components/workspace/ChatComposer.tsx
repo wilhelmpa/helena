@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { useTranslations } from 'next-intl';
+import { useDisplayName } from '@/context/displayName';
+import { agentDisplayName } from '../../utils/agentChip';
 import { Plus, RefreshCw, Square } from 'lucide-react';
 import { toast } from 'sonner';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
@@ -172,7 +174,7 @@ export default function ChatComposer({
   onEditLast,
 }: ChatComposerProps) {
   const t = useTranslations('chatWorkspace');
-  const homeName = agent.name;
+  const displayName = agentDisplayName(agent, useDisplayName());
   useEffect(() => {
     if (!dockSheet) return;
     return listenDockVoice(() => void conversation.start());
@@ -308,7 +310,7 @@ export default function ChatComposer({
     } else {
       if (!(await checkConcurrency(agent.maxConcurrentChats))) {
         toast.error(
-          t('composer.concurrencyLimit', { agent: agent.name, limit: agent.maxConcurrentChats }),
+          t('composer.concurrencyLimit', { agent: displayName, limit: agent.maxConcurrentChats }),
         );
         return;
       }
@@ -394,7 +396,7 @@ export default function ChatComposer({
             <ChatVoiceNotice active={readAll || talking} />
             <ChatComposerQueue
               queue={queue}
-              agentName={agent.name}
+              agentName={displayName}
               paused={queuePaused}
               onRemove={onRemoveQueued}
             />
@@ -420,7 +422,7 @@ export default function ChatComposer({
             )}
             <ChatComposerStatus
               activity={activity}
-              agentName={agent.name}
+              agentName={displayName}
               onReconnect={onReconnect}
               onContinue={onContinue}
               onRegenerate={onRetryLast}
@@ -456,9 +458,9 @@ export default function ChatComposer({
               onChange={(event) => setValue(event.target.value)}
               onKeyDown={onKeyDown}
               placeholder={
-                talking ? t('voice.placeholder') : t('composer.placeholder', { agent: homeName })
+                talking ? t('voice.placeholder') : t('composer.placeholder', { agent: displayName })
               }
-              aria-label={t('composer.placeholder', { agent: homeName })}
+              aria-label={t('composer.placeholder', { agent: displayName })}
               aria-description={t('composer.hint')}
               maxLength={CHAT_PROMPT_LIMIT}
             />

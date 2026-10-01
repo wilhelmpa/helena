@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { usePanelHeaderSlot } from '@/context/panelHeaderSlot';
 import { useTranslations } from 'next-intl';
+import { useDisplayName } from '@/context/displayName';
+import { agentDisplayName } from '../../utils/agentChip';
 import { PanelRight, PanelRightClose, SquarePen } from 'lucide-react';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import { WorkspaceHeader } from '@/components/layout/WorkspaceHeader';
@@ -55,6 +57,7 @@ export default function ChatHeader({
   inPage = false,
 }: ChatHeaderProps) {
   const t = useTranslations('chatWorkspace');
+  const displayName = agentDisplayName(agent, useDisplayName());
   const chat = useChatSummary(threadId);
   const { rename } = useChatListMutations();
   const [renaming, setRenaming] = useState(false);
@@ -140,7 +143,7 @@ export default function ChatHeader({
             threadId={threadId}
             chat={chat.data}
             messages={messages}
-            agentName={agent.name}
+            agentName={displayName}
             onRename={() => setRenaming(true)}
             onToIssue={projectKey && messages.length > 0 ? () => setIssueOpen(true) : undefined}
             onDeleted={() => onDeleted(threadId)}
@@ -197,7 +200,7 @@ export default function ChatHeader({
             threadId={threadId}
             chat={chat.data}
             messages={messages}
-            agentName={agent.name}
+            agentName={displayName}
             onRename={() => setRenaming(true)}
             onToIssue={projectKey && messages.length > 0 ? () => setIssueOpen(true) : undefined}
             onDeleted={() => onDeleted(threadId)}
@@ -254,7 +257,7 @@ export default function ChatHeader({
           threadId={threadId}
           chat={chat.data}
           messages={messages}
-          agentName={agent.name}
+          agentName={displayName}
           onRename={() => setRenaming(true)}
           onToIssue={projectKey && messages.length > 0 ? () => setIssueOpen(true) : undefined}
           onDeleted={() => onDeleted(threadId)}
