@@ -50,6 +50,8 @@ beforeAll(() => {
     fetch(request) {
       const url = new URL(request.url);
       requested.push(`${url.pathname}${url.search}`);
+      if (url.pathname.endsWith('/files'))
+        return Response.json({ files: [], nextPageToken: 'next' });
       const id = url.pathname.match(/\/files\/([^/]+)/)?.[1];
       const file = id ? files[id] : undefined;
       if (!file) return new Response('missing', { status: 404 });
@@ -131,4 +133,25 @@ it('returns text extracted from a Drive PDF', async () => {
     { engine: 'helena', email: 'test@example.com', auth },
   )) as { text: string };
   expect(result.text.length).toBeGreaterThan(0);
+});
+
+const search = GOOGLE_TOOLS.find((entry) => entry.name === 'google_drive_search')!;
+it('preserves shared-with-me and parent queries and searches shared drives', async () => {
+  for (const query of [
+    'sharedWithMe',
+    'sharedWithMe = true',
+    "'folder' in parents",
+    "'owner@example.com' in owners",
+  ]) {
+    const result = await search.handler(
+      { account: 'test@example.com', query, pageToken: 'page' },
+      { engine: 'helena', email: 'test@example.com', auth },
+    );
+    const url = new URL(requested.at(-1)!, 'http://localhost');
+    expect(url.searchParams.get('q')).toBe(query);
+    expect(url.searchParams.get('supportsAllDrives')).toBe('true');
+    expect(url.searchParams.get('includeItemsFromAllDrives')).toBe('true');
+    expect(url.searchParams.get('pageToken')).toBe('page');
+    expect(result).toEqual({ files: [], nextPageToken: 'next' });
+  }
 });

@@ -27,7 +27,7 @@ export class GogError extends Error {
 }
 
 const TIMEOUT_MS = 90_000;
-const MAX_OUTPUT = 8 * 1024 * 1024;
+const MAX_OUTPUT = 72 * 1024 * 1024;
 
 // The broker as a command line, e.g. `sudo -n -u volition-google
 // /usr/local/libexec/helena-google-broker`. It is split on spaces and run without a shell.
@@ -51,6 +51,8 @@ export function gogBroker(commandLine: string, timeoutMs = TIMEOUT_MS): GogBroke
           size += chunk.length;
           if (size > MAX_OUTPUT) {
             child.kill('SIGKILL');
+            clearTimeout(timer);
+            reject(new GogError('The gog broker answer exceeds the size limit.'));
             return;
           }
           out.push(chunk);
