@@ -11,6 +11,8 @@ import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
 import { buildMcpServer } from '../../server';
 
+// Catalog tests make the SDK compile hundreds of output schemas, sometimes twice.
+const catalogTimeoutMs = 15_000;
 const clients: Client[] = [];
 let externalAgentSequence = 0;
 
@@ -89,112 +91,124 @@ describe('MCP structured results through the SDK client', () => {
     });
   });
 
-  it('compiles every advertised output schema and validates object, array, and empty results', async () => {
-    const user = await signUpTestUser();
-    const client = await connect(user.userId);
-    const listed = await client.listTools();
-    expect(listed.tools.length).toBeGreaterThan(0);
-    expect(listed.tools.every((tool) => tool.outputSchema?.type === 'object')).toBe(true);
-    expect(listed.tools.every((tool) => typeof tool.title === 'string' && tool.title)).toBe(true);
-    expect(client.getServerVersion()).toMatchObject({ name: 'helena', title: 'Ava' });
+  it(
+    'compiles every advertised output schema and validates object, array, and empty results',
+    async () => {
+      const user = await signUpTestUser();
+      const client = await connect(user.userId);
+      const listed = await client.listTools();
+      expect(listed.tools.length).toBeGreaterThan(0);
+      expect(listed.tools.every((tool) => tool.outputSchema?.type === 'object')).toBe(true);
+      expect(listed.tools.every((tool) => typeof tool.title === 'string' && tool.title)).toBe(true);
+      expect(client.getServerVersion()).toMatchObject({ name: 'helena', title: 'Ava' });
 
-    const created = await callTool(client, {
-      name: 'create_project',
-      arguments: { key: 'RESULT', name: 'Structured results' },
-    });
-    expect(created.isError).toBe(false);
-    expect(created.structuredContent).toMatchObject({
-      ok: true,
-      status: 201,
-      data: { key: 'RESULT', name: 'Structured results' },
-    });
-    const text = created.content[0];
-    expect(text.type).toBe('text');
-    if (text.type === 'text')
-      expect(JSON.parse(text.text)).toEqual(created.structuredContent?.data);
-
-    const projects = await callTool(client, { name: 'list_projects' });
-    expect(projects.structuredContent).toMatchObject({
-      ok: true,
-      status: 200,
-      data: [{ key: 'RESULT' }],
-    });
-
-    const deleted = await callTool(client, {
-      name: 'delete_project',
-      arguments: { projectKey: 'RESULT' },
-    });
-    expect(deleted.isError).toBe(false);
-    expect(deleted.content).toEqual([{ type: 'text', text: '' }]);
-    expect(deleted.structuredContent).toEqual({ ok: true, status: 204, data: null });
-  });
-
-  it('validates structured validation, conflict, and permission errors without changing their text', async () => {
-    const owner = await signUpTestUser();
-    const api = authedApi(owner.cookie);
-    await api.projects.post({ key: 'PRIVATE', name: 'Private project' });
-    const client = await connect(owner.userId);
-    await client.listTools();
-    for (const [args, status] of [
-      [{ key: 'MISSING' }, 400],
-      [{ key: 'PRIVATE', name: 'Duplicate' }, 409],
-    ] as const) {
-      const result = await callTool(client, { name: 'create_project', arguments: args });
-      expect(result.isError).toBe(true);
-      expect(result.structuredContent).toMatchObject({
-        ok: false,
-        status,
-        error: { code: `HTTP_${status}`, retryable: false, retryAfterSeconds: null },
+      const created = await callTool(client, {
+        name: 'create_project',
+        arguments: { key: 'RESULT', name: 'Structured results' },
       });
-      const content = result.content[0];
-      if (content.type === 'text') {
-        expect(JSON.parse(content.text).error).toBe(
-          (result.structuredContent?.error as { message: string }).message,
-        );
+      expect(created.isError).toBe(false);
+      expect(created.structuredContent).toMatchObject({
+        ok: true,
+        status: 201,
+        data: { key: 'RESULT', name: 'Structured results' },
+      });
+      const text = created.content[0];
+      expect(text.type).toBe('text');
+      if (text.type === 'text')
+        expect(JSON.parse(text.text)).toEqual(created.structuredContent?.data);
+
+      const projects = await callTool(client, { name: 'list_projects' });
+      expect(projects.structuredContent).toMatchObject({
+        ok: true,
+        status: 200,
+        data: [{ key: 'RESULT' }],
+      });
+
+      const deleted = await callTool(client, {
+        name: 'delete_project',
+        arguments: { projectKey: 'RESULT' },
+      });
+      expect(deleted.isError).toBe(false);
+      expect(deleted.content).toEqual([{ type: 'text', text: '' }]);
+      expect(deleted.structuredContent).toEqual({ ok: true, status: 204, data: null });
+    },
+    catalogTimeoutMs,
+  );
+
+  it(
+    'validates structured validation, conflict, and permission errors without changing their text',
+    async () => {
+      const owner = await signUpTestUser();
+      const api = authedApi(owner.cookie);
+      await api.projects.post({ key: 'PRIVATE', name: 'Private project' });
+      const client = await connect(owner.userId);
+      await client.listTools();
+      for (const [args, status] of [
+        [{ key: 'MISSING' }, 400],
+        [{ key: 'PRIVATE', name: 'Duplicate' }, 409],
+      ] as const) {
+        const result = await callTool(client, { name: 'create_project', arguments: args });
+        expect(result.isError).toBe(true);
+        expect(result.structuredContent).toMatchObject({
+          ok: false,
+          status,
+          error: { code: `HTTP_${status}`, retryable: false, retryAfterSeconds: null },
+        });
+        const content = result.content[0];
+        if (content.type === 'text') {
+          expect(JSON.parse(content.text).error).toBe(
+            (result.structuredContent?.error as { message: string }).message,
+          );
+        }
       }
-    }
 
-    const outsider = await signUpTestUser();
-    const otherClient = await connect(outsider.userId);
-    await otherClient.listTools();
-    const forbidden = await callTool(otherClient, {
-      name: 'get_project',
-      arguments: { projectKey: 'PRIVATE' },
-    });
-    expect(forbidden.isError).toBe(true);
-    expect(forbidden.structuredContent).toMatchObject({
-      ok: false,
-      status: 403,
-      error: { code: 'HTTP_403', retryable: false },
-    });
-  });
+      const outsider = await signUpTestUser();
+      const otherClient = await connect(outsider.userId);
+      await otherClient.listTools();
+      const forbidden = await callTool(otherClient, {
+        name: 'get_project',
+        arguments: { projectKey: 'PRIVATE' },
+      });
+      expect(forbidden.isError).toBe(true);
+      expect(forbidden.structuredContent).toMatchObject({
+        ok: false,
+        status: 403,
+        error: { code: 'HTTP_403', retryable: false },
+      });
+    },
+    catalogTimeoutMs,
+  );
 
-  it('returns the same error envelope for missing team arguments and unknown tools', async () => {
-    const user = await signUpTestUser();
-    await authedApi(user.cookie).teams.post({ name: 'Another team' });
-    const client = await connect(user.userId);
-    await client.listTools();
-    const missing = await callTool(client, { name: 'list_ai_agents' });
-    expect(missing.isError).toBe(true);
-    expect(missing.structuredContent).toMatchObject({
-      ok: false,
-      status: 400,
-      error: { code: 'HTTP_400', retryable: false },
-    });
-    expect(missing.content[0]).toMatchObject({
-      type: 'text',
-      text: expect.stringContaining('teamId'),
-    });
+  it(
+    'returns the same error envelope for missing team arguments and unknown tools',
+    async () => {
+      const user = await signUpTestUser();
+      await authedApi(user.cookie).teams.post({ name: 'Another team' });
+      const client = await connect(user.userId);
+      await client.listTools();
+      const missing = await callTool(client, { name: 'list_ai_agents' });
+      expect(missing.isError).toBe(true);
+      expect(missing.structuredContent).toMatchObject({
+        ok: false,
+        status: 400,
+        error: { code: 'HTTP_400', retryable: false },
+      });
+      expect(missing.content[0]).toMatchObject({
+        type: 'text',
+        text: expect.stringContaining('teamId'),
+      });
 
-    const unknown = await callTool(client, { name: 'unknown_tool' });
-    expect(unknown.isError).toBe(true);
-    expect(unknown.content).toEqual([{ type: 'text', text: 'Unknown tool: unknown_tool' }]);
-    expect(unknown.structuredContent).toMatchObject({
-      ok: false,
-      status: 404,
-      error: { code: 'HTTP_404', retryable: false },
-    });
-  });
+      const unknown = await callTool(client, { name: 'unknown_tool' });
+      expect(unknown.isError).toBe(true);
+      expect(unknown.content).toEqual([{ type: 'text', text: 'Unknown tool: unknown_tool' }]);
+      expect(unknown.structuredContent).toMatchObject({
+        ok: false,
+        status: 404,
+        error: { code: 'HTTP_404', retryable: false },
+      });
+    },
+    catalogTimeoutMs,
+  );
 
   it('lets an explicitly granted external MCP agent create for its team owner', async () => {
     const { owner, ownerApi, agent, client } = await externalAgentClient(['itsaplan']);

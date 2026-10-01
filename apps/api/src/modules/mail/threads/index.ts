@@ -81,7 +81,11 @@ export const mailThreadRoutes = new Elysia({
         attachments: query.attachments === 'true',
         flagged: query.flagged === 'true',
         q: query.q,
-        cursor: parseCursor(query.cursor),
+        cursor:
+          parseCursor(query.cursor) ??
+          (query.beforeAt
+            ? { ts: query.beforeAt, id: query.beforeThreadId ?? Number.MAX_SAFE_INTEGER }
+            : null),
         limit: query.limit,
       });
     },
@@ -93,7 +97,7 @@ export const mailThreadRoutes = new Elysia({
       detail: {
         summary: 'List mail threads, newest first',
         description:
-          'The threads the caller reaches, filtered by project, account, folder, unread state, attachments and search words; paged by cursor.',
+          'The threads the caller reaches, filtered by project, account, folder, unread state, attachments and search words. Default limit 25. Page with nextCursor as cursor, or beforeAt=lastMessageAt and beforeThreadId=id of the last thread. cursor takes precedence. Snippets are at most 160 characters with invisible filler removed. Use read_mail for the full content; use get_mail_triage_overview to assess triage settings without scanning the mailbox.',
       },
     },
   )
@@ -161,7 +165,12 @@ export const mailThreadRoutes = new Elysia({
     async ({ thread, body, user, request }) => {
       // Marking what one has read needs no more than reading it.
       if (body.action !== 'read' && body.action !== 'unread')
-        await threadAccess(thread.id, user, 'edit', request.headers);
+        await threadAccess(
+          thread.id,
+          user,
+          body.action === 'trash' ? 'delete' : 'edit',
+          request.headers,
+        );
       await applyThreadAction(thread.id, body.action);
       return noContent();
     },

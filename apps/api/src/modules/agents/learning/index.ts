@@ -58,6 +58,7 @@ export const agentLearningRoutes = new Elysia({
       teamPermission: ['ai_agents', 'read'],
       response: { 200: NativeSkillsResponse, ...commonErrors },
       detail: {
+        'x-access': 'agent-inspector',
         summary: 'Read the history of learned skills for an agent',
         description:
           'Lists current and archived native skills with their revisions for owner review.',
@@ -84,6 +85,7 @@ export const agentLearningRoutes = new Elysia({
       teamPermission: ['ai_agents', 'edit'],
       response: { 200: NativeSkillResponse, ...commonErrors, ...errors(409) },
       detail: {
+        'x-access': 'agent-inspector',
         summary: 'Review a learned skill revision',
         description: 'Records the owner decision on a specific revision of an agent-created skill.',
       },

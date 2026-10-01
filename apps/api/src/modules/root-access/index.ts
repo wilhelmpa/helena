@@ -60,6 +60,7 @@ export const rootAccessRoutes = new Elysia({ name: 'volition-root-access' })
       runnerAgent: true,
       body: rootCommandBody,
       detail: {
+        'x-access': 'root-owner',
         summary: 'Run a root command for the Home agent',
         description:
           'Run a root command with its reason. Home work on every runtime runs immediately when unrestricted mode is enabled. Provenance and results remain audited; the owner can revoke access.',

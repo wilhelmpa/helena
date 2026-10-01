@@ -1,3 +1,4 @@
+import { agentCoordinatesProject, agentMayInspect } from './agent-access';
 import { aiAgent, db } from '@repo/db';
 import { and, eq } from 'drizzle-orm';
 import { HttpError } from './lib';
@@ -227,6 +228,12 @@ export async function assertPermission(
   const ctx = await getMemberContext(projectId, current.id);
   if (!ctx) throw new HttpError(403, 'You do not have access to this project');
   if (ctx.role === 'owner') return;
+  if (
+    resource === 'mail' &&
+    action === 'read' &&
+    (await agentCoordinatesProject(current.id, projectId))
+  )
+    return;
   if (!hasPermission(ctx.permissions, resource, action)) {
     throw new HttpError(403, `You do not have permission to ${action} ${resourceLabel(resource)}`);
   }
@@ -257,7 +264,13 @@ export async function checkPermission(
   if (!user) return false;
   const ctx = await getMemberContext(projectId, user.id);
   if (!ctx) return false;
-  return ctx.role === 'owner' || hasPermission(ctx.permissions, resource, action);
+  return (
+    ctx.role === 'owner' ||
+    hasPermission(ctx.permissions, resource, action) ||
+    (resource === 'mail' &&
+      action === 'read' &&
+      (await agentCoordinatesProject(user.id, projectId)))
+  );
 }
 
 // Resolves the :projectKey path param to a project and asserts the given
@@ -310,6 +323,12 @@ export async function requireTeamPermission(
 ): Promise<TeamMembership> {
   const membership = await requireTeamMembership(teamId, user);
   if (runsTeam(membership.role)) return membership;
+  if (
+    resource === 'ai_agents' &&
+    action === 'read' &&
+    (await agentMayInspect(membership.userId, teamId))
+  )
+    return membership;
   const permissions = await getTeamPermissions(teamId, membership.userId);
   if (!hasPermission(permissions, resource, action)) {
     throw new HttpError(403, `You do not have permission to ${action} ${resourceLabel(resource)}`);

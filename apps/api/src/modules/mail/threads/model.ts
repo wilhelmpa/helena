@@ -17,7 +17,19 @@ export const threadListQuery = t.Object({
   flagged: flag,
   q: t.Optional(t.String({ maxLength: 200 })),
   cursor: t.Optional(t.String({ maxLength: 200 })),
-  limit: t.Optional(t.Numeric({ minimum: 1, maximum: 100 })),
+  beforeAt: t.Optional(
+    t.String({
+      format: 'date-time',
+      description: 'Alternative to cursor: page before this lastMessageAt.',
+    }),
+  ),
+  beforeThreadId: t.Optional(
+    t.Numeric({
+      minimum: 1,
+      description: 'With beforeAt, use the last thread id to break timestamp ties.',
+    }),
+  ),
+  limit: t.Optional(t.Numeric({ minimum: 1, maximum: 100, default: 25 })),
 });
 
 export const ThreadRowResponse = t.Object({

@@ -708,7 +708,13 @@ export async function classificationsOfThreads(
 // learns it (the outcome of that question's decision).
 export async function correctClassification(
   threadId: number,
-  input: { category?: string; priority?: string; projectId?: number | null; needsReply?: boolean },
+  input: {
+    status?: 'classified' | 'unsure' | 'failed';
+    category?: string;
+    priority?: string;
+    projectId?: number | null;
+    needsReply?: boolean;
+  },
   userId: string,
 ): Promise<ClassificationView> {
   const [row] = await db
@@ -734,6 +740,7 @@ export async function correctClassification(
   const [updated] = await db
     .update(helenaMailClassification)
     .set({
+      ...(input.status ? { status: input.status } : {}),
       ...(input.category ? { category: input.category } : {}),
       ...(input.priority ? { priority: input.priority } : {}),
       ...(input.projectId !== undefined ? { projectId: input.projectId } : {}),

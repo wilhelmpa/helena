@@ -1,3 +1,4 @@
+import { agentAccess } from '#shared/agent-access';
 import { db, mailThread, project, projectMember, teamRole } from '@repo/db';
 import { and, eq } from 'drizzle-orm';
 import { toMemberContext, type MemberRole } from '#modules/members/service';
@@ -19,12 +20,13 @@ export interface MailScope {
 export async function mailScope(
   teamId: number,
   user: AuthUser | null | undefined,
-  action: PermissionAction,
+  action: PermissionAction | 'triage',
 ): Promise<MailScope> {
   const userId = requireUser(user).id;
   const standing = await getTeamMembership(teamId, userId);
   if (!standing) throw new HttpError(404, 'Team not found');
-  if (runsTeam(standing)) {
+  const agent = await agentAccess(userId, teamId);
+  if (runsTeam(standing) || agent?.role === 'home') {
     const rows = await db
       .select({ id: project.id })
       .from(project)
@@ -41,18 +43,28 @@ export async function mailScope(
     .innerJoin(project, eq(project.id, projectMember.projectId))
     .leftJoin(teamRole, eq(teamRole.id, projectMember.roleId))
     .where(and(eq(projectMember.userId, userId), eq(project.teamId, teamId)));
-  return {
-    home: false,
-    projectIds: rows
-      .filter((row) =>
-        hasPermission(
-          toMemberContext(row.role as MemberRole, row.permissions).permissions,
-          'mail',
-          action,
-        ),
-      )
-      .map((row) => row.projectId),
-  };
+  const allowed = rows.map((row) => {
+    const coordinator = agent?.coordinator === 'coordinator';
+    if (coordinator && (action === 'create' || action === 'delete')) return null;
+    return (
+      action === 'triage'
+        ? coordinator ||
+          hasPermission(
+            toMemberContext(row.role as MemberRole, row.permissions).permissions,
+            'mail',
+            'edit',
+          )
+        : (action === 'read' && coordinator) ||
+          hasPermission(
+            toMemberContext(row.role as MemberRole, row.permissions).permissions,
+            'mail',
+            action,
+          )
+    )
+      ? row.projectId
+      : null;
+  });
+  return { home: false, projectIds: allowed.filter((id): id is number => id !== null) };
 }
 
 export function inScope(scope: MailScope, projectId: number | null): boolean {
@@ -65,7 +77,7 @@ export async function assertMailAccess(
   teamId: number,
   projectId: number | null,
   user: AuthUser | null | undefined,
-  action: PermissionAction,
+  action: PermissionAction | 'triage',
   headers: Headers,
 ): Promise<void> {
   const scope = await mailScope(teamId, user, action).catch((error: unknown) => {
@@ -81,7 +93,7 @@ export async function assertMailAccess(
 export async function threadAccess(
   threadId: number,
   user: AuthUser | null | undefined,
-  action: PermissionAction,
+  action: PermissionAction | 'triage',
   headers: Headers,
 ) {
   const [thread] = await db

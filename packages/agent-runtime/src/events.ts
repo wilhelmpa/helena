@@ -27,7 +27,16 @@ export type AgentEvent =
       exitCode?: number | null;
     }
   // The context size of the last model call (tokens read, cache included, and written).
-  | { type: 'usage'; inputTokens: number; outputTokens: number }
+  | {
+      type: 'usage';
+      inputTokens: number;
+      outputTokens: number;
+      step?: number;
+      model?: string;
+      reasoningTokens?: number;
+      reasoningDurationMs?: number;
+      durationMs?: number;
+    }
   | SpendEvent
   | EscalateEvent
   | ResultEvent;

@@ -1,3 +1,4 @@
+import { agentMayReadDecisionClasses } from './agent-access';
 import { Elysia, type DocumentDecoration } from 'elysia';
 import { authContext } from './auth-context';
 import {
@@ -27,7 +28,8 @@ import type { PermissionResource, PermissionAction } from './permissions';
 // A [resource, action] pair naming one cell of the role permission matrix.
 export type Permission = [PermissionResource, PermissionAction];
 // Project administration is a standing check, not a cell of the role matrix.
-export type DeclaredPermission = Permission | ['project_admin', 'admin'] | ['receipts', 'read'];
+export type DeclaredPermission =
+  Permission | ['project_admin', 'admin'] | ['receipts', 'read'] | ['mail', 'triage'];
 
 // The slice of the request context an entity guard reads. Annotated explicitly
 // because the factory is defined outside a plugin, so there is no context to
@@ -185,6 +187,7 @@ export const guards = new Elysia({ name: 'guards' }).use(authContext).macro({
   // check.
   projectOwner(_enabled: boolean) {
     return {
+      detail: { 'x-access': 'project-owner' } as DocumentDecoration,
       async resolve({ params, user, request }) {
         const project = await requireProjectOwner((params as ProjectKeyParams).projectKey, user);
         assertMcpEnabled(project, isMcpRequest(request.headers));
@@ -221,6 +224,7 @@ export const guards = new Elysia({ name: 'guards' }).use(authContext).macro({
   // than any project role: copying the project into one of their own.
   teamRunsProject(_enabled: boolean) {
     return {
+      detail: { 'x-access': 'team-manager' } as DocumentDecoration,
       async resolve({ params, user, request }) {
         const project = await requireTeamRunsProject((params as ProjectKeyParams).projectKey, user);
         assertMcpEnabled(project, isMcpRequest(request.headers));
@@ -284,10 +288,30 @@ export const guards = new Elysia({ name: 'guards' }).use(authContext).macro({
   // that it belongs to it.
   teamManager(_enabled: boolean) {
     return {
+      detail: { 'x-access': 'team-manager' } as DocumentDecoration,
       async resolve({ params, user, request }) {
         const membership = await resolveTeam(params, user);
         if (!runsTeam(membership.role))
           throw new HttpError(403, 'Only a team owner or manager can do this');
+        await assertTeamMcpAllowed(params, request.headers);
+        return { membership };
+      },
+    };
+  },
+
+  decisionReader(_enabled: boolean) {
+    return {
+      detail: { 'x-access': 'decision-reader' } as DocumentDecoration,
+      async resolve({ params, user, request }) {
+        const membership = await resolveTeam(params, user);
+        if (
+          !runsTeam(membership.role) &&
+          !(await agentMayReadDecisionClasses(membership.userId, membership.teamId))
+        )
+          throw new HttpError(
+            403,
+            'Only a team owner, manager, Home or coordinator can read decision classes',
+          );
         await assertTeamMcpAllowed(params, request.headers);
         return { membership };
       },
@@ -319,6 +343,7 @@ export const guards = new Elysia({ name: 'guards' }).use(authContext).macro({
   // resolved before the owner check.
   teamOwner(_enabled: boolean) {
     return {
+      detail: { 'x-access': 'team-owner' } as DocumentDecoration,
       async resolve({ params, user, request }) {
         const membership = await resolveTeam(params, user);
         if (membership.role !== 'owner') throw new HttpError(403, 'Only a team owner can do this');

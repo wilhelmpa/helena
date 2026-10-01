@@ -344,7 +344,7 @@ describe('agent loop', () => {
     expect(sink.of('tool-call')[0]!.input).toContain('VERVE');
   });
 
-  test('find_tools makes a deferred tool callable in the next step', async () => {
+  test('direct calls load allowed deferred tools in the same step', async () => {
     const hidden: AgentTool = {
       name: 'create_calendar_event',
       description: 'Create an event in the calendar',
@@ -363,7 +363,8 @@ describe('agent loop', () => {
     );
     expect(result.status).toBe('success');
     const outputs = sink.of('tool-result').map((event) => event.output);
-    expect(outputs[0]).toContain('not loaded');
+    expect(outputs[0]).toBe('event created');
+    expect(sink.of('tool-result')[0]!.isError).not.toBe(true);
     expect(outputs[1]).toContain('create_calendar_event');
     expect(outputs[2]).toBe('event created');
   });
@@ -946,3 +947,153 @@ for (const count of [5, 120]) {
     expect(old.output.value.length).toBeLessThanOrEqual(2000);
   });
 }
+
+test('unknown direct tool names suggest three available tools and find_tools', async () => {
+  const { sink } = await run([{ calls: [{ name: 'read_fil', input: {} }] }, { text: 'Done.' }]);
+  const result = sink.of('tool-result')[0]!;
+  expect(result.isError).toBe(true);
+  expect(result.output).toContain('find_tools');
+  expect(result.output).toContain('read_file');
+  expect(result.output.split('Similar tools: ')[1]!.split(', ')).toHaveLength(3);
+});
+
+test('a deferred tool uses the same JSON object validation as offered tools', async () => {
+  let executed = false;
+  const tool: AgentTool = {
+    name: 'deferred_mail',
+    description: 'mail',
+    readOnly: true,
+    inputSchema: { type: 'object', properties: { id: { type: 'number' } }, required: ['id'] },
+    execute: async () => {
+      executed = true;
+      return { text: 'bad' };
+    },
+  };
+  const { sink } = await run([{ calls: [{ name: tool.name, input: [] }] }, { text: 'Done.' }], {
+    extraTools: [tool],
+    config: { tools: { profile: 'assistent' } },
+  });
+  expect(executed).toBe(false);
+  expect(sink.of('tool-result')[0]!.isError).toBe(true);
+});
+
+test.each(['summarize', 'fail'] as const)(
+  'chat budget behavior %s remains configurable',
+  async (behavior) => {
+    const { runLoop } = await import('../loop');
+    const { resolveModel } = await import('../models');
+    const dir = await workdir();
+    const cfg = config(dir, {
+      kind: 'chat',
+      limits: { chatBudgetSeconds: 10, chatBudgetBehavior: behavior },
+    });
+    const primary = scriptedModel([{ text: 'Zeitgrenze erreicht. Gefunden: A; offen: B.' }]);
+    const model = resolveModel(
+      'local/flash',
+      cfg.servers,
+      null,
+      {},
+      factoryOf({ 'local/flash': primary }),
+    );
+    const sink = new MemorySink();
+    let reads = 0;
+    const result = await runLoop({
+      config: cfg,
+      prompt: 'Assess triage',
+      system: '',
+      sessionId: null,
+      models: [model],
+      tools: [],
+      direct: new Set(),
+      sessions: new MemorySessionStore(),
+      sink,
+      policy: async () => ({ allowed: true, message: '' }),
+      env: {},
+      signal: new AbortController().signal,
+      now: () => (reads++ === 0 ? 0 : 11000),
+    });
+    expect(result.status).toBe(behavior === 'summarize' ? 'success' : 'failed');
+    expect(result.reason).toBe('budget');
+    expect(primary.doStreamCalls).toHaveLength(behavior === 'summarize' ? 1 : 0);
+    if (behavior === 'summarize') {
+      expect(primary.doStreamCalls[0]!.tools ?? []).toHaveLength(0);
+      expect(result.text).toContain('Zeitgrenze erreicht');
+      expect(result.text).toContain('offen: B');
+    }
+  },
+);
+
+test('chat deadline during a model call still produces a final answer without tools', async () => {
+  const { result, primary } = await run(
+    [{ hang: true }, { text: 'Zeitgrenze erreicht. Noch offen: die Konfiguration.' }],
+    { config: { kind: 'chat', limits: { runBudgetSeconds: 0.02, chatSummarySeconds: 0.1 } } },
+  );
+  expect(result.status).toBe('success');
+  expect(result.reason).toBe('budget');
+  expect(result.text).toContain('Noch offen');
+  expect(primary.doStreamCalls[1]!.tools ?? []).toHaveLength(0);
+});
+
+test('summary failure still returns a bounded explicit partial answer', async () => {
+  const { result } = await run([{ hang: true }, { error: 'unavailable' }], {
+    config: { kind: 'chat', limits: { runBudgetSeconds: 0.02, chatSummarySeconds: 0.1 } },
+  });
+  expect(result.status).toBe('success');
+  expect(result.text).toContain('Zeitgrenze erreicht');
+  expect(result.text).toContain('Offen:');
+});
+
+test('reasoning token and duration metrics are recorded per model step', async () => {
+  const { sink } = await run([
+    { text: 'Done.', reasoning: 'Check the evidence.', reasoningTokens: 17 },
+  ]);
+  const usage = sink.of('usage')[0]!;
+  expect(usage.model).toBe('local/flash');
+  expect(usage.step).toBe(1);
+  expect(usage.reasoningTokens).toBe(17);
+  expect(usage.durationMs).toBeGreaterThanOrEqual(usage.reasoningDurationMs!);
+  expect(usage.reasoningDurationMs).toBeGreaterThanOrEqual(0);
+});
+
+test('budget-80 hands over on the first threshold check despite a two-failure schema', async () => {
+  const { DEFAULT_ESCALATION } = await import('@helena/sdk');
+  const { runLoop } = await import('../loop');
+  const { resolveModel } = await import('../models');
+  const dir = await workdir();
+  const cfg = config(dir, {
+    limits: { runBudgetSeconds: 10 },
+    escalation: {
+      central: {
+        ...DEFAULT_ESCALATION,
+        enabled: true,
+        failure: { ...DEFAULT_ESCALATION.failure, localAttempts: 2, model: 'gpt-6.1-sol' },
+      },
+    },
+  });
+  const model = resolveModel(
+    'local/flash',
+    cfg.servers,
+    null,
+    {},
+    factoryOf({ 'local/flash': scriptedModel([{ text: 'unused' }]) }),
+  );
+  const sink = new MemorySink();
+  let reads = 0;
+  const result = await runLoop({
+    config: cfg,
+    prompt: 'Task',
+    system: '',
+    sessionId: null,
+    models: [model],
+    tools: [],
+    direct: new Set(),
+    sessions: new MemorySessionStore(),
+    sink,
+    policy: async () => ({ allowed: true, message: '' }),
+    env: {},
+    signal: new AbortController().signal,
+    now: () => (reads++ === 0 ? 0 : 8000),
+  });
+  expect(result.status).toBe('escalated');
+  expect(sink.of('escalate')[0]!.target).toBe('runtime:codex/gpt-6.1-sol');
+});

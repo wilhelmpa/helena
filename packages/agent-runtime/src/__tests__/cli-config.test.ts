@@ -26,3 +26,18 @@ test('still validates the task model and the rest of the configuration', () => {
   expect(() => configForTask({ ...raw, workdir: 'relative' }, task, null)).toThrow('absolute');
   expect(() => configForTask(null, task, null)).toThrow('not an object');
 });
+
+test('validates and preserves native chat budget configuration', () => {
+  const limits = {
+    chatBudgetSeconds: 1200,
+    chatBudgetBehavior: 'summarize' as const,
+    chatSummarySeconds: 30,
+  };
+  expect(configForTask({ ...raw, limits }, task, 'chat').limits).toMatchObject(limits);
+  for (const limits of [
+    { chatBudgetSeconds: 0 },
+    { chatSummarySeconds: 999 },
+    { chatBudgetBehavior: 'unknown' },
+  ])
+    expect(() => configForTask({ ...raw, limits }, task, 'chat')).toThrow();
+});

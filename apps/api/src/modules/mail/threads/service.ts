@@ -1,3 +1,4 @@
+import { compactMailSnippet } from './compact';
 import { classificationsOfThreads } from '#modules/mail-triage/classify';
 import {
   db,
@@ -95,7 +96,7 @@ function scopeCondition(scope: MailScope): SQL {
 const suggested = alias(project, 'suggested_project');
 
 export async function listThreads(filters: ThreadFilters) {
-  const limit = Math.min(Math.max(filters.limit ?? 50, 1), 100);
+  const limit = Math.min(Math.max(filters.limit ?? 25, 1), 100);
   const where: SQL[] = [eq(mailThread.teamId, filters.teamId), scopeCondition(filters.scope)];
   if (filters.projectId !== undefined) where.push(eq(mailThread.projectId, filters.projectId));
   if (filters.home) where.push(isNull(mailThread.projectId));
@@ -195,6 +196,7 @@ export async function listThreads(filters: ThreadFilters) {
     const found = triage.get(row.id);
     return {
       ...row,
+      snippet: compactMailSnippet(row.snippet),
       lastMessageAt: iso(row.lastMessageAt),
       triage: found
         ? {
@@ -548,6 +550,7 @@ export async function issueThreads(issueId: number, scope: MailScope) {
     .orderBy(desc(mailThread.lastMessageAt));
   return rows.map(({ projectId: _projectId, ...row }) => ({
     ...row,
+    snippet: compactMailSnippet(row.snippet),
     lastMessageAt: iso(row.lastMessageAt),
   }));
 }

@@ -103,10 +103,10 @@ test('an output pause still fails at the chunk deadline', async () => {
   }
 });
 
-test('an active answer still stops at the run budget', async () => {
+test('an active answer stops at the run budget when failure is configured', async () => {
   jest.useFakeTimers();
   try {
-    const f = fixture({ runBudgetSeconds: 45 });
+    const f = fixture({ runBudgetSeconds: 45, chatBudgetBehavior: 'fail' });
     await settleStream();
     for (let index = 0; index < 3; index++) {
       f.stream().enqueue({ type: 'text-delta', id: 'answer', delta: 'Partial answer' });

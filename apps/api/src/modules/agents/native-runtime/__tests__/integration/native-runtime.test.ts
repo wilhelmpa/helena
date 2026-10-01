@@ -294,7 +294,16 @@ describe("Helena's own runtime", () => {
         const snapshot = await apiKeyApi(on.data!.apiKey!)['agent-runtime'].policy.get();
         expect(snapshot.data!.helena).toMatchObject({
           toolProfile: 'recherche',
-          escalation: { mode: 'auto', central: { enabled: false } },
+          escalation: {
+            mode: 'auto',
+            central: {
+              enabled: true,
+              defaultModel: 'claude-sonnet-5-5',
+              kinds: [],
+              uncertainty: { enabled: false },
+              failure: { enabled: true, localAttempts: 2, model: 'claude-sonnet-5-5' },
+            },
+          },
         });
       } finally {
         if (before === undefined) delete process.env.HELENA_NATIVE_RUNTIME;

@@ -217,7 +217,9 @@ export const nativeRuntimeRoutes = new Elysia({
       body: profileImportBody,
       teamManager: true,
       response: { 200: ProfileImportResponse, ...commonErrors, ...errors(409, 413) },
-      detail: { summary: 'Preview or atomically import an unchanged Hermes profile snapshot' },
+      detail: {
+        summary: 'Preview or atomically import an unchanged Hermes profile snapshot',
+      },
     },
   )
   .post(
@@ -293,7 +295,10 @@ export const nativeRuntimeRoutes = new Elysia({
       params: agentParams,
       teamPermission: ['ai_agents', 'read'],
       response: { 200: FactListResponse, ...commonErrors },
-      detail: { summary: 'List the facts an agent keeps' },
+      detail: {
+        'x-access': 'agent-inspector',
+        summary: 'List the facts an agent keeps',
+      },
     },
   )
   .get(
@@ -306,7 +311,10 @@ export const nativeRuntimeRoutes = new Elysia({
       params: agentParams,
       teamPermission: ['ai_agents', 'read'],
       response: { 200: NotesResponse, ...commonErrors },
-      detail: { summary: "List an agent's daily notes, newest first" },
+      detail: {
+        'x-access': 'agent-inspector',
+        summary: "List an agent's daily notes, newest first",
+      },
     },
   )
   .patch(

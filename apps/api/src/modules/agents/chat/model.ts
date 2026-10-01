@@ -139,7 +139,23 @@ const ToolCallResultEvent = t.Object({
   isError: t.Optional(t.Boolean()),
 });
 
+export const ModelStepEvent = t.Object({
+  type: t.Literal('CUSTOM'),
+  name: t.Literal('volition.model-step'),
+  value: t.Object({
+    type: t.Literal('usage'),
+    step: t.Integer({ minimum: 0 }),
+    model: t.String({ maxLength: 200 }),
+    inputTokens: t.Number({ minimum: 0 }),
+    outputTokens: t.Number({ minimum: 0 }),
+    reasoningTokens: t.Number({ minimum: 0 }),
+    reasoningDurationMs: t.Number({ minimum: 0 }),
+    durationMs: t.Number({ minimum: 0 }),
+  }),
+});
+
 export const AgUiEvent = t.Union([
+  ModelStepEvent,
   RunStartedEvent,
   RunFinishedEvent,
   RunErrorEvent,

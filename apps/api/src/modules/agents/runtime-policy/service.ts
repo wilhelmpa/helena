@@ -265,6 +265,7 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
             }
           : {}),
         escalation: {
+          ...agent.runtimePolicy.helena?.escalation,
           mode: agent.runtimePolicy.helena?.escalation?.mode ?? 'auto',
           target: agent.runtimePolicy.helena?.escalation?.target,
           agentId: agent.id,
@@ -633,15 +634,26 @@ function previewPreamble(displayName: string): string {
 
 async function nativeEscalationRules(agentId: number) {
   const [central, policy] = await Promise.all([readEscalation(), escalationPolicy(agentId)]);
-  const model =
-    policy.model ?? (policy.target === 'claude' ? 'claude-opus-5-5' : central.defaultModel);
+  return effectiveNativeEscalation(central, policy);
+}
+
+export function effectiveNativeEscalation(
+  central: Awaited<ReturnType<typeof readEscalation>>,
+  policy: Awaited<ReturnType<typeof escalationPolicy>>,
+) {
+  const model = policy.model ?? (policy.target === 'claude' ? 'claude-sonnet-5-5' : 'gpt-6.1-sol');
   return {
     ...central,
-    enabled: central.enabled && policy.maxDepth > 0,
+    enabled: policy.maxDepth > 0 && (central.enabled || policy.afterFailures > 0),
+    kinds: central.enabled ? central.kinds : [],
+    uncertainty: {
+      ...central.uncertainty,
+      enabled: central.enabled && central.uncertainty.enabled,
+    },
     defaultModel: model,
     failure: {
       ...central.failure,
-      enabled: central.failure.enabled && policy.afterFailures > 0,
+      enabled: policy.afterFailures > 0 && (!central.enabled || central.failure.enabled),
       localAttempts: policy.afterFailures,
       model,
     },

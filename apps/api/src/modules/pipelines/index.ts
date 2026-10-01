@@ -435,6 +435,7 @@ export const pipelineRoutes = new Elysia({
       body: decisionBody,
       response: { 200: PipelineRunResponse, ...commonErrors, ...errors(409, 502, 503) },
       detail: {
+        'x-access': 'person-only',
         summary: 'Decide the approval step of a workflow run',
         description:
           'Approves or rejects the step the run waits at, with an optional note the later ' +

@@ -43,6 +43,9 @@ export interface ToolSettings {
 export interface Limits {
   maxTurns?: number;
   runBudgetSeconds?: number;
+  chatBudgetSeconds?: number;
+  chatBudgetBehavior?: 'summarize' | 'fail';
+  chatSummarySeconds?: number;
   firstChunkSeconds?: number;
   chunkSeconds?: number;
   // Optional hard limit per model call; the run budget applies when omitted.
@@ -178,6 +181,23 @@ export function parseConfig(value: unknown): AgentRuntimeConfig {
       queueSeconds > 86_400)
   )
     fail('localModelQueueSeconds must be between 0 and 86400');
+  const limits = value.limits as Record<string, unknown> | undefined;
+  for (const [key, min, max] of [
+    ['chatBudgetSeconds', 60, 7200],
+    ['chatSummarySeconds', 5, 180],
+  ] as const) {
+    const limit = limits?.[key];
+    if (
+      limit !== undefined &&
+      (typeof limit !== 'number' || !Number.isInteger(limit) || limit < min || limit > max)
+    )
+      fail(`${key} must be between ${min} and ${max}`);
+  }
+  if (
+    limits?.chatBudgetBehavior !== undefined &&
+    !['summarize', 'fail'].includes(String(limits.chatBudgetBehavior))
+  )
+    fail('Invalid chatBudgetBehavior');
   return value as unknown as AgentRuntimeConfig;
 }
 

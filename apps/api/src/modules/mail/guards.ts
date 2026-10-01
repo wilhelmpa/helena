@@ -22,9 +22,23 @@ const byId = (params: unknown, key: string) => Number((params as Record<string, 
 // The guards of the mail routes. Each resolves the mail row a route addresses and
 // asserts that the caller reaches its project (see access.ts).
 export const mailGuards = new Elysia({ name: 'mail-guards' }).use(authContext).macro({
+  mailTriage(_enabled: boolean) {
+    return {
+      detail: { 'x-permission': ['mail', 'triage'] } as DocumentDecoration,
+      async resolve({ params, user, request }) {
+        const project = await requireProjectAccess(
+          (params as { projectKey: string }).projectKey,
+          user,
+        );
+        await assertMailAccess(project.teamId, project.id, user, 'triage', request.headers);
+        return { project };
+      },
+    };
+  },
   // The mail of a :teamId the caller may reach with the action.
   mailTeam(action: PermissionAction) {
     return {
+      detail: requiresPermission(['mail', action]) as DocumentDecoration,
       async resolve({ params, user }) {
         const teamId = byId(params, 'teamId');
         return { teamId, scope: await mailScope(teamId, user, action) };
@@ -33,6 +47,7 @@ export const mailGuards = new Elysia({ name: 'mail-guards' }).use(authContext).m
   },
   mailThread(action: PermissionAction) {
     return {
+      detail: requiresPermission(['mail', action]) as DocumentDecoration,
       async resolve({ params, user, request }) {
         const thread = await threadAccess(byId(params, 'threadId'), user, action, request.headers);
         return { thread };
@@ -41,6 +56,7 @@ export const mailGuards = new Elysia({ name: 'mail-guards' }).use(authContext).m
   },
   mailMessage(action: PermissionAction) {
     return {
+      detail: requiresPermission(['mail', action]) as DocumentDecoration,
       async resolve({ params, user, request }) {
         const threadId = await messageThreadId(byId(params, 'messageId'));
         if (threadId == null) throw new HttpError(404, 'Mail message not found');
@@ -50,6 +66,7 @@ export const mailGuards = new Elysia({ name: 'mail-guards' }).use(authContext).m
   },
   mailAttachment(action: PermissionAction) {
     return {
+      detail: requiresPermission(['mail', action]) as DocumentDecoration,
       async resolve({ params, user, request }) {
         const threadId = await attachmentThreadId(byId(params, 'attachmentId'));
         if (threadId == null) throw new HttpError(404, 'Attachment not found');
@@ -59,6 +76,7 @@ export const mailGuards = new Elysia({ name: 'mail-guards' }).use(authContext).m
   },
   mailDraft(action: PermissionAction) {
     return {
+      detail: requiresPermission(['mail', action]) as DocumentDecoration,
       async resolve({ params, user, request }) {
         const draft = await draftAccess(byId(params, 'draftId'));
         if (!draft) throw new HttpError(404, 'Draft not found');
@@ -98,7 +116,7 @@ export const mailGuards = new Elysia({ name: 'mail-guards' }).use(authContext).m
         assertMcpEnabled(project, isMcpRequest(request.headers));
         const agent = await getCallingAgent(requireUser(user).id, project.teamId);
         if (!agent) throw new HttpError(403, 'Only an agent asks for approval to send');
-        await assertPermission(project.id, user, 'mail', action);
+        await assertMailAccess(project.teamId, project.id, user, action, request.headers);
         return { project, agent };
       },
     };

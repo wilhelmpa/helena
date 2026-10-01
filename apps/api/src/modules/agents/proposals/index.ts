@@ -42,6 +42,7 @@ export const agentProposalRoutes = new Elysia({
       query: proposalListQuery,
       response: { 200: ProposalListResponse, ...accessErrors },
       detail: {
+        'x-access': 'person-only',
         summary: 'List runtime proposals',
         description:
           "Memory writes an agent's runtime held back and runtime updates, waiting or decided, " +
@@ -55,7 +56,10 @@ export const agentProposalRoutes = new Elysia({
     async ({ user }) => ({ count: await countPendingProposals(await person(user)) }),
     {
       response: { 200: ProposalCountResponse, ...accessErrors },
-      detail: { summary: 'Count the runtime proposals waiting for the caller' },
+      detail: {
+        'x-access': 'person-only',
+        summary: 'Count the runtime proposals waiting for the caller',
+      },
     },
   )
 
@@ -68,6 +72,7 @@ export const agentProposalRoutes = new Elysia({
       body: proposalDecisionBody,
       response: { 200: ProposalResponse, ...commonErrors, ...errors(409) },
       detail: {
+        'x-access': 'person-only',
         summary: 'Decide on a runtime proposal',
         description:
           "Approve or reject. An approved memory write is written by the agent's runner on its " +
@@ -88,6 +93,7 @@ export const agentProposalRoutes = new Elysia({
       teamPermission: ['ai_agents', 'read'],
       response: { 200: MemoryRevisionListResponse, ...commonErrors },
       detail: {
+        'x-access': 'agent-inspector',
         summary: "List the versions of an agent's memory",
         description:
           'Every version of MEMORY.md and USER.md {appName} has seen, newest first: written by ' +

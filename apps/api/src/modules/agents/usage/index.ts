@@ -15,6 +15,7 @@ import { HttpError } from '#shared/lib';
 import { commonErrors } from '#shared/responses';
 import { runsTeam } from '#modules/teams/service';
 import { memberProjectIds } from '../core/service';
+import { agentMayInspect } from '#shared/agent-access';
 import { agentForPerson } from '../people-access';
 import {
   BudgetSummaryResponse,
@@ -147,7 +148,10 @@ export const agentUsageRoutes = new Elysia({
   .get(
     '/teams/:teamId/agent-usage',
     async ({ membership, query }) => {
-      if (membership.role === 'agent') {
+      if (
+        membership.role === 'agent' &&
+        !(await agentMayInspect(membership.userId, membership.teamId))
+      ) {
         throw new HttpError(403, 'Only a person can read what agents spent');
       }
       const today = new Date(Math.floor(Date.now() / DAY_MS) * DAY_MS);
@@ -193,6 +197,7 @@ export const agentUsageRoutes = new Elysia({
       teamPermission: ['ai_agents', 'read'],
       response: { 200: UsageResponse, ...commonErrors },
       detail: {
+        'x-access': 'agent-inspector',
         summary: 'Read what the agents spent',
         description:
           'Tokens (OpenTelemetry GenAI counts) and cost in euro of the runs, chat answers and ' +

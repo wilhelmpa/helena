@@ -89,6 +89,9 @@ export type AgentRuntimeKind = 'hermes' | 'claude' | 'codex' | 'command' | 'webh
 // Settings of Helena's own loop (runtime `helena`, docs/helena-decisions/zentrale-laufzeit.md).
 export type HelenaToolProfile = 'assistent' | 'recherche' | 'coder-lite' | 'voll';
 export interface HelenaRuntimeSettings {
+  chatBudgetSeconds?: number;
+  chatBudgetBehavior?: 'summarize' | 'fail';
+  chatSummarySeconds?: number;
   toolProfile?: HelenaToolProfile;
   escalation?: {
     mode?: 'auto' | 'never' | 'always';

@@ -313,7 +313,7 @@ export const decisionRoutes = new Elysia({
     }),
     {
       params: teamParams,
-      teamManager: true,
+      decisionReader: true,
       response: { 200: DecisionClassesResponse, ...commonErrors },
       detail: {
         summary: 'List the decision classes',
@@ -342,7 +342,7 @@ export const decisionRoutes = new Elysia({
     ({ membership, params }) => getClassView(membership.teamId, params.classId),
     {
       params: decisionClassParams,
-      teamManager: true,
+      decisionReader: true,
       response: { 200: DecisionClassView, ...commonErrors },
       detail: { summary: 'Read a decision class' },
     },

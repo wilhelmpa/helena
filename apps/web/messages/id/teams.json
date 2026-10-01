@@ -433,7 +433,13 @@
         "model": "Model perangkum",
         "modelDefault": "Otomatis (model sendiri atau AI lokal)"
       },
-      "behaviourTitle": "Perilaku"
+      "behaviourTitle": "Perilaku",
+      "chatBudget": {
+        "title": "Chat time limit",
+        "seconds": "Time limit in seconds",
+        "summarize": "Give a final answer when the time limit is reached",
+        "summarySeconds": "Additional time for the final answer in seconds"
+      }
     },
     "runtimeConflicts": {
       "title": "Diubah di luar {appName}",
