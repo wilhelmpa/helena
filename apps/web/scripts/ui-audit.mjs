@@ -298,6 +298,8 @@ function measureContent() {
       shadow: shadowShows(style.boxShadow),
       // A chosen card (Auswahl) lies one step up on the surface scale (docs/ui-framework.md §19).
       selected: el.classList.contains('is-selected'),
+      // A board card held up by another issue is tinted red (a state of the box, not another box).
+      tinted: el.classList.contains('kanban-card-blocked'),
       pad: [style.paddingTop, style.paddingRight, style.paddingBottom, style.paddingLeft].map(
         round,
       ),

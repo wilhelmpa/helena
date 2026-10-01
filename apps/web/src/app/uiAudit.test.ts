@@ -254,6 +254,15 @@ describe('content rules', () => {
     assert.equal(inset({ bg: '--surface-1', selected: true }).length, 1);
   });
 
+  it('lets a card take the tint of its state, and nothing else off the surfaces', () => {
+    const card = (extra: object) =>
+      rules.contentFindings(
+        at(content({ boxes: [box({ bg: 'color(srgb 0.98 0.93 0.95)', ...extra })] })),
+      );
+    assert.deepEqual(card({ tinted: true }), []);
+    assert.equal(card({}).length, 1);
+  });
+
   it('finds a hand-drawn box and boxes that stand 12px apart', () => {
     const found = rules.contentFindings(
       at(content({ rogue: ['div.rounded-md.border'], gaps: [{ a: 'a', b: 'b', gap: 12 }] })),
