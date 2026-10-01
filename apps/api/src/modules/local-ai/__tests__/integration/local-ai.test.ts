@@ -164,6 +164,27 @@ async function setup() {
 
 describe('local AI', () => {
   beforeEach(resetDb);
+  it('offers local models to a native agent with and without a published catalog', async () => {
+    const { asOwner, agent } = await setup();
+    const previous = process.env.HELENA_NATIVE_RUNTIME;
+    process.env.HELENA_NATIVE_RUNTIME = 'on';
+    try {
+      await db
+        .update(aiAgent)
+        .set({ runtimePolicy: { ...agent.runtimePolicy, runtime: 'helena' } })
+        .where(eq(aiAgent.id, agent.id));
+      await asOwner.god['local-ai'].policy.patch({ enabled: true });
+      const chat = asOwner.projects({ projectKey: 'LAI' })['ai-agents']({ agentId: agent.id });
+      const local = 'helena-local/Qwen3.6-35B-A3B-GGUF';
+      expect((await chat.chat.catalog.get()).data!.models.map((model) => model.id)).toContain(local);
+      expect((await chat.chat.post({ prompt: 'Synthetic native model selection', model: local })).status).toBe(200);
+      await db.execute(sql`delete from agent_chat_catalog where agent_id = ${agent.id}`);
+      expect((await chat.chat.catalog.get()).data!.models.map((model) => model.id)).toContain(local);
+    } finally {
+      if (previous === undefined) delete process.env.HELENA_NATIVE_RUNTIME;
+      else process.env.HELENA_NATIVE_RUNTIME = previous;
+    }
+  });
   it('CLI results update the registered model gate without applying a policy', async () => {
     const { server } = await setup();
     const entry = BUILTIN_TASK_CLASSES.find((item) => item.id === 'hermes-helpers')!;

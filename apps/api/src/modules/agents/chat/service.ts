@@ -1481,10 +1481,10 @@ async function resumableSession(
 }
 
 // The local models a runtime's picker offers (docs/helena-decisions/local-ai-platform.md):
-// Hermes reaches them as a named provider the runner writes. Claude Code and Codex get none
+// Hermes and Helena reach them as named providers. Claude Code and Codex get none
 // yet. Empty while local AI is off.
 async function localModelsFor(runtime: string): Promise<ChatCatalogModel[]> {
-  if (runtime !== 'hermes') return [];
+  if (runtime !== 'hermes' && runtime !== 'helena') return [];
   try {
     return await localCatalogModelsNow();
   } catch (error) {
@@ -1574,8 +1574,8 @@ export async function readTeamChatCatalog(teamId: number): Promise<ChatCatalog> 
     for (const model of annotated.unavailable)
       if (!unavailable.has(model.id)) unavailable.set(model.id, model);
   }
-  // Local models, while local AI is on, for the Hermes agents' copies.
-  if (rows.some((row) => runtimeOfPolicy(row.runtimePolicy) === 'hermes')) {
+  // Local models, while local AI is on, for Hermes and Helena agents' copies.
+  if (rows.some((row) => ['hermes', 'helena'].includes(runtimeOfPolicy(row.runtimePolicy)))) {
     for (const model of await localModelsFor('hermes'))
       if (!models.has(model.id)) models.set(model.id, model);
   }
