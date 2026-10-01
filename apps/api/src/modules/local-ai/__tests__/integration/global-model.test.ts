@@ -16,6 +16,11 @@ import { api, authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
+import {
+  publishChatCatalog,
+  readChatCatalog,
+  readTeamChatCatalog,
+} from '#modules/agents/chat/service';
 import { useHostdTransport } from '#modules/server/hostd';
 import { chooseModelNow } from '../../service';
 import {
@@ -171,6 +176,30 @@ async function fixture() {
 }
 
 describe('global local model API', () => {
+  it('offers the switched local default to Helena chats with a stale runner catalog', async () => {
+    const { client, agent, teamId } = await fixture();
+    await db
+      .update(aiAgent)
+      .set({ runtimePolicy: { ...agent.runtimePolicy, runtime: 'helena' } })
+      .where(eq(aiAgent.id, agent.id));
+    const expected = 'helena-halogen/Flash';
+    expect((await readChatCatalog(agent.id)).models.some((model) => model.id === expected)).toBe(
+      true,
+    );
+    await publishChatCatalog(agent.id, []);
+    expect((await readChatCatalog(agent.id)).models.some((model) => model.id === expected)).toBe(
+      true,
+    );
+    expect((await readTeamChatCatalog(teamId)).models.some((model) => model.id === expected)).toBe(
+      true,
+    );
+    const sent = await client.teams({ teamId })['ai-agents']({ agentId: agent.id }).chat.post({
+      prompt: 'Which local model answers?',
+      model: LOCAL_DEFAULT,
+    });
+    expect(sent.status).toBe(200);
+  });
+
   it('previews and begins the paired profile with empty catalogs and no NPU registration', async () => {
     await db
       .update(helenaModelServer)
