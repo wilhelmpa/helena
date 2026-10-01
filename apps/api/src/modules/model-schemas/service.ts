@@ -88,11 +88,11 @@ export function defaultState(): State {
 function stateOf(raw: unknown): State {
   if (!raw || typeof raw !== 'object') return defaultState();
   const value = raw as State;
-  return migrateSchemaEscalations({
-    ...defaultState(),
-    ...value,
-    schemas: { ...MODEL_TEMPLATES, ...value.schemas },
-  });
+  const schemas = { ...MODEL_TEMPLATES, ...value.schemas };
+  // The words of a built-in schema come from the code, so a renamed one shows its new name.
+  for (const [id, template] of Object.entries(MODEL_TEMPLATES))
+    schemas[id] = { ...schemas[id]!, name: template.name, description: template.description };
+  return migrateSchemaEscalations({ ...defaultState(), ...value, schemas });
 }
 export async function readModelState(): Promise<State> {
   const [row] = await db
@@ -306,7 +306,7 @@ function validateValues(value: Partial<ModelValues>) {
       throw new HttpError(400, 'Invalid escalation policy');
   }
 }
-async function inventory(teamId?: number) {
+export async function inventory(teamId?: number) {
   const agents = await db
     .select({
       id: aiAgent.id,

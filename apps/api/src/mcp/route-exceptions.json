@@ -2355,5 +2355,11 @@
     "/teams/:teamId/ai-agents/:agentId/dream",
     "admin",
     "Gedächtniskonsolidierung und Protokoll sind dem Team-Owner vorbehalten."
+  ],
+  [
+    "POST",
+    "/god/model-schemas/follow-profile",
+    "admin",
+    "Owner-only repair of a state the local model switch left behind; the switch itself does this."
   ]
 ]

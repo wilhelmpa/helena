@@ -629,11 +629,12 @@
       "profileLocked": "Das lokale Profil eines mitgelieferten Schemas lässt sich nicht ändern. Kopiere das Schema, um ein anderes Profil zu wählen."
     },
     "profiles": {
-      "local-halogen": "Nur GPU mit Flash, NPU aus",
-      "local-27b-npu": "GPU mit Qwen3.8-27B, NPU für kleine Aufgaben"
+      "local-halogen": "Nur GPU mit Flash, NPU aus. Dazu gehört das Schema „Nur lokal – Flash“.",
+      "local-27b-npu": "GPU mit Qwen3.8-27B, NPU für kleine Aufgaben. Dazu gehört das Schema „Nur lokal – 27B + NPU“."
     },
     "schemas": {
       "nur-lokal": "Alle Agenten laufen lokal; bei Fehlschlägen, Hängern oder auf Anfrage übernimmt Codex.",
+      "nur-lokal-27b": "Alle Agenten laufen lokal auf Qwen3.8-27B, kleine Hintergrundaufgaben übernimmt die NPU; bei Fehlschlägen, Hängern oder auf Anfrage übernimmt Codex.",
       "gemischt": "Routine lokal, Codex für Programmierarbeit, Claude für Planung und Texte.",
       "nur-codex": "Alle Agenten laufen auf Codex.",
       "nur-claude": "Alle Agenten laufen auf Claude."

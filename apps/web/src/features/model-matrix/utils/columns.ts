@@ -74,4 +74,10 @@ export function modelsOfRuntime<T extends { id: string }>(
 }
 
 // The schemas that ship with the app, in the order they are listed; custom ones follow.
-export const BUILT_IN_SCHEMAS = ['nur-lokal', 'gemischt', 'nur-codex', 'nur-claude'];
+export const BUILT_IN_SCHEMAS = [
+  'nur-lokal',
+  'nur-lokal-27b',
+  'gemischt',
+  'nur-codex',
+  'nur-claude',
+];

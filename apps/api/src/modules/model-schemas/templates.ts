@@ -215,16 +215,37 @@ function roles(kind: 'local' | 'mixed' | 'codex' | 'claude'): Record<string, Mod
   return values;
 }
 
+// Which built-in local schema belongs to which local profile. A profile switch of the model
+// server (Flash on Halogen, or Qwen3.8-27B with the NPU) moves a local active schema to the
+// one of the new profile; a mixed or cloud schema stays as it is.
+export const PROFILE_SCHEMAS: Record<ModelSchema['profile'], string> = {
+  'local-halogen': 'nur-lokal',
+  'local-27b-npu': 'nur-lokal-27b',
+};
+
 export const MODEL_TEMPLATES: Record<string, ModelSchema> = {
   'nur-lokal': {
     id: 'nur-lokal',
-    name: 'Nur lokal',
+    name: 'Nur lokal – Flash',
     description:
-      'Local default for agent runs; configured escalation after two failures, at the resume limit or on request.',
+      'Local default for agent runs on the Halogen profile (Flash on the GPU, NPU off); configured escalation after two failures, at the resume limit or on request.',
     profile: 'local-halogen',
     roles: roles('local'),
     classes: classes('local-halogen'),
     npuSlots: 0,
+    gpuSlots: 4,
+    speechRecognition: 'cpu',
+    jevPrivate: true,
+  },
+  'nur-lokal-27b': {
+    id: 'nur-lokal-27b',
+    name: 'Nur lokal – 27B + NPU',
+    description:
+      'Local default for agent runs on the 27B profile (Qwen3.8-27B on the GPU, small background classes on the NPU where their eval passed); configured escalation after two failures, at the resume limit or on request.',
+    profile: 'local-27b-npu',
+    roles: roles('local'),
+    classes: classes('local-27b-npu'),
+    npuSlots: 1,
     gpuSlots: 4,
     speechRecognition: 'cpu',
     jevPrivate: true,
@@ -268,6 +289,8 @@ export const MODEL_TEMPLATES: Record<string, ModelSchema> = {
 };
 export const LOCAL_PROFILE_TEMPLATES = LOCAL_PROFILES.map((profile) => ({
   ...profile,
+  // The built-in local schema of the profile (see PROFILE_SCHEMAS).
+  schema: PROFILE_SCHEMAS[profile.id],
   classes: classes(profile.id),
   gpuSlots: 4,
   npuSlots: profile.npu ? 1 : 0,

@@ -9,6 +9,7 @@ import { mcpTool } from '#mcp/generate';
 import { globalModelStatus } from '#modules/local-ai/global-model';
 import { listClassViews } from '#modules/decisions/settings';
 import { effectiveBrowserControl } from '#modules/browser-task/settings';
+import { followLocalProfile } from './profile-follow';
 import {
   applyMatrix,
   modelMatrix,
@@ -31,6 +32,7 @@ import {
   roleBody,
   roleParams,
   patchBody,
+  followProfileBody,
   schemaResponse,
   listResponse,
   matrixResponse,
@@ -245,6 +247,21 @@ export const modelSchemaRoutes = new Elysia({
         description:
           'Applies the preview patch transactionally, with revision checking and an audit entry. Built-ins cannot be edited. Own overrides remain. Example: {"expectedRevision":3,"active":"custom"}.',
         ...mcpTool('apply_model_schema_changes'),
+      },
+    },
+  )
+  .post(
+    '/god/model-schemas/follow-profile',
+    ({ body, schemaActorId }) =>
+      followLocalProfile(body.profile, { dryRun: body.dryRun, actorId: schemaActorId }),
+    {
+      modelSchemaAdmin: true,
+      body: followProfileBody,
+      response: { 200: t.Any(), ...failures },
+      detail: {
+        summary: 'Bring the local schema and local model pins in line with a local profile',
+        description:
+          'A local active schema (the built-in one of a profile) and projects that follow one become the schema of the given profile, and agents that pin the model of a local profile by name follow the local default instead. Mixed, cloud and own schemas stay as they are, as do own settings for other models. The model switch itself does this when it commits; this call repairs a state that was left behind. With dryRun it only previews. Example: {"profile":"local-27b-npu","dryRun":true}.',
       },
     },
   );

@@ -26,6 +26,7 @@ import { and, desc, eq, gte, inArray, sql } from 'drizzle-orm';
 import { localModelId, parseLocalModelId } from '@helena/sdk';
 import { HttpError } from '#shared/lib';
 import { hostd } from '#modules/server/hostd';
+import { followLocalProfile, restoreActiveSchema } from '#modules/model-schemas/profile-follow';
 import { readModelOptions, saveModelOptions, type LocalModelOptions } from './model-options';
 import { localAiWorkActive } from './guard';
 import { DEFAULT_KEY_FILE, evalById, refreshServer, startEval, taskClasses } from './service';
@@ -56,6 +57,11 @@ interface ModelJob {
   failedClasses: string[];
   done?: boolean;
   catalogStartedAt?: number;
+  // The active schema moved to the one of the new profile (and where back to), once done.
+  schemaFollow?: { from: string; to: string };
+  schemaFollowed?: boolean;
+  schemaRestored?: boolean;
+  schemaError?: string;
 }
 const LEMONADE_BASES = [LEMONADE_DEFAULT_BASE_URL, 'http://127.0.0.1:13305/v1'];
 
@@ -289,6 +295,30 @@ async function commitModel(state: MaintenanceState, job: ModelJob, rollback: boo
   await forgetSetting('localAi.policy');
 }
 
+// A local active schema follows the profile of the model that was just committed; a rolled-back
+// switch puts it back. A failure here must not undo the switch: it is kept in the job.
+async function followSchema(target: ModelTarget, reverse: boolean) {
+  const job = await readUncachedSetting<ModelJob>(MAINTENANCE_KEY);
+  if (!job || (reverse ? job.schemaRestored : job.schemaFollowed)) return;
+  try {
+    if (reverse) {
+      if (job.schemaFollow) await restoreActiveSchema(job.schemaFollow.from, job.schemaFollow.to);
+    } else {
+      const profile = target.profile ?? (target.server === 'halogen' ? 'local-halogen' : undefined);
+      if (profile) {
+        const result = await followLocalProfile(profile);
+        if (result.from !== result.to) job.schemaFollow = { from: result.from, to: result.to };
+      }
+    }
+  } catch (error) {
+    job.schemaError = error instanceof Error ? error.message : String(error);
+  }
+  await setSetting(MAINTENANCE_KEY, {
+    ...job,
+    ...(reverse ? { schemaRestored: true } : { schemaFollowed: true }),
+  });
+}
+
 async function evaluateClasses(state: MaintenanceState, job: ModelJob): Promise<boolean> {
   const target = state.operation!.target;
   const servers = await listModelServers();
@@ -416,6 +446,7 @@ export async function resumeGlobalModel(rollback = false): Promise<MaintenanceSt
         }
       }
       if (!(reverse ? job.restored : job.committed)) await commitModel(state, job, reverse);
+      await followSchema(target, reverse);
       await forgetSetting('localAi.policy');
       const server = (await listModelServers()).find((row) => row.slug === target.slug);
       if (server && target.profile !== 'local-27b-npu') await refreshServer(server.id);

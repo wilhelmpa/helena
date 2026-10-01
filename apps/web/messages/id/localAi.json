@@ -629,11 +629,12 @@
       "profileLocked": "Profil lokal skema bawaan tidak dapat diubah. Salin skema untuk memilih profil lain."
     },
     "profiles": {
-      "local-halogen": "Hanya GPU dengan Flash, NPU mati",
-      "local-27b-npu": "GPU dengan Qwen3.8-27B, NPU untuk tugas kecil"
+      "local-halogen": "Hanya GPU dengan Flash, NPU mati. Skemanya adalah “Nur lokal – Flash”.",
+      "local-27b-npu": "GPU dengan Qwen3.8-27B, NPU untuk tugas kecil. Skemanya adalah “Nur lokal – 27B + NPU”."
     },
     "schemas": {
       "nur-lokal": "Semua agen berjalan secara lokal; Codex mengambil alih saat gagal, macet, atau atas permintaan.",
+      "nur-lokal-27b": "Semua agen berjalan secara lokal di Qwen3.8-27B, NPU menangani tugas latar kecil; Codex mengambil alih saat gagal, macet, atau atas permintaan.",
       "gemischt": "Pekerjaan rutin lokal, Codex untuk pemrograman, Claude untuk perencanaan dan teks.",
       "nur-codex": "Semua agen berjalan di Codex.",
       "nur-claude": "Semua agen berjalan di Claude."

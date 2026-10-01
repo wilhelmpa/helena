@@ -18,6 +18,7 @@ import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
 import { useHostdTransport } from '#modules/server/hostd';
 import { chooseModelNow } from '../../service';
+import { applyMatrix, readModelState } from '#modules/model-schemas/service';
 import {
   beginGlobalModel,
   bulkLocalDefault,
@@ -506,4 +507,78 @@ it('pairs only the 27B GPU with NPU, gates classes and restores both server flag
       ?.enabled,
   ).toBe(false);
   expect((await readLocalAiPolicy()).classes.triage).toEqual(policy.classes.triage);
+});
+
+async function pairedProfile() {
+  const [gpu] = await db
+    .select()
+    .from(helenaModelServer)
+    .where(eq(helenaModelServer.slug, 'local'));
+  await db
+    .update(helenaModelServer)
+    .set({ models: [{ ...gpu!.models[0]!, id: 'Qwen3.8-27B-GGUF' }] })
+    .where(eq(helenaModelServer.id, gpu!.id));
+  await db.insert(helenaModelServer).values({
+    slug: 'volition-npu',
+    name: 'NPU',
+    kind: 'fastflowlm',
+    enabled: false,
+    baseUrl: 'http://127.0.0.1:13309/v1',
+    keySource: 'none',
+  });
+}
+const FLASH_PIN = 'helena-halogen/halogen-qwen3.8-flash-next';
+
+describe('the schema follows the local profile', () => {
+  it('moves a local schema and the pins of the old model with the commit and back on rollback', async () => {
+    const { agent } = await fixture();
+    await pairedProfile();
+    await db
+      .update(aiAgent)
+      .set({ model: FLASH_PIN, modelOverrides: { model: FLASH_PIN } })
+      .where(eq(aiAgent.id, agent.id));
+    expect((await readModelState()).active).toBe('nur-lokal');
+    await beginGlobalModel('helena-local/Qwen3.8-27B-GGUF', 'local-27b-npu');
+    const pending = (await readMaintenance())!;
+    pending.operation!.phase = 'commit';
+    await save(pending);
+    pairedCatalogs();
+    await resumeGlobalModel();
+    expect((await readModelState()).active).toBe('nur-lokal-27b');
+    const [row] = await db.select().from(aiAgent).where(eq(aiAgent.id, agent.id));
+    expect(row!.model).toBe(LOCAL_DEFAULT);
+    expect(row!.modelOverrides.model).toBeUndefined();
+    expect(
+      (await readUncachedSetting<{ schemaFollow?: unknown }>(MAINTENANCE_KEY))?.schemaFollow,
+    ).toEqual({ from: 'nur-lokal', to: 'nur-lokal-27b' });
+    // The coordinator runs the commit phase again after a restart: nothing is applied twice.
+    const revision = (await readModelState()).revision;
+    const again = (await readMaintenance())!;
+    again.operation!.phase = 'commit';
+    await save(again);
+    await resumeGlobalModel();
+    expect((await readModelState()).revision).toBe(revision);
+    const back = (await readMaintenance())!;
+    back.operation!.phase = 'rollback-commit';
+    await save(back);
+    await resumeGlobalModel();
+    expect((await readModelState()).active).toBe('nur-lokal');
+  });
+
+  it('leaves a mixed active schema alone', async () => {
+    await fixture();
+    await pairedProfile();
+    const current = await readModelState();
+    await applyMatrix({ expectedRevision: current.revision, active: 'gemischt' });
+    await beginGlobalModel('helena-local/Qwen3.8-27B-GGUF', 'local-27b-npu');
+    const pending = (await readMaintenance())!;
+    pending.operation!.phase = 'commit';
+    await save(pending);
+    pairedCatalogs();
+    await resumeGlobalModel();
+    expect((await readModelState()).active).toBe('gemischt');
+    expect(
+      (await readUncachedSetting<{ schemaFollow?: unknown }>(MAINTENANCE_KEY))?.schemaFollow,
+    ).toBeUndefined();
+  });
 });
