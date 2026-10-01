@@ -2,6 +2,7 @@ import { db, aiAgent, agentRuntimeAction, agentSkillLink } from '@repo/db';
 import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
 import { applyNativeSkillActions } from '../native-runtime/skills';
 import { HttpError, iso } from '#shared/lib';
+import { normalizeRuntimeInventory } from '../core/inventory';
 import type { AgentRuntimeInventory } from '../core/service';
 import { isDisallowedRef } from '../skills/skill-format';
 import { createSkillFromFiles, type SkillRow } from '../skills/service';
@@ -74,7 +75,9 @@ async function runtimeOf(agentId: number) {
     .from(aiAgent)
     .where(eq(aiAgent.id, agentId));
   if (!row) throw new HttpError(404, 'Agent not found');
-  const inventory = (row.state as { inventory?: AgentRuntimeInventory | null }).inventory ?? null;
+  const inventory = normalizeRuntimeInventory(
+    (row.state as { inventory?: unknown } | null)?.inventory,
+  );
   const learned =
     (row.policy as { runtime?: string }).runtime === 'helena' ? row.nativeLearned : row.learned;
   return { inventory, learned: Array.isArray(learned) ? (learned as LearnedSkill[]) : [] };

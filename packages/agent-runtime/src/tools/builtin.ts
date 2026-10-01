@@ -1,3 +1,4 @@
+import { limitSkillMarkdownDescription } from '@helena/sdk';
 import { memorySection } from '../prompt';
 import type { SkillEntry } from '../config';
 import type { HelenaApi, MemoryState } from '../helena-client';
@@ -445,7 +446,7 @@ export function learnSkillTool(
         {
           path: current?.path ?? requestedPath,
           name: text(input.name) || current?.name || '',
-          markdown,
+          markdown: limitSkillMarkdownDescription(markdown),
           files,
           truncated: false,
           otherFiles: 0,

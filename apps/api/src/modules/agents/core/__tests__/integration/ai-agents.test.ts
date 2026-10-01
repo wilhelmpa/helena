@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
-import { apikey, db } from '@repo/db';
+import { aiAgent, apikey, db } from '@repo/db';
 import { eq } from 'drizzle-orm';
 import { apiKeyApi, authedApi, type Api } from '#tests/helpers/app';
 import { createRole, listProjectRoles } from '#tests/helpers/roles';
@@ -28,6 +28,43 @@ const agents = (api: Api, teamId: number) => api.teams({ teamId })['ai-agents'];
 describe('ai agents', () => {
   beforeEach(async () => {
     await resetDb();
+  });
+
+  it('lists an agent with a 389-character learned skill description', async () => {
+    const { asOwner, teamId } = await setup();
+    const created = await createAgent(asOwner, 'MKT', {
+      name: 'Recovery Bot',
+      username: 'recovery-bot',
+      kind: 'external',
+    });
+    const id = created.data!.agent.id;
+    // Legacy runtime data cannot be submitted through the current report schema.
+    await db
+      .update(aiAgent)
+      .set({
+        runtimeState: {
+          inventory: {
+            toolsets: [],
+            mcpServers: [],
+            memory: [],
+            skills: [
+              {
+                name: 'mail-triage-failed-run-recovery',
+                category: null,
+                description: 'x'.repeat(389),
+                origin: 'agent',
+                path: 'recovery',
+              },
+            ],
+          },
+        },
+      })
+      .where(eq(aiAgent.id, id));
+    const listed = await agents(asOwner, teamId).get();
+    expect(listed.status).toBe(200);
+    expect(
+      listed.data?.find((agent) => agent.id === id)?.runtimeState.inventory?.skills[0]?.description,
+    ).toBe('x'.repeat(299) + '…');
   });
 
   it('creates an external agent and returns its key once', async () => {

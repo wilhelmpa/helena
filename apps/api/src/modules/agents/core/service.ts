@@ -26,6 +26,7 @@ import { listAgentMemberFieldIds } from '#modules/custom-fields/service';
 import { runsTeam, type TeamStanding } from '#modules/teams/service';
 import { getDefaultRoleId } from '#modules/roles/service';
 import { deleteAccount } from '#shared/account-deletion';
+import { normalizeRuntimeInventory } from './inventory';
 import { runtimeFileKind } from '../runtime-files/paths';
 import { maxTurnsLimit, runBudgetSecondsLimit } from '../model';
 import { notHomeAgent } from './home-agent';
@@ -380,8 +381,7 @@ function normalizeRuntimeState(value: unknown): AgentRuntimeState {
     restored: Array.isArray(state.restored)
       ? state.restored.filter((path): path is string => typeof path === 'string')
       : [],
-    // Validated when the runner reported it, so only its presence is checked.
-    inventory: state.inventory && typeof state.inventory === 'object' ? state.inventory : null,
+    inventory: normalizeRuntimeInventory(state.inventory),
     profile:
       state.profile && typeof state.profile === 'object' && Array.isArray(state.profile.drift)
         ? state.profile

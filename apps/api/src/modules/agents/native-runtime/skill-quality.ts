@@ -1,3 +1,4 @@
+import { truncateSkillDescription } from '@helena/sdk';
 import { looksSecret } from '@helena/facts';
 import { HttpError } from '#shared/lib';
 import { parseFrontmatter } from '../skills/skill-format';
@@ -19,7 +20,7 @@ export function similarSkill(a: LearnedSkill, b: LearnedSkill): boolean {
 }
 
 export function skillDescription(skill: LearnedSkill): string {
-  return parseFrontmatter(skill.markdown).description ?? skill.name;
+  return truncateSkillDescription(parseFrontmatter(skill.markdown).description ?? skill.name);
 }
 
 export function skillQuality(skill: LearnedSkill): string[] {

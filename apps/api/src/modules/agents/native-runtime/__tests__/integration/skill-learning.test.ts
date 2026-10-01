@@ -380,3 +380,26 @@ test('does not duplicate a procedure already supplied by the installed library',
   ).toBe(409);
   expect((await agent['agent-runtime'].skills.get()).data).toEqual([]);
 });
+
+test('stores learned skills with a bounded frontmatter description', async () => {
+  const { agent } = await setup();
+  const description = (
+    'Use when importing CSV tables with locale-specific amounts. ' +
+    'Recover a failed import run. '.repeat(20)
+  ).slice(0, 389);
+  expect(description).toHaveLength(389);
+  const saved = await agent['agent-runtime'].skills.put({
+    skill: {
+      ...skill,
+      markdown: skill.markdown.replace(
+        'Use when importing CSV tables with locale-specific amounts',
+        description,
+      ),
+    },
+    baseRevision: null,
+  });
+  expect(saved.status, JSON.stringify(saved.error?.value)).toBe(200);
+  const listed = await agent['agent-runtime'].skills.get();
+  expect(listed.status).toBe(200);
+  expect(listed.data?.[0]?.markdown).toContain('description: "' + description.slice(0, 299) + '…"');
+});

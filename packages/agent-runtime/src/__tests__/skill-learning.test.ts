@@ -192,3 +192,18 @@ test('a failed loaded skill can be reflected on but a failed task cannot create 
   expect(shouldReflect({} as never, { ...result, toolsUsed: ['shell'] })).toBe(false);
   expect(shouldReflect({ memory: { enabled: false } } as never, result)).toBe(false);
 });
+
+test('skill management bounds a learned frontmatter description before saving', async () => {
+  const f = fixture();
+  const tool = learnSkillTool(f.api);
+  await tool.execute(
+    {
+      action: 'create',
+      ...skill,
+      markdown: skill.markdown.replace('Import CSV with decimal commas', 'x'.repeat(389)),
+      baseRevision: null,
+    },
+    {} as Parameters<typeof tool.execute>[1],
+  );
+  expect(f.skills[0]?.markdown).toContain('description: "' + 'x'.repeat(299) + '…"');
+});

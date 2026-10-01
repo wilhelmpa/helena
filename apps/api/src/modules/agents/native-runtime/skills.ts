@@ -1,3 +1,4 @@
+import { limitSkillMarkdownDescription } from '@helena/sdk';
 import { createHash } from 'node:crypto';
 import {
   aiAgent,
@@ -182,6 +183,7 @@ export async function saveNativeSkill(
   baseRevision: string | null,
   options: { sessionId?: string | null; structured?: boolean } = {},
 ) {
+  skill = { ...skill, markdown: limitSkillMarkdownDescription(skill.markdown) };
   validateNativeSkill(skill);
   if (skillQuality(skill).length) throw new HttpError(400, skillQuality(skill).join('; '));
   return db.transaction(async (tx) => {
