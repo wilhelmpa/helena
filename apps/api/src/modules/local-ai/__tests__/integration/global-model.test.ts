@@ -16,6 +16,8 @@ import { api, authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
+import { getRunnerAgent } from '#modules/agents/runner/service';
+import { runtimePolicySnapshot } from '#modules/agents/runtime-policy/service';
 import {
   publishChatCatalog,
   readChatCatalog,
@@ -176,6 +178,22 @@ async function fixture() {
 }
 
 describe('global local model API', () => {
+  it('resolves the local default in native runner configuration after each switch', async () => {
+    const { agent } = await fixture();
+    await db
+      .update(aiAgent)
+      .set({ model: LOCAL_DEFAULT, runtimePolicy: { ...agent.runtimePolicy, runtime: 'helena' } })
+      .where(eq(aiAgent.id, agent.id));
+    const runner = await getRunnerAgent(agent.userId);
+    expect(runner).not.toBeNull();
+    const before = await runtimePolicySnapshot(runner!);
+    expect(before.model).toBe('helena-halogen/Flash');
+    await setSetting(DEFAULT_KEY, 'helena-local/Qwen27B');
+    const after = await runtimePolicySnapshot(runner!);
+    expect(after.model).toBe('helena-local/Qwen27B');
+    expect(after.revision).not.toBe(before.revision);
+  });
+
   it('offers the switched local default to Helena chats with a stale runner catalog', async () => {
     const { client, agent, teamId } = await fixture();
     await db

@@ -19,6 +19,7 @@ import {
   type RuntimeCompression,
 } from '@helena/sdk';
 import { HttpError } from '#shared/lib';
+import { LOCAL_DEFAULT, localDefaultModel } from '#modules/local-ai/maintenance-state';
 
 import {
   getAgentById,
@@ -102,7 +103,9 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
     ...normalizeContextLimits(teamSettings?.contextLimits),
     ...normalizeContextLimits(agent.runtimePolicy.contextLimits),
   };
-  const selectedModel = agent.model?.split('/') ?? [];
+  const model =
+    agent.model === LOCAL_DEFAULT ? ((await localDefaultModel()) ?? agent.model) : agent.model;
+  const selectedModel = model?.split('/') ?? [];
   const localModel = localAi?.servers.find((entry) => entry.provider === selectedModel[0]);
   const contextTokens =
     localModel?.models.find((entry) => entry.id === selectedModel.slice(1).join('/'))
@@ -143,7 +146,7 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
     displayName,
     agent: { id: agent.id, name: agent.name, username: agent.username, agentRole: agent.agentRole },
     instructions: agent.instructions,
-    model: agent.model,
+    model,
     runtimePolicy: {
       ...agent.runtimePolicy,
       ...(agent.agentRole === 'home' ? { toolDeny: [], skillsDisabled: [] } : {}),
