@@ -6,12 +6,14 @@
 //   sudo systemd-run --wait --pipe --collect --uid=volition-plan \
 //     -p EnvironmentFile=/etc/volition/plan.env -p WorkingDirectory=/srv/volition/source/plan \
 //     /usr/local/bin/bun apps/api/src/scripts/local-ai-register.ts [--kind halogen | --embeddings]
+// Lemonade uses volition-lemonade when local already belongs to the embedding server.
 //
 // --embeddings: the server `local` (Lemonade until now) becomes the embedding server of
 // native/local-ai/embed.sh (127.0.0.1:13308, same key, same model name), so the vectors in the
 // index, which are named `helena-local/Qwen3-Embedding-0.6B-GGUF`, stay valid. Its other models
 // leave the list; the classes that pointed at them fall back to their configured models.
 import { modelServerBySlug } from '@repo/db';
+import { localAiRegistrationSlug } from './local-ai-registration';
 import { host } from '#shared/helena';
 import { LOCAL_AI_PLUGIN_ID, LOCAL_AI_PROVIDES, localAiPlugin } from '#modules/local-ai/plugin';
 import {
@@ -71,8 +73,11 @@ if (process.argv.includes('--embeddings')) {
 // Halogen has no key (loopback, the firewall lets only Helena's users in). Its KV pool (262,144
 // positions) is shared by its conversation slots: agents are told half of it, so two long
 // turns fit at once.
-const slug = kind === HALOGEN ? 'halogen' : DEFAULT_SERVER_SLUG;
+const defaultServer = kind === LEMONADE ? await modelServerBySlug(DEFAULT_SERVER_SLUG) : null;
+const slug = localAiRegistrationSlug(kind, defaultServer?.kind ?? null);
 const existing = await modelServerBySlug(slug);
+if (existing && existing.kind !== kind)
+  throw new Error(`The ${slug} slug belongs to another server type`);
 const server = existing
   ? await refreshServer(existing.id)
   : kind === HALOGEN
