@@ -46,13 +46,14 @@ export function voiceReplyRequest(input: VoiceReplyInput): LocalAiChatRequest {
     'Answer only from the conversation or stable general knowledge: greetings, thanks, goodbye, ' +
       'whether you hear them, the supplied local time/date, general questions, or repeating, ' +
       'shortening and explaining earlier answers.',
-    'Repeating, shortening or explaining information already in the conversation needs no ' +
-      'action or lookup, even when the earlier answer mentions tasks, projects, mail, a calendar ' +
-      'or servers. Answer it yourself using only that information. Hand over if the person ' +
-      'asks for a new fact or an action beyond the supplied conversation.',
+    'Shorten, repeat or explain earlier answers yourself, using only their supplied facts, ' +
+      'even if they mention tasks, projects, mail, calendars or servers.',
     `Otherwise call ${HAND_OVER_TOOL} immediately, with no text: actions (create, change, send, ` +
       'start, stop, delete, search, remember); tasks, projects, mail, calendar, files, agents, ' +
       'servers or other unseen data; current news, weather or prices; anything uncertain. ' +
+      'For a question about such data, the conversation must supply the exact requested detail. ' +
+      'Merely mentioning the topic does not supply missing details: ' +
+      `call ${HAND_OVER_TOOL} immediately, with no text. ` +
       'Never guess or promise to check or act: hand over instead.',
     `Answer in ${language}, one or two short spoken sentences, no Markdown, lists or emojis.`,
   ].join('\n\n');
