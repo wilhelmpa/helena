@@ -133,6 +133,24 @@ class ModelServerTest(unittest.TestCase):
                 self.begin()
             self.assertEqual(error.exception.code, 'Busy')
 
+    def test_halogen_health_reads_engine_response_and_rejects_unready_models(self):
+        for payload, ready in [
+            ({'status': 'ok', 'engine': {'responds': True}}, True),
+            ({'status': 'ok', 'responds': True}, True),
+            ({'status': 'ok', 'responds': True, 'engine': {'responds': False}}, False),
+            ({'status': 'ok', 'engine': {'responds': False}}, False),
+            ({'status': 'ok'}, False),
+            ({'status': 'loading', 'engine': {'responds': True}}, False),
+        ]:
+            with self.subTest(payload=payload), patch.object(m.time, 'monotonic', side_effect=[0, 1000]):
+                driver = m.Driver(self.host)
+                driver.http = lambda *args: payload
+                if ready:
+                    driver.perform('health', OLD, {'operation': {}})
+                else:
+                    with self.assertRaises(HostError):
+                        driver.perform('health', OLD, {'operation': {}})
+
     def test_reset_uses_active_server_and_invalidates_pending_checks(self):
         self.begin()
         self.finish()
