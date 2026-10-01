@@ -888,13 +888,18 @@ test('two searches keep the first discovered tool available', async () => {
 
 for (const count of [5, 120]) {
   test(`preserves returned collection counts for ${count} items across the context limit`, async () => {
-    const receipts = Array.from({ length: count }, (_, id) => ({ id, text: 'synthetic '.repeat(80) }));
+    const receipts = Array.from({ length: count }, (_, id) => ({
+      id,
+      text: 'synthetic '.repeat(80),
+    }));
     const { sessions, primary } = await run(
       [
         { calls: [{ name: 'find_tools', input: { query: 'list_receipts' } }] },
         { calls: [{ name: 'list_receipts', input: {} }] },
         ...Array.from({ length: 5 }, (_, index) => ({
-          calls: [{ name: 'write_file', input: { path: `probe${index}.txt`, content: 'synthetic' } }],
+          calls: [
+            { name: 'write_file', input: { path: `probe${index}.txt`, content: 'synthetic' } },
+          ],
         })),
         { text: `${count} receipts returned.` },
       ],

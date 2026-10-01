@@ -27,7 +27,12 @@ export function boundedToolResult(text: string, limit: number): string {
     }
   }
   if (text.length <= limit) {
-    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed) && Object.keys(returnedCounts).length) {
+    if (
+      parsed &&
+      typeof parsed === 'object' &&
+      !Array.isArray(parsed) &&
+      Object.keys(returnedCounts).length
+    ) {
       const annotated = JSON.stringify({ ...parsed, returnedCounts });
       if (annotated.length <= limit) return annotated;
     } else return text;
