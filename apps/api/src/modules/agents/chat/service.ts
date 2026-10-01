@@ -1913,18 +1913,7 @@ export async function finishMessage(
           eq(agentChatMessage.id, messageId),
           eq(agentChatMessage.agentId, agentId),
           eq(agentChatMessage.attempts, claim),
-          or(
-            eq(agentChatMessage.status, result.status),
-            result.escalation && result.status === 'success'
-              ? and(
-                  eq(agentChatMessage.status, 'failed'),
-                  eq(
-                    agentChatMessage.lastError,
-                    `No eligible agent for ${result.escalation.target}`,
-                  ),
-                )
-              : undefined,
-          ),
+          eq(agentChatMessage.status, result.status),
         ),
       );
     if (finished) {

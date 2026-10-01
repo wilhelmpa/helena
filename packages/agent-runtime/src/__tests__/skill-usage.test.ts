@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { buildSystemPrompt, skillIndex, skillTrigger } from '../prompt';
+import { buildSystemPrompt, isAgentDiagnosis, skillIndex, skillTrigger } from '../prompt';
 import { skillTool } from '../tools/builtin';
 import { SKILL_USAGE_CASES, usageSkills } from '../skill-usage-eval';
 
@@ -80,4 +80,32 @@ test('large skill pages are explicit and can be loaded completely below the loop
     offset = Number(next[1]);
   }
   expect(read).toEqual(lines);
+});
+
+for (const file of [undefined, 'ref.md']) {
+  test(`skill offset beyond EOF is a successful empty page (${file ?? 'main'})`, async () => {
+    const tool = skillTool([
+      {
+        name: 'short',
+        description: '',
+        markdown: 'one\ntwo',
+        files: [{ path: 'ref.md', content: 'one' }],
+      },
+    ]);
+    const result = await tool.execute(
+      { name: 'short', file, offset: 500 },
+      { workdir: '/tmp', env: {}, signal: new AbortController().signal },
+    );
+    expect(result.isError).not.toBe(true);
+    expect(result.text).toBe('Ende der Datei');
+  });
+}
+
+test('diagnostic limits apply to questions and leave requested repairs actionable', () => {
+  expect(isAgentDiagnosis('warum hat der PRIV-Koordinator Fehler in den Werkzeugaufrufen?')).toBe(
+    true,
+  );
+  expect(isAgentDiagnosis('Bitte analysiere die Timeout-Ursache beim Agenten')).toBe(true);
+  expect(isAgentDiagnosis('Behebe den Fehler im Agenten')).toBe(false);
+  expect(isAgentDiagnosis('Fix the agent error and check the result')).toBe(false);
 });

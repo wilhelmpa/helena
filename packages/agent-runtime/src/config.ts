@@ -79,6 +79,7 @@ export interface EscalationSettings {
   onFailure?: boolean;
   central?: import('@helena/sdk').EscalationSettings;
   agentId?: number;
+  availableRuntimes?: string[];
 }
 
 export interface AgentRuntimeConfig {

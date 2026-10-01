@@ -17,7 +17,8 @@ test('eval admission waits behind chats without changing the live decision conne
     modelServer: 'local',
     priority: 'realtime',
   } as DecisionConnection;
-  const evalConnection = evaluationConnection(live);
+  const evalConnection = evaluationConnection(live, 'helena.mail');
+  expect(evalConnection.localAiClassId).toBe('decisions');
   expect(evalConnection.priority).toBe('background');
   expect(evalConnection.mailBudget).toEqual({ queueMs: 60_000, generationMs: 60_000 });
   expect(live.mailBudget).toBeUndefined();

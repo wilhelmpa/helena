@@ -10,7 +10,7 @@ import { escalationPolicy } from '../runner/escalation';
 import { readEscalation } from '#modules/escalation/service';
 import { createHash } from 'node:crypto';
 import { db, aiAgent, team, getDisplayName } from '@repo/db';
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull, ne } from 'drizzle-orm';
 import {
   contextFileLimit,
   effectiveContextLimits,
@@ -24,6 +24,7 @@ import { LOCAL_DEFAULT, localDefaultModel } from '#modules/local-ai/maintenance-
 
 import {
   getAgentById,
+  normalizeRuntimePolicy,
   type AgentCompression,
   type AgentRuntimeConflict,
   type AgentRuntimeInventory,
@@ -104,6 +105,26 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
     ...normalizeContextLimits(teamSettings?.contextLimits),
     ...normalizeContextLimits(agent.runtimePolicy.contextLimits),
   };
+  const handoverAgents = await db
+    .select({ policy: aiAgent.runtimePolicy })
+    .from(aiAgent)
+    .where(
+      and(
+        eq(aiAgent.teamId, agent.teamId),
+        ne(aiAgent.id, agent.id),
+        eq(aiAgent.template, false),
+        isNull(aiAgent.pausedAt),
+      ),
+    );
+  const availableRuntimes = [
+    ...new Set(
+      handoverAgents
+        .map(({ policy }) => normalizeRuntimePolicy(policy).runtime)
+        .filter(
+          (runtime): runtime is 'claude' | 'codex' => runtime === 'claude' || runtime === 'codex',
+        ),
+    ),
+  ];
   const model =
     agent.model === LOCAL_DEFAULT ? ((await localDefaultModel()) ?? agent.model) : agent.model;
   const selectedModel = model?.split('/') ?? [];
@@ -270,6 +291,7 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
           target: agent.runtimePolicy.helena?.escalation?.target,
           agentId: agent.id,
           central: await nativeEscalationRules(agent.id),
+          availableRuntimes,
         },
       },
     }),

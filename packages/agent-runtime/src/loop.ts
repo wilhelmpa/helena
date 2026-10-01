@@ -17,6 +17,7 @@ import { messageText, type SessionItem, type SessionStore } from './session';
 import { looksSecret, redactSecrets } from '@helena/facts';
 import type { AgentTool, PolicyQuestion, ToolOutput } from './tools/types';
 import { boundedToolResult } from './tool-result';
+import { isAgentDiagnosis } from './prompt';
 import { closestToolNames } from './tools/builtin';
 
 // Helena's agent loop. One model call per step through the AI SDK (streaming, the tools
@@ -39,6 +40,7 @@ export interface LoopInput {
   models: ResolvedModel[];
   // The model a hand-over switches to when the escalation target is one this loop drives.
   escalationModel?: ResolvedModel | null;
+  escalationModels?: ResolvedModel[];
   resolveEscalationModel?: (target: string) => ResolvedModel | null;
   // Every tool the agent may use; `direct` names the ones the model sees from the start.
   tools: AgentTool[];
@@ -129,10 +131,13 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
   const started = now();
   let budgetStarted = started;
   const kind = config.kind ?? 'run';
-  const budgetMs =
+  const diagnosis = kind === 'chat' && isAgentDiagnosis(input.prompt);
+  const budgetMs = Math.min(
+    diagnosis ? 240_000 : Infinity,
     ((kind === 'chat' ? config.limits?.chatBudgetSeconds : undefined) ??
       config.limits?.runBudgetSeconds ??
-      (kind === 'chat' ? DEFAULTS.chatBudgetSeconds : DEFAULTS.runBudgetSeconds)) * 1000;
+      (kind === 'chat' ? DEFAULTS.chatBudgetSeconds : DEFAULTS.runBudgetSeconds)) * 1000,
+  );
   const queueRetry = new LocalQueueRetry(
     (config.limits?.localModelQueueSeconds ??
       (kind === 'chat' ? DEFAULTS.chatModelQueueSeconds : DEFAULTS.localModelQueueSeconds)) * 1000,
@@ -338,7 +343,30 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
       config.escalation?.onFailure === false
     )
       return null;
-    if (isRuntimeTarget(target)) {
+    const cloudChain = [
+      ...input.models.filter((model) => !model.local),
+      ...(input.escalationModels ?? []),
+    ];
+    let next: ResolvedModel | null | undefined =
+      input.escalationModel?.id === target ? input.escalationModel : null;
+    next ??= input.models.find(
+      (model) =>
+        !model.local &&
+        (model.id === target ||
+          model.modelId === target.replace(/^runtime:(?:codex|claude)\//, '')),
+    );
+    next ??= input.resolveEscalationModel?.(target);
+    if (isRuntimeTarget(target)) next ??= cloudChain[0];
+    if (isRuntimeTarget(target) && !next) {
+      const runtime = target.slice('runtime:'.length).split('/')[0]!;
+      if (
+        config.escalation?.availableRuntimes &&
+        !config.escalation.availableRuntimes.includes(runtime)
+      ) {
+        if (kind === 'chat')
+          return summarizeBudget('Zeitgrenze/Eskalation nicht möglich', lastText);
+        return null;
+      }
       sink.emit({
         type: 'escalate',
         target,
@@ -353,38 +381,30 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
         reason: 'escalated',
       });
     }
-    const next =
-      input.escalationModel?.id === target
-        ? input.escalationModel
-        : (input.models.find((model) => model.id === target) ??
-          input.resolveEscalationModel?.(target));
-    if (!next) return null;
+    if (!next) {
+      if (kind === 'chat') return summarizeBudget('Zeitgrenze/Eskalation nicht möglich', lastText);
+      return null;
+    }
     switchedTo = target;
-    chain = [next];
+    chain = [
+      next,
+      ...cloudChain.filter(
+        (model, index, all) =>
+          model.id !== next.id && all.findIndex((entry) => entry.id === model.id) === index,
+      ),
+    ];
     sink.emit({ type: 'model', id: next.id });
     await save(
       [
         {
           role: 'user',
-          content: `(${displayName}) Die Aufgabe wird an ein stärkeres Modell übergeben (${escalation.reason}: ${escalation.detail}). Mach mit dem bisherigen Verlauf weiter und bring sie zu Ende.`,
+          content: `(${displayName}) Ein stärkeres Modell übernimmt im selben Agentenlauf (${escalation.reason}: ${escalation.detail}). Mach mit dem bisherigen Verlauf weiter und bring sie zu Ende.`,
         },
       ],
       step + 1,
     );
     return 'switched';
   };
-
-  // ── before the first step ──
-  const pre =
-    (config.escalation?.central
-      ? centralEscalation(config.escalation, input.prompt, input.env)
-      : preflightEscalation(config.escalation, input.prompt, input.labels)) ??
-    (await input.uncertainty?.().catch(() => null)) ??
-    null;
-  if (pre) {
-    const escalated = await escalate(pre, '');
-    if (escalated && escalated !== 'switched') return escalated;
-  }
 
   watch = new FailureWatch();
   let nudged = false;
@@ -463,9 +483,11 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
   const stepSignal = () =>
     input.followups ? AbortSignal.any([input.signal, input.followups.signal]) : input.signal;
 
-  async function summarizeBudget(): Promise<LoopResult> {
-    const notice = 'Zeitgrenze erreicht';
-    const fallback = `${notice}. ${lastText || 'Die Recherche konnte innerhalb der Zeitgrenze nicht abgeschlossen werden.'}\nOffen: abschließende Prüfung der ursprünglichen Frage.`;
+  async function summarizeBudget(
+    notice = 'Zeitgrenze erreicht',
+    partial = lastText,
+  ): Promise<LoopResult> {
+    const fallback = `${notice}. ${partial || 'Die Recherche konnte innerhalb der Zeitgrenze nicht abgeschlossen werden.'}\nOffen: abschließende Prüfung der ursprünglichen Frage.`;
     const messages: ModelMessage[] = [
       ...contextMessages(),
       {
@@ -482,7 +504,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
         chain[0]!,
         messages,
         {},
-        (config.limits?.chatSummarySeconds ?? 60) * 1000,
+        Math.min(config.limits?.chatSummarySeconds ?? 60, diagnosis ? 45 : Infinity) * 1000,
         undefined,
         true,
       );
@@ -509,6 +531,18 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     return finish({ status: 'success', text, exitCode: 0, reason: 'budget' });
   }
 
+  // ── before the first step ──
+  const pre =
+    (config.escalation?.central
+      ? centralEscalation(config.escalation, input.prompt, input.env)
+      : preflightEscalation(config.escalation, input.prompt, input.labels)) ??
+    (await input.uncertainty?.().catch(() => null)) ??
+    null;
+  if (pre) {
+    const escalated = await escalate(pre, '');
+    if (escalated && escalated !== 'switched') return escalated;
+  }
+
   for (;;) {
     await consumeInstructions();
     if (input.signal.aborted) {
@@ -526,6 +560,8 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
         reason: 'budget',
       });
     }
+    if (diagnosis && spend.toolCalls >= 10)
+      return summarizeBudget('Diagnose-Werkzeuggrenze erreicht');
     if (turns >= maxTurns) {
       const escalated = await escalate({ reason: 'failure', detail: 'max-turns' }, lastText);
       if (escalated && escalated !== 'switched') return escalated;
@@ -621,7 +657,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
       }
       if (
         lastError instanceof StepAbort &&
-        lastError.why === 'budget' &&
+        (lastError.why === 'budget' || now() - budgetStarted >= budgetMs) &&
         kind === 'chat' &&
         config.limits?.chatBudgetBehavior !== 'fail'
       )
@@ -647,6 +683,8 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
         now() - budgetStarted < budgetMs
       )
         continue;
+      if (kind === 'chat' && switchedTo)
+        return summarizeBudget('Zeitgrenze/Eskalation nicht möglich');
       let failureReason = 'model-unavailable';
       if (lastError instanceof LocalModelBusy) failureReason = 'local-model-busy';
       else if (lastError instanceof StepAbort && lastError.why === 'budget')
@@ -760,6 +798,19 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     let warning: string | null = null;
     let deferCalls = await instructionsPending();
     for (const call of outcome.calls) {
+      if (diagnosis && spend.toolCalls >= 10) {
+        results.push({
+          type: 'tool-result',
+          toolCallId: call.id,
+          toolName: call.name,
+          output: {
+            type: 'text',
+            value:
+              'Not executed: diagnostic tool limit reached. Answer the original question with the existing evidence.',
+          },
+        });
+        continue;
+      }
       spend.toolCalls += 1;
       const observedName = toolName(call);
       toolsUsed.add(observedName);

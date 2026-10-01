@@ -579,7 +579,6 @@ async function claimAdmittedRun(agent: RunnerAgent): Promise<RunnerRun | null> {
     threadContext,
     routine,
   };
-  await recordAgentRunStarted({ ...forPrompt, agentId: agent.id, autopilotLevel: autopilot.level });
   // A digest run is text only: its prompt is the whole task and its system prompt says the
   // input is data (updates/digest.ts); nothing about projects, people or the Autopilot.
   const digest = row.trigger === 'digest';
@@ -595,6 +594,37 @@ async function claimAdmittedRun(agent: RunnerAgent): Promise<RunnerRun | null> {
   );
   let { model, thinkingLevel } = configured;
   let fallback = configured.fallback;
+  if (
+    (row.workClass === 'routines' || routine) &&
+    agent.runtime === 'helena' &&
+    configured.fallback &&
+    (agent.model === LOCAL_DEFAULT || parseLocalModelId(agent.model)) &&
+    !parseLocalModelId(model)
+  ) {
+    await db
+      .delete(issueWorkClaim)
+      .where(and(eq(issueWorkClaim.runId, row.id), eq(issueWorkClaim.claim, row.claim)));
+    await db
+      .update(agentRun)
+      .set({
+        attempts: sql`${agentRun.attempts} - 1`,
+        claims: sql`${agentRun.claims} - 1`,
+        claimedAt: null,
+        startedAt: row.interrupted ? sql`${agentRun.startedAt}` : null,
+        resumes: sql`CASE WHEN ${agentRun.sessionId} IS NOT NULL THEN ${agentRun.resumes} - 1 ELSE ${agentRun.resumes} END`,
+        nextAttemptAt: new Date(Date.now() + 30_000),
+        modelCheck: claimedModelCheck(
+          model,
+          thinkingLevel,
+          'local',
+          configured.fallback,
+          row.workClass,
+        ),
+      })
+      .where(and(eq(agentRun.id, row.id), eq(agentRun.claims, row.claim)));
+    return null;
+  }
+
   if (
     (row.model ?? agent.model) === LOCAL_DEFAULT &&
     (await localDefaultClassFallback(row.workClass))
@@ -667,6 +697,7 @@ async function claimAdmittedRun(agent: RunnerAgent): Promise<RunnerRun | null> {
         .where(eq(agentRun.id, row.id));
     }
   }
+  await recordAgentRunStarted({ ...forPrompt, agentId: agent.id, autopilotLevel: autopilot.level });
   return {
     id: row.id,
     trigger: row.trigger,

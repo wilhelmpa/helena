@@ -48,6 +48,15 @@ export const defaultModelFactory: ModelFactory = (server, modelId, env) => {
       ? { headers: { 'x-volition-halogen-priority': env.VOLITION_HALOGEN_PRIORITY ?? 'normal' } }
       : {}),
     includeUsage: true,
+    // Queue admission can exceed Bun's five-minute idle timeout; the loop supplies deadlines.
+    ...(server.local
+      ? {
+          fetch: ((input: Parameters<typeof fetch>[0], init?: RequestInit) =>
+            fetch(input, { ...init, timeout: false } as RequestInit & {
+              timeout: false;
+            })) as typeof fetch,
+        }
+      : {}),
   })(modelId);
 };
 

@@ -649,7 +649,8 @@ describe('native runtime hardening', () => {
       .select()
       .from(agentChatMessage)
       .where(eq(agentChatMessage.id, claimed.id));
-    expect(failed!.status).toBe('failed');
+    expect(failed!.status).toBe('success');
+    expect(failed!.lastError).toBeNull();
     await db.update(aiAgent).set({ projectScope: 'all' }).where(eq(aiAgent.id, target.agent.id));
     await chat.post({ prompt: 'Another Home task' });
     claimed = (await runner['agent-chats'].claim.post()).data!.message!;
@@ -659,8 +660,9 @@ describe('native runtime hardening', () => {
     expect(followup.prompt).toContain('Continue Home work');
   });
 
-  it('reports a missing target without creating a follow-up', async () => {
-    const { api, agent, runner } = await setup();
+  it('keeps an unavailable Codex escalation successful without creating a follow-up', async () => {
+    const { api, agent, runner, target } = await setup();
+    await db.update(aiAgent).set({ pausedAt: new Date() }).where(eq(aiAgent.id, target.agent.id));
     await api
       .projects({ projectKey: 'MEM' })
       ['ai-agents']({ agentId: agent.id })
@@ -668,7 +670,12 @@ describe('native runtime hardening', () => {
     const claimed = (await runner['agent-chats'].claim.post()).data!.message!;
     const report = {
       status: 'success' as const,
-      escalation: { target: 'runtime:claude', reason: 'failure', detail: null, handover: 'Work' },
+      escalation: {
+        target: 'runtime:codex/gpt-6.1-sol',
+        reason: 'failure',
+        detail: null,
+        handover: 'Work',
+      },
     };
     const endpoint = runner['agent-chats']({ messageId: claimed.id });
     expect(
@@ -681,8 +688,10 @@ describe('native runtime hardening', () => {
       .select()
       .from(agentChatMessage)
       .where(eq(agentChatMessage.id, claimed.id));
-    expect(answer!.status).toBe('failed');
-    expect(answer!.content).toContain('Handover failed');
+    expect(answer!.status).toBe('success');
+    expect(answer!.lastError).toBeNull();
+    expect(answer!.content).toContain('Zeitgrenze/Eskalation nicht möglich');
+    expect(answer!.content.match(/Zeitgrenze\/Eskalation nicht möglich/g)).toHaveLength(1);
   });
   it('pages sessions sharing a timestamp and latest memory revisions without omissions', async () => {
     const { agent, owner, project } = await setup();

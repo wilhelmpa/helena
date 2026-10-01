@@ -7,7 +7,7 @@ import { centralEscalation, uncertaintyEscalation, type Escalation } from './esc
 import { resultEvent, runLoop, type LoopResult } from './loop';
 import type { SpendEvent } from './events';
 import { modelChain, resolveModel, type ModelFactory, type ResolvedModel } from './models';
-import { buildSystemPrompt, memorySection } from './prompt';
+import { buildSystemPrompt, isAgentDiagnosis, memorySection } from './prompt';
 import { workspaceState } from './workspace';
 import {
   FileSessionStore,
@@ -194,8 +194,44 @@ export async function runAgent(input: AgentRunInput): Promise<LoopResult> {
       }
     }
 
+    const resolveEscalationModel = (target: string): ResolvedModel | null => {
+      if (/^runtime:(?:codex|claude)$/.test(target)) return null;
+      const model = target.replace(/^runtime:(?:codex|claude)\//, '');
+      const configured = chain.find(
+        (entry) => !entry.local && (entry.modelId === model || entry.id === model),
+      );
+      if (configured) return configured;
+      const candidates: string[] = [];
+      if (model.includes('/')) candidates.push(model);
+      else {
+        const provider = /^claude-/.test(model) ? 'anthropic' : 'openai';
+        for (const server of config.servers) {
+          if (server.local) continue;
+          if (
+            server.provider !== provider &&
+            server.provider !== 'openrouter' &&
+            !server.models?.some((entry) => entry.id === model)
+          )
+            continue;
+          const prefix = server.provider === 'openrouter' ? `${provider}/` : '';
+          candidates.push(`${server.provider}/${prefix}${model}`);
+        }
+      }
+      for (const id of candidates) {
+        try {
+          return resolveModel(id, config.servers, config.reasoning, input.env, input.modelFactory);
+        } catch {
+          continue;
+        }
+      }
+      return null;
+    };
+    const escalationModels = ['gpt-6.1-sol', 'claude-sonnet-5-5']
+      .map(resolveEscalationModel)
+      .filter((model): model is ResolvedModel => model !== null);
+
     // ── tools ──
-    const tools: AgentTool[] = [clarifyTool, sumIntegersTool];
+    let tools: AgentTool[] = [clarifyTool, sumIntegersTool];
     const taken = new Set<string>([
       'clarify',
       'find_tools',
@@ -282,9 +318,25 @@ export async function runAgent(input: AgentRunInput): Promise<LoopResult> {
     }
     tools.push(...renderDisplayName(input.extraTools ?? [], config.displayName));
     const voice = input.env?.VOLITION_VOICE === '1';
+    const diagnosis = config.kind === 'chat' && isAgentDiagnosis(input.prompt);
+    if (diagnosis) tools = tools.filter((entry) => !['run_as_root', 'shell'].includes(entry.name));
     const direct = voice
       ? new Set(LOOP_TOOLS.filter((name) => tools.some((entry) => entry.name === name)))
       : directTools(profile, tools, config.tools?.core);
+    if (diagnosis) {
+      for (const entry of tools)
+        if (
+          [
+            'list_ai_agents',
+            'list_team_ai_agents',
+            'list_ai_agent_runs',
+            'list_agent_runs',
+            'read_one_run_of_agent',
+            'get_mail_triage_overview',
+          ].includes(entry.name)
+        )
+          direct.add(entry.name);
+    }
     if (!voice) {
       for (const hit of searchCatalog(
         tools
@@ -310,6 +362,7 @@ export async function runAgent(input: AgentRunInput): Promise<LoopResult> {
     }
 
     const system = buildSystemPrompt({
+      kind: config.kind,
       instructions: config.instructions,
       contextWarnings: config.contextWarnings,
       contextLimits: config.contextLimits,
@@ -409,19 +462,8 @@ export async function runAgent(input: AgentRunInput): Promise<LoopResult> {
       labels: input.labels,
       models: chain,
       escalationModel,
-      resolveEscalationModel: (target) => {
-        try {
-          return resolveModel(
-            target,
-            config.servers,
-            config.reasoning,
-            input.env,
-            input.modelFactory,
-          );
-        } catch {
-          return null;
-        }
-      },
+      resolveEscalationModel,
+      escalationModels,
       tools,
       direct,
       sessions,

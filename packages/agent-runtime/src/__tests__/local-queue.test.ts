@@ -627,3 +627,55 @@ test('a configured local fallback is still attempted after exhausting the queue 
   expect(result.text).toBe('Fallback');
   expect(fallbackCalls).toBe(1);
 });
+
+test('local model admission outlasts the HTTP idle default while honoring the caller deadline', async () => {
+  const original = globalThis.fetch;
+  const server = Bun.serve({
+    port: 0,
+    hostname: '127.0.0.1',
+    async fetch() {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      return Response.json({
+        id: 'chat',
+        object: 'chat.completion',
+        created: 0,
+        model: 'flash',
+        choices: [
+          { index: 0, message: { role: 'assistant', content: 'Done' }, finish_reason: 'stop' },
+        ],
+        usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+      });
+    },
+  });
+  globalThis.fetch = ((input, init) => {
+    const signal =
+      init && 'timeout' in init && init.timeout === false
+        ? init.signal
+        : AbortSignal.any([AbortSignal.timeout(20), ...(init?.signal ? [init.signal] : [])]);
+    return original(input, { ...init, signal });
+  }) as typeof fetch;
+  try {
+    await expect(fetch(server.url)).rejects.toThrow();
+    const resolved = resolveModel(
+      'local/flash',
+      [{ provider: 'local', kind: 'openai-compatible', local: true, baseUrl: `${server.url}v1` }],
+      null,
+      {},
+    );
+    expect(
+      (await generateText({ model: resolved.model, prompt: 'Synthetic question', maxRetries: 0 }))
+        .text,
+    ).toBe('Done');
+    await expect(
+      generateText({
+        model: resolved.model,
+        prompt: 'Synthetic question',
+        maxRetries: 0,
+        abortSignal: AbortSignal.timeout(20),
+      }),
+    ).rejects.toThrow();
+  } finally {
+    globalThis.fetch = original;
+    await server.stop(true);
+  }
+});
