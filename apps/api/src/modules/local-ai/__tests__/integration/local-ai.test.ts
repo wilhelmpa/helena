@@ -1,6 +1,6 @@
 import { storeCliEval } from '../../../../scripts/local-ai-eval-store';
 import { BUILTIN_TASK_CLASSES } from '../../task-classes';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'bun:test';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'bun:test';
 import { aiAgent, agentRun, agentUsage, db, helenaLocalAiEval, helenaModelServer } from '@repo/db';
 import { eq, sql } from 'drizzle-orm';
 import { apiKeyApi, authedApi } from '#tests/helpers/app';
@@ -590,7 +590,26 @@ describe('local AI', () => {
 // that names its kind (agent_run.work_class) starts on the class's local model while the class
 // runs locally and its server answers, and on its own model otherwise, with the reason shown.
 describe('local AI takes kinds of work', () => {
-  beforeEach(resetDb);
+  let originalFetch: typeof fetch;
+  beforeEach(async () => {
+    await resetDb();
+    originalFetch = globalThis.fetch;
+    // Scheduling fixtures must not depend on the live GPU's current load.
+    globalThis.fetch = ((input, init) =>
+      String(input) === 'http://127.0.0.1:8741/priority/status'
+        ? Promise.resolve(
+            Response.json({
+              healthy: true,
+              active: { interactive: 0, realtime: 0, normal: 0, background: 0 },
+              queued: { interactive: 0, realtime: 0, normal: 0, background: 0 },
+              config: { maxConcurrent: 4, reservedInteractive: 1, maxBackground: 2, maxNormal: 3 },
+            }),
+          )
+        : originalFetch(input, init)) as typeof fetch;
+  });
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
 
   const LOCAL = 'helena-local/Qwen3.6-35B-A3B-GGUF';
 
