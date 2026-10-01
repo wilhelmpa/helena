@@ -10,6 +10,7 @@ import {
   EMPTY_PENDING,
   agentGroup,
   buildPatch,
+  chooseProfile,
   clearAgentColumn,
   clearSchemaCell,
   discardSchema,
@@ -233,5 +234,51 @@ describe('Vorgemerkte Änderungen an den Rollen eines eigenen Schemas', () => {
     const patch = buildPatch(two, pending);
     assert.equal(patch.schema, undefined);
     assert.deepEqual(patch.schemas?.map((entry) => entry.id).sort(), ['eigenes', 'zweites']);
+  });
+});
+
+describe('Lokales Profil wählen', () => {
+  const paired = (): ModelMatrix => {
+    const base = matrix([]);
+    return {
+      ...base,
+      schemas: {
+        ...base.schemas,
+        'nur-lokal-27b': schema('nur-lokal-27b', 'local-27b-npu'),
+      },
+      profiles: [
+        { ...profile('local-halogen'), schema: 'nur-lokal' },
+        { ...profile('local-27b-npu'), schema: 'nur-lokal-27b' },
+      ],
+    };
+  };
+
+  test('bei einem lokalen Schema wählt das andere Profil das Schema dieses Profils', () => {
+    const chosen = chooseProfile(paired(), EMPTY_PENDING, 'local-27b-npu');
+    assert.equal(chosen.active, 'nur-lokal-27b');
+    assert.equal(chosen.profile, undefined);
+    // The schema is the change; the profile is not written onto the Flash schema.
+    const patch = buildPatch(paired(), chosen);
+    assert.equal(patch.active, 'nur-lokal-27b');
+    assert.equal(patch.schema, undefined);
+    // Choosing the Flash profile again takes the choice back.
+    assert.equal(chooseProfile(paired(), chosen, 'local-halogen').active, undefined);
+  });
+
+  test('ein gemischtes Schema nimmt das Profil für seine Klassen, wie bisher', () => {
+    const base = paired();
+    const mixed = chooseProfile({ ...base, active: 'gemischt' }, EMPTY_PENDING, 'local-27b-npu');
+    assert.equal(mixed.active, undefined);
+    assert.equal(mixed.profile, 'local-27b-npu');
+    assert.equal(
+      chooseProfile({ ...base, active: 'gemischt' }, mixed, 'local-halogen').profile,
+      undefined,
+    );
+  });
+
+  test('ohne Zuordnung im Server-Stand bleibt es beim Profil des Schemas', () => {
+    const chosen = chooseProfile(matrix([]), EMPTY_PENDING, 'local-27b-npu');
+    assert.equal(chosen.active, undefined);
+    assert.equal(chosen.profile, 'local-27b-npu');
   });
 });

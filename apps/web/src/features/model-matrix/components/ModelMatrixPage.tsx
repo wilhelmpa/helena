@@ -41,13 +41,13 @@ import { useMatrixLabels } from '../utils/labels';
 import {
   EMPTY_PENDING,
   buildPatch,
+  chooseProfile,
   clearAgentColumn,
   isEmpty,
   pendingAgentCount,
   pendingCount,
   setAgentRole,
   setAgentValue,
-  targetSchemaId,
   type Pending,
 } from '../utils/pending';
 import { AgentMatrix, effectiveCell, modelForRuntime } from './AgentMatrix';
@@ -195,11 +195,7 @@ export default function ModelMatrixPage({ teamId }: { teamId: number }) {
         active: id === matrix.active || id === current.active ? undefined : id,
         profile: undefined,
       })),
-    onProfile: (id: string) =>
-      setPending((current) => {
-        const target = matrix.schemas[targetSchemaId(matrix, current)];
-        return { ...current, profile: target?.profile === id ? undefined : id };
-      }),
+    onProfile: (id: string) => setPending((current) => chooseProfile(matrix, current, id)),
     onProjectSchema: (schemaId: string | null) => {
       if (!project) return;
       setPending((current) => {

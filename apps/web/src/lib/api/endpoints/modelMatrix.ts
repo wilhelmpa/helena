@@ -96,6 +96,8 @@ export interface MatrixProfile {
   id: string;
   name: string;
   npu: boolean;
+  // The built-in local schema that belongs to the profile.
+  schema?: string;
   classes: MatrixSchema['classes'];
   npuSlots: number;
   gpuSlots: number;

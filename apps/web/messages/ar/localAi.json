@@ -629,11 +629,12 @@
       "profileLocked": "لا يمكن تغيير الملف التعريفي المحلي لمخطط مضمَّن. انسخ المخطط لاختيار ملف تعريفي آخر."
     },
     "profiles": {
-      "local-halogen": "GPU فقط مع Flash، وNPU متوقفة",
-      "local-27b-npu": "GPU مع Qwen3.8-27B، وNPU للمهام الصغيرة"
+      "local-halogen": "GPU فقط مع Flash، وNPU متوقفة. مخططه هو «Nur lokal – Flash».",
+      "local-27b-npu": "GPU مع Qwen3.8-27B، وNPU للمهام الصغيرة. مخططه هو «Nur lokal – 27B + NPU»."
     },
     "schemas": {
       "nur-lokal": "يعمل كل الوكلاء محليًا؛ ويتولى Codex عند الإخفاق أو التعثر أو عند الطلب.",
+      "nur-lokal-27b": "يعمل كل الوكلاء محليًا على Qwen3.8-27B، وتتولى NPU المهام الخلفية الصغيرة؛ ويتولى Codex عند الإخفاق أو التعثر أو عند الطلب.",
       "gemischt": "العمل الروتيني محليًا، وCodex للبرمجة، وClaude للتخطيط والنصوص.",
       "nur-codex": "يعمل كل الوكلاء على Codex.",
       "nur-claude": "يعمل كل الوكلاء على Claude."

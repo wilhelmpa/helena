@@ -148,3 +148,7 @@ export const patchBody = t.Object({
   removeSchema: t.Optional(schemaParams.properties.schemaId),
   undo: t.Optional(t.Boolean()),
 });
+export const followProfileBody = t.Object({
+  profile: oneOf(['local-halogen', 'local-27b-npu'] as const),
+  dryRun: t.Optional(t.Boolean()),
+});

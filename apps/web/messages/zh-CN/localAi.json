@@ -629,11 +629,12 @@
       "profileLocked": "内置方案的本地配置无法更改。复制该方案即可选择其他配置。"
     },
     "profiles": {
-      "local-halogen": "仅 GPU 运行 Flash，NPU 关闭",
-      "local-27b-npu": "GPU 运行 Qwen3.8-27B，NPU 处理小任务"
+      "local-halogen": "仅 GPU 运行 Flash，NPU 关闭。对应方案为“Nur lokal – Flash”。",
+      "local-27b-npu": "GPU 运行 Qwen3.8-27B，NPU 处理小任务。对应方案为“Nur lokal – 27B + NPU”。"
     },
     "schemas": {
       "nur-lokal": "所有智能体在本地运行；失败、卡住或按请求时由 Codex 接手。",
+      "nur-lokal-27b": "所有智能体在本地用 Qwen3.8-27B 运行，NPU 处理小型后台任务；失败、卡住或按请求时由 Codex 接手。",
       "gemischt": "日常工作在本地，编程用 Codex，规划和文本用 Claude。",
       "nur-codex": "所有智能体都在 Codex 上运行。",
       "nur-claude": "所有智能体都在 Claude 上运行。"

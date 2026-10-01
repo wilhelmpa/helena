@@ -629,11 +629,12 @@
       "profileLocked": "Le profil local d’un schéma fourni ne peut pas être modifié. Copiez le schéma pour choisir un autre profil."
     },
     "profiles": {
-      "local-halogen": "GPU seul avec Flash, NPU désactivé",
-      "local-27b-npu": "GPU avec Qwen3.8-27B, NPU pour les petites tâches"
+      "local-halogen": "GPU seul avec Flash, NPU désactivé. Son schéma est « Nur lokal – Flash ».",
+      "local-27b-npu": "GPU avec Qwen3.8-27B, NPU pour les petites tâches. Son schéma est « Nur lokal – 27B + NPU »."
     },
     "schemas": {
       "nur-lokal": "Tous les agents tournent en local ; Codex prend le relais en cas d’échec, de blocage ou sur demande.",
+      "nur-lokal-27b": "Tous les agents tournent en local sur Qwen3.8-27B, le NPU prend les petites tâches de fond ; Codex prend le relais en cas d’échec, de blocage ou sur demande.",
       "gemischt": "Travail courant en local, Codex pour la programmation, Claude pour la planification et les textes.",
       "nur-codex": "Tous les agents tournent sur Codex.",
       "nur-claude": "Tous les agents tournent sur Claude."

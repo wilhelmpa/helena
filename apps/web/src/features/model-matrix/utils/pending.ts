@@ -111,6 +111,23 @@ export function targetSchemaId(matrix: ModelMatrix, pending: Pending): string {
   return pending.active ?? matrix.active;
 }
 
+// Choosing a local profile. A built-in local schema belongs to its profile (the schema says
+// which), so choosing the other profile stages the schema of that profile; choosing the profile
+// the schema of the other one would be switched to takes that back. A mixed, cloud or own
+// schema takes the profile for its classes, slots and speech recognition as before.
+export function chooseProfile(matrix: ModelMatrix, pending: Pending, profileId: string): Pending {
+  const targetId = targetSchemaId(matrix, pending);
+  const paired = matrix.profiles.find((entry) => entry.id === profileId)?.schema;
+  if (paired && matrix.profiles.some((entry) => entry.schema === targetId))
+    return {
+      ...pending,
+      active: paired === matrix.active ? undefined : paired,
+      profile: undefined,
+    };
+  const target = matrix.schemas[targetId];
+  return { ...pending, profile: target?.profile === profileId ? undefined : profileId };
+}
+
 // The values a new role of a schema starts from: the schema's own general role, else the
 // general role of the local schema (what the server does for a role it is asked to add).
 export function roleBase(matrix: ModelMatrix, schemaId: string): MatrixValues | undefined {

@@ -629,11 +629,12 @@
       "profileLocked": "The local profile of a built-in schema cannot be changed. Copy the schema to choose another profile."
     },
     "profiles": {
-      "local-halogen": "GPU only with Flash, NPU off",
-      "local-27b-npu": "GPU with Qwen3.8-27B, NPU for small tasks"
+      "local-halogen": "GPU only with Flash, NPU off. Its schema is “Nur lokal – Flash”.",
+      "local-27b-npu": "GPU with Qwen3.8-27B, NPU for small tasks. Its schema is “Nur lokal – 27B + NPU”."
     },
     "schemas": {
       "nur-lokal": "All agents run locally; Codex takes over on failures, when stuck or on request.",
+      "nur-lokal-27b": "All agents run locally on Qwen3.8-27B, the NPU takes small background tasks; Codex takes over on failures, when stuck or on request.",
       "gemischt": "Routine work local, Codex for coding, Claude for planning and texts.",
       "nur-codex": "All agents run on Codex.",
       "nur-claude": "All agents run on Claude."
