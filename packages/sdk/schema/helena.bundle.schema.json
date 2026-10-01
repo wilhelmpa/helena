@@ -275,7 +275,7 @@
               },
               "period": {
                 "type": "string",
-                "enum": ["day", "month"]
+                "enum": ["day", "week", "month"]
               },
               "limit": {
                 "type": "number",
@@ -364,7 +364,7 @@
                     },
                     "period": {
                       "type": "string",
-                      "enum": ["day", "month"]
+                      "enum": ["day", "week", "month"]
                     },
                     "limit": {
                       "type": "number",

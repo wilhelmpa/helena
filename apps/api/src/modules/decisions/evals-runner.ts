@@ -2,7 +2,7 @@ import { runDecisionEval, type EvalReport } from '@helena/decisions';
 import { db, helenaDecisionEval } from '@repo/db';
 import { and, desc, eq, isNull, lt } from 'drizzle-orm';
 import { HttpError, iso } from '#shared/lib';
-import { loadConnection } from '#modules/browser-task/connection';
+import { loadConnection, type DecisionConnection } from '#modules/browser-task/connection';
 import { costOfUsage } from '#modules/model-prices/service';
 import { decisionClass } from './classes';
 import { askConnection, classSetting, effectiveThreshold } from './service';
@@ -14,11 +14,20 @@ import { jevDecisionPolicy } from './jev-policy';
 // can be switched on only with a passing eval on the chosen connection.
 
 // A question of an eval may take longer than a live decision (a cold model, the CPU).
-const EVAL_TIMEOUT_MS = 60_000;
+const EVAL_TIMEOUT_MS = 120_000;
 // An eval that has not finished after this long was cut off (a restart).
 const STALE_MS = 45 * 60_000;
 
 const running = new Map<number, AbortController>();
+
+// Evals may wait behind interactive work; the realtime admission deadline is for live decisions.
+export function evaluationConnection(connection: DecisionConnection): DecisionConnection {
+  return {
+    ...connection,
+    priority: 'background',
+    mailBudget: { queueMs: 60_000, generationMs: 60_000 },
+  };
+}
 
 export interface EvalView {
   id: number;
@@ -207,7 +216,7 @@ export async function startEval(
         threshold,
         async (context, questions) => {
           const result = await askConnection(
-            connection,
+            evaluationConnection(connection),
             context,
             questions,
             EVAL_TIMEOUT_MS,

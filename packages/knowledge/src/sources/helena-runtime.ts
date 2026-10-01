@@ -19,7 +19,7 @@ import { cursorId, iso, nextCursor, numericIds, pageLimit, routes } from './comm
 // the reader's reach) finds it:
 //
 //   agent-session  a session of the loop, its messages as text, read like the agent's runs
-//                  (the project's ai_agents permission; Home's by the team's)
+//                  (chat sessions private to the agent; tasks by project or team)
 //   agent-memory   the newest version of each memory file and daily note, private to the
 //                  agent (its own recall; the owner reads it in the memory editor)
 //   fact           a fact of the fact store: every member of its project, the team's by the
@@ -52,6 +52,7 @@ async function sessionRows(
       updatedAt: helenaAgentSession.updatedAt,
       key: project.key,
       agentName: user.name,
+      agentUserId: aiAgent.userId,
     })
     .from(helenaAgentSession)
     .innerJoin(aiAgent, eq(aiAgent.id, helenaAgentSession.agentId))
@@ -79,6 +80,19 @@ async function sessionRows(
 
 type SessionRow = Awaited<ReturnType<typeof sessionRows>>[number];
 
+export function agentSessionScope(
+  row: Pick<SessionRow, 'teamId' | 'projectId' | 'kind' | 'chatThreadId' | 'agentUserId'>,
+): KnowledgeItem['scope'] {
+  const privateSession = row.kind !== 'run' || row.chatThreadId !== null;
+  return {
+    teamId: row.teamId,
+    projectId: row.projectId,
+    visibility: privateSession ? 'private' : row.projectId === null ? 'team' : 'project',
+    ...(privateSession ? { ownerId: row.agentUserId } : {}),
+    permission: 'ai_agents',
+  };
+}
+
 async function sessionItem(row: SessionRow): Promise<KnowledgeItem> {
   const items = await db
     .select({ role: helenaAgentSessionItem.role, text: helenaAgentSessionItem.text })
@@ -103,12 +117,7 @@ async function sessionItem(row: SessionRow): Promise<KnowledgeItem> {
           ? routes.activity(row.key, row.agentId)
           : '/activity',
     mimeType: 'text/markdown',
-    scope: {
-      teamId: row.teamId,
-      projectId: row.projectId,
-      visibility: row.projectId === null ? 'team' : 'project',
-      permission: 'ai_agents',
-    },
+    scope: agentSessionScope(row),
     provenance: {
       createdAt: iso(row.createdAt),
       updatedAt: iso(row.updatedAt),

@@ -266,6 +266,40 @@ describe('the Claude Code and Codex adapter', () => {
     expect(JSON.stringify(statuses)).not.toContain('shop-secret');
   });
 
+  for (const target of ['claude', 'codex'] as const) {
+    it(`carries approved canonical memory into ${target} with context limits`, async () => {
+      const policy: RuntimePolicySnapshot = {
+        ...snapshot('memory', []),
+        contextLimits: { memory: 40, user: 12 },
+        memoryWrites: {
+          approval: true,
+          baseline: [
+            {
+              file: 'MEMORY.md',
+              sha256: 'approved',
+              content: 'Test pearl is copper. ' + 'x'.repeat(100),
+            },
+            { file: 'USER.md', sha256: 'approved-user', content: 'Use German. ' + 'y'.repeat(100) },
+          ],
+        },
+      };
+      const { runtime } = await adapter(target, [policy]);
+      const settings = await runtime.runSettings();
+      expect(settings.instructions).toContain(soul);
+      expect(settings.instructions).toContain('Test pearl is copper.');
+      expect(settings.instructions).toContain('Use German.');
+      expect(settings.instructions).not.toContain('x'.repeat(41));
+      expect(settings.instructions).not.toContain('y'.repeat(13));
+
+      const disabled = await adapter(target, [
+        { ...policy, learning: { enabled: false, curator: false } },
+      ]);
+      const off = await disabled.runtime.runSettings();
+      expect(off.instructions).not.toContain('Test pearl');
+      expect(off.instructions).not.toContain('Use German.');
+    });
+  }
+
   it('removes a skill Helena no longer gives the agent', async () => {
     const { runtime, config } = await adapter('claude', [
       snapshot('sha256:one', [skill]),

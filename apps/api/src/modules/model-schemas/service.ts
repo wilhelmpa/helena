@@ -49,7 +49,9 @@ export const UNDO_DEPTH = 10;
 type Change = {
   agentId: number;
   role?: string;
-  values: Partial<Record<ModelColumn, ModelValues[ModelColumn] | null>>;
+  values: Partial<
+    Record<ModelColumn | 'toolProfile', ModelValues[ModelColumn | 'toolProfile'] | null>
+  >;
 };
 export type MatrixPatch = {
   expectedRevision: number;
@@ -629,7 +631,7 @@ export function changedRows(
       values.toolProfile ??= profile;
     if (change.role !== undefined) values.role = change.role;
     for (const [key, value] of Object.entries(change.values)) {
-      if (!MODEL_COLUMNS.includes(key as ModelColumn))
+      if (key !== 'toolProfile' && !MODEL_COLUMNS.includes(key as ModelColumn))
         throw new HttpError(400, `Unknown column ${key}`);
       if (value === null) delete values[key];
       else {

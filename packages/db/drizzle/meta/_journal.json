@@ -1618,6 +1618,13 @@
       "when": 1790779197780,
       "tag": "0231_volition_chat_attention",
       "breakpoints": true
+    },
+    {
+      "idx": 232,
+      "version": "7",
+      "when": 1790887194932,
+      "tag": "0232_volition_private_session_index",
+      "breakpoints": true
     }
   ]
 }
