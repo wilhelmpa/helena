@@ -25,6 +25,7 @@ export interface ManagedPreview {
 }
 
 export interface ResolveResult {
+  displayName?: string;
   agentId: number;
   agentName: string;
   teamId: number;

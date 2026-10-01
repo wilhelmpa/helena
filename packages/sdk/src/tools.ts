@@ -15,6 +15,7 @@ import type { AgentRef, Logger, ProjectRef } from './common';
 // code at all: a plugin names the server in its manifest (`mcpServers`).
 
 export interface ToolCallContext {
+  displayName?: string;
   // Who calls: the agent the call runs for, and the project it acts in.
   agent: AgentRef | null;
   project: ProjectRef | null;

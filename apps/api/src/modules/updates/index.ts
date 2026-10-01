@@ -42,7 +42,7 @@ export const updateCenterRoutes = new Elysia({
       detail: {
         summary: 'Read the update center',
         description:
-          'Every component Helena runs on with its installed and newest version, whether the ' +
+          'Every component {appName} runs on with its installed and newest version, whether the ' +
           'update fixes a vulnerability, the summary of what it changes with its risk, the ' +
           'updates started and how they went, the settings and the scheduled check.',
       },

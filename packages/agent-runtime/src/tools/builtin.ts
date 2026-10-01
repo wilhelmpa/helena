@@ -243,11 +243,12 @@ export function memoryTool(
   api: HelenaApi,
   sessionId?: () => string | undefined,
   initial?: MemoryState | null,
+  displayName = 'Ava',
 ): AgentTool {
   let cached = initial;
   return {
     name: 'memory',
-    description: `Your long-term memory in Helena. Relevant excerpts are already in the prompt; read only for missing details, not every round. action "read" searches MEMORY.md, USER.md and recent daily notes with query; "note" adds a durable fact; "propose" replaces MEMORY.md or USER.md (the owner may review it). ${MEMORY_RULE}`,
+    description: `Your long-term memory in ${displayName}. Relevant excerpts are already in the prompt; read only for missing details, not every round. action "read" searches MEMORY.md, USER.md and recent daily notes with query; "note" adds a durable fact; "propose" replaces MEMORY.md or USER.md (the owner may review it). ${MEMORY_RULE}`,
     inputSchema: {
       type: 'object',
       properties: {

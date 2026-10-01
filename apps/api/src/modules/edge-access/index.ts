@@ -114,7 +114,7 @@ export const securityRoutes = new Elysia({ name: 'security', detail: { tags: ['G
       detail: {
         summary: 'List the password-less sign-ins',
         description:
-          'The newest sign-ins Helena opened without a password: through the Cloudflare ' +
+          'The newest sign-ins {appName} opened without a password: through the Cloudflare ' +
           'sign-in (`edge`) and the LAN owner sign-in (`local_owner`), refused ones included, ' +
           'with the identity, the client address and the browser.',
       },

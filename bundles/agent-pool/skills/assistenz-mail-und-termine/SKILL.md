@@ -1,6 +1,6 @@
 ---
 name: assistenz-mail-und-termine
-description: Persönliche Assistenz in Helena – deutsche Mail-Entwürfe (nie selbst senden), Termine vorschlagen und vorbereiten, Erledigungen als Aufgaben verfolgen. Nutze ihn für jede Mail, jeden Termin, jede Erinnerung und jede private oder familiäre Organisationsaufgabe.
+description: Persönliche Assistenz in {appName} – deutsche Mail-Entwürfe (nie selbst senden), Termine vorschlagen und vorbereiten, Erledigungen als Aufgaben verfolgen. Nutze ihn für jede Mail, jeden Termin, jede Erinnerung und jede private oder familiäre Organisationsaufgabe.
 ---
 
 # Assistenz: Mail, Termine, Erledigungen
@@ -28,7 +28,7 @@ Wichtiges zuerst: Fristen, Behörden, Schule/Ärzte, Geld.
 1. Thread lesen (`search_mail`, `read_mail`), Vorgeschichte und Wissen prüfen (`search_knowledge` im Projekt, z. B. `Projects/PRIV`).
 2. Ziel der Antwort in einem Satz festhalten (zusagen, absagen, nachfragen, Termin vorschlagen, Unterlagen anfordern).
 3. Entwurf schreiben – Regeln in `refs/mail-stil.md` (Anrede, Du/Sie, Aufbau, Betreff, Schluss).
-4. Als Entwurf ablegen: `draft_reply`. Das Zitat fügt Helena selbst an.
+4. Als Entwurf ablegen: `draft_reply`. Das Zitat fügt {appName} selbst an.
 5. Senden **nur** über `request_mail_send` und nur, wenn die Aufgabe das ausdrücklich verlangt; dann den Lauf beenden. Sonst liegt der Entwurf für den Owner bereit.
 6. In der Aufgabe kurz berichten: an wen, Kernaussage, was offen ist, Link/Name des Entwurfs.
 
@@ -39,7 +39,7 @@ Neue Mail ohne vorhandenen Thread: Text als Kommentar in der Aufgabe (Empfänger
 - Prüfe Konflikte mit dem, was du kennst (Aufgaben mit Fälligkeit, Notizen, Mails). Kennst du den Kalender nicht, sag das offen.
 - Vorbereitung eines Termins als Notiz (`write_note` unter `Projects/<KEY>/Docs/…`): Anlass, Teilnehmer, offene Punkte, benötigte Unterlagen, Anfahrt/Link.
 - Fristen und Wiedervorlagen als Aufgabe mit Fälligkeitsdatum (`create_issue` mit `dueDate`), nicht als lose Erinnerung.
-- **Protokoll** nach einem Termin (aus Notizen oder Mitschrift des Owners): Anlass, Datum, Teilnehmer; **Entscheidungen** (was gilt jetzt); **Aufgaben** mit Verantwortlichem und Frist (eigene als Helena-Aufgaben anlegen); **offene Fragen**. Getrennt halten, was entschieden und was nur besprochen wurde.
+- **Protokoll** nach einem Termin (aus Notizen oder Mitschrift des Owners): Anlass, Datum, Teilnehmer; **Entscheidungen** (was gilt jetzt); **Aufgaben** mit Verantwortlichem und Frist (eigene als {appName}-Aufgaben anlegen); **offene Fragen**. Getrennt halten, was entschieden und was nur besprochen wurde.
 
 ## Erledigungen
 - Jede Erledigung ist eine Aufgabe mit klarem Ergebnis („Reisepass verlängert", nicht „Pass"). Schritte als Checkliste.

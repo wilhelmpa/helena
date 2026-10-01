@@ -193,12 +193,12 @@ async function accountIdOf(client: AlpacaPaperClient): Promise<string> {
   return account.id;
 }
 
-function refusedOrder(check: CheckResult) {
+function refusedOrder(check: CheckResult, displayName = 'Ava') {
   return {
     content: [
       {
         type: 'text' as const,
-        text: `Refused by Helena's paper limits, nothing was sent:\n- ${check.violations.join('\n- ')}`,
+        text: `Refused by ${displayName}'s paper limits, nothing was sent:\n- ${check.violations.join('\n- ')}`,
       },
     ],
     structuredContent: { refused: true, checks: check },
@@ -562,7 +562,7 @@ export function alpacaPaperTools(deps: PaperToolDeps = {}): AgentTool<unknown>[]
       name: 'alpaca_paper_orders',
       title: 'Paper orders',
       description:
-        "Orders of the Alpaca PAPER account, newest first. Helena's orders have a clientOrderId " +
+        "Orders of the Alpaca PAPER account, newest first. {appName}'s orders have a clientOrderId " +
         '"helena-<strategy>-v<version>-<time>", which links each to its strategy version.',
       inputSchema: z.object({
         status: z.enum(['open', 'closed', 'all']).default('open'),
@@ -765,7 +765,7 @@ export function alpacaPaperTools(deps: PaperToolDeps = {}): AgentTool<unknown>[]
       name: 'alpaca_paper_check_order',
       title: 'Check a paper order',
       description:
-        "Run Helena's hard checks for an order without placing it: the owner's limits (order " +
+        "Run {appName}'s hard checks for an order without placing it: the owner's limits (order " +
         'value, position value, risk to the stop, daily loss limit, open positions, orders per ' +
         'day), long only, a stop for every entry. Answers ok and the violations.',
       inputSchema: checkSchema,
@@ -779,8 +779,8 @@ export function alpacaPaperTools(deps: PaperToolDeps = {}): AgentTool<unknown>[]
       name: 'alpaca_paper_submit_order',
       title: 'Place a paper order',
       description:
-        'Place an order in the Alpaca PAPER account (simulated money only; Helena has no ' +
-        "live trading). Helena checks the owner's hard limits first and refuses the order " +
+        'Place an order in the Alpaca PAPER account (simulated money only; {appName} has no ' +
+        "live trading). {appName} checks the owner's hard limits first and refuses the order " +
         'with the reasons when one is not met. Only for a strategy version the owner approved ' +
         'for paper trading via trading_request_strategy_approval. Keep requestId and arguments unchanged after an uncertain response. Crypto entries are disabled. File the returned journal entry right away.',
       inputSchema: submitSchema,
@@ -824,11 +824,14 @@ export function alpacaPaperTools(deps: PaperToolDeps = {}): AgentTool<unknown>[]
             strategyVersion: request.strategyVersion,
           });
           if (!check.ok || !precheck.allowed)
-            return refusedOrder({
-              ...check,
-              ok: false,
-              violations: [...check.violations, ...(!precheck.allowed ? [precheck.reason] : [])],
-            });
+            return refusedOrder(
+              {
+                ...check,
+                ok: false,
+                violations: [...check.violations, ...(!precheck.allowed ? [precheck.reason] : [])],
+              },
+              ctx.displayName,
+            );
           const freshOpen = await reconciledOpenOrders(client, execution, accountId);
           const freshCheck = await runChecks(
             client,
@@ -837,7 +840,7 @@ export function alpacaPaperTools(deps: PaperToolDeps = {}): AgentTool<unknown>[]
             now(),
             freshOpen,
           );
-          if (!freshCheck.ok) return refusedOrder(freshCheck);
+          if (!freshCheck.ok) return refusedOrder(freshCheck, ctx.displayName);
           if (
             freshOpen.some(
               (order) =>
@@ -846,17 +849,23 @@ export function alpacaPaperTools(deps: PaperToolDeps = {}): AgentTool<unknown>[]
                 order.side === request.side,
             )
           )
-            return refusedOrder({
-              ...freshCheck,
-              ok: false,
-              violations: ['A conflicting paper order appeared during the precheck.'],
-            });
+            return refusedOrder(
+              {
+                ...freshCheck,
+                ok: false,
+                violations: ['A conflicting paper order appeared during the precheck.'],
+              },
+              ctx.displayName,
+            );
           if (freshCheck.assetClass === 'us_equity' && !(await client.clock()).is_open)
-            return refusedOrder({
-              ...freshCheck,
-              ok: false,
-              violations: ['The stock market closed during the precheck.'],
-            });
+            return refusedOrder(
+              {
+                ...freshCheck,
+                ok: false,
+                violations: ['The stock market closed during the precheck.'],
+              },
+              ctx.displayName,
+            );
           await execution.authorizeStrategy(ctx, accountId, request);
           await execution.beginIntent(ctx, intent);
           const order = await client.submit(alpacaOrder(request, freshCheck, intent.clientOrderId));
@@ -1020,11 +1029,14 @@ export function alpacaPaperTools(deps: PaperToolDeps = {}): AgentTool<unknown>[]
             newsContext: request.newsContext,
           });
           if (!check.ok || !precheck.allowed)
-            return refusedOrder({
-              ...check,
-              ok: false,
-              violations: [...check.violations, ...(!precheck.allowed ? [precheck.reason] : [])],
-            });
+            return refusedOrder(
+              {
+                ...check,
+                ok: false,
+                violations: [...check.violations, ...(!precheck.allowed ? [precheck.reason] : [])],
+              },
+              ctx.displayName,
+            );
           if (check.assetClass === 'us_equity' && !(await client.clock()).is_open)
             throw new Error('The stock market is closed; the protective stop was left unchanged.');
           const stop = exits.find((order) => order.type === 'stop' || order.type === 'stop_limit');

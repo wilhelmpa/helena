@@ -5,7 +5,7 @@ description: Betrieb von Diensten mit strikter Änderungskontrolle – Diagnose 
 
 # Betrieb und Incidents
 
-**Lesen ist frei, Ändern braucht Freigabe.** Alles, was ein laufendes System verändert – Deploy, Neustart, Konfiguration, Migration, Paketinstallation, Firewall, DNS, Zertifikate, Datenbank-Schreibzugriff, Löschen – geht erst nach `request_approval` (kind `other`, bei Löschen `delete`, bei Veröffentlichung `publish`). Danach Lauf beenden; Helena startet dich mit der Entscheidung neu.
+**Lesen ist frei, Ändern braucht Freigabe.** Alles, was ein laufendes System verändert – Deploy, Neustart, Konfiguration, Migration, Paketinstallation, Firewall, DNS, Zertifikate, Datenbank-Schreibzugriff, Löschen – geht erst nach `request_approval` (kind `other`, bei Löschen `delete`, bei Veröffentlichung `publish`). Danach Lauf beenden; {appName} startet dich mit der Entscheidung neu.
 
 ## Nie
 - Secrets lesen oder ausgeben (Env-Dateien, `/etc/<dienst>/`, `auth.json`, Schlüssel, Tokens, Zugangsdaten-Speicher). Brauchst du einen Wert, frag nach dem Ergebnis, nicht nach dem Secret.

@@ -105,7 +105,7 @@ function tool<S extends TSchema>(spec: GoogleToolSpec<S>): GoogleTool {
     async handler(input, ctx) {
       const typed = input as Static<S>;
       if (ctx.engine === 'helena') {
-        if (!ctx.auth) throw new Error('The account is not signed in to Ava.');
+        if (!ctx.auth) throw new Error('The account is not signed in.');
         return bounded(await spec.helena(typed, ctx.auth, ctx));
       }
       if (!spec.gog || !ctx.gog) {
@@ -287,7 +287,7 @@ const MAIL_TOOLS = [
     service: 'mail',
     category: 'send',
     description:
-      'Send a mail from the Gmail account. Sending reaches people outside Ava, so it usually waits for the owner’s approval; the answer says so and gives the action id.',
+      'Send a mail from the Gmail account. Sending reaches people outside {appName}, so it usually waits for the owner’s approval; the answer says so and gives the action id.',
     input: mailSend,
     summarize: (input) => `Send mail to ${input.to.join(', ')}: ${input.subject}`,
     async helena(input, auth) {
@@ -378,7 +378,8 @@ const eventFields = {
   attendees: T.Optional(
     T.Array(T.String({ format: 'email' }), {
       maxItems: 50,
-      description: 'Guests. Google sends them an invitation, which reaches people outside Ava.',
+      description:
+        'Guests. Google sends them an invitation, which reaches people outside {appName}.',
     }),
   ),
 };
@@ -752,7 +753,7 @@ const DRIVE_TOOLS = [
     service: 'drive',
     category: 'publish',
     description:
-      'Share a Drive file with a person (reader, commenter or writer). The person gets access outside Ava, so this needs approval.',
+      'Share a Drive file with a person (reader, commenter or writer). The person gets access outside {appName}, so this needs approval.',
     input: T.Object({
       fileId: T.String({ maxLength: 300 }),
       email: T.String({ format: 'email' }),

@@ -54,7 +54,7 @@ export const controlPlaneWorkflowRoutes = new Elysia({
       detail: {
         summary: 'List the built-in workflows of a project',
         description:
-          'The workflows Helena builds in (the agent team), each with its steps and whether ' +
+          'The workflows {appName} builds in (the agent team), each with its steps and whether ' +
           'and how the project uses it.',
       },
     },

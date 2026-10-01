@@ -85,7 +85,7 @@ export const runtimePolicy = t.Object({
       ],
       {
         description:
-          "Which runtime runs the agent. Unset is Hermes. Helena is Helena's own agent loop " +
+          "Which runtime runs the agent. Unset is Hermes. {appName} is {appName}'s own agent loop " +
           '(local and API-key models), available while HELENA_NATIVE_RUNTIME is on. Unset is Hermes. The server provisions a runtime for ' +
           'an agent of one project whichever it is. Command runs a workspace script; Webhook ' +
           'posts a signed request to an external service. Claude Code and Codex also receive ' +
@@ -139,7 +139,7 @@ export const runtimePolicy = t.Object({
         browserBudgetSeconds: t.Optional(t.Integer({ minimum: 30, maximum: 3600 })),
         localModelQueueSeconds: t.Optional(t.Integer({ minimum: 0, maximum: 86_400 })),
       },
-      { description: "Settings of Helena's own loop (runtime helena)." },
+      { description: "Settings of {appName}'s own loop (runtime helena)." },
     ),
   ),
   commandScript: t.Optional(
@@ -290,7 +290,7 @@ export const runtimeInventory = t.Object({
         {
           description:
             "'bundled' ships with Hermes, 'hub' was installed from the Skills Hub, 'plan' is " +
-            "one of Helena's skills, 'agent' was created by the agent.",
+            "one of {appName}'s skills, 'agent' was created by the agent.",
         },
       ),
       path: t.Optional(
@@ -333,7 +333,7 @@ export const runtimeState = t.Object({
   conflicts: t.Array(runtimeConflict),
   restored: t.Array(t.String(), {
     description:
-      'What the runtime put back after it was changed or removed outside Helena: managed ' +
+      'What the runtime put back after it was changed or removed outside {appName}: managed ' +
       'files and plugin links, by their path in the runtime.',
   }),
   inventory: t.Nullable(runtimeInventory),

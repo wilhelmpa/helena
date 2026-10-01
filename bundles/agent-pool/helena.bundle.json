@@ -7,7 +7,7 @@
   "description": "Agenten-Vorlagen für Entwicklung, Prüfung, Betrieb, Wissen, Assistenz, Finanzen, Recht und Trading (Research, Analyse, Backtests, Paper-Trading, Journal), mit geprüften Skill-Sets.",
   "license": "AGPL-3.0-only",
   "author": {
-    "name": "Helena"
+    "name": "{appName}"
   },
   "skills": [
     {

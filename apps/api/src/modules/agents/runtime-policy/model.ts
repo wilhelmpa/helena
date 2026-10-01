@@ -139,7 +139,7 @@ export const RuntimePolicySnapshotResponse = t.Object({
         ),
         browserBudgetSeconds: t.Optional(t.Number()),
       },
-      { description: "Settings of Helena's own loop, for an agent on the runtime helena." },
+      { description: "Settings of {appName}'s own loop, for an agent on the runtime helena." },
     ),
   ),
   localAi: t.Nullable(

@@ -1,6 +1,6 @@
 ---
 name: ava-bedienen-aufgaben
-description: Helena-Aufgaben suchen, lesen, ändern, archivieren und ihre Abläufe prüfen.
+description: {appName}-Aufgaben suchen, lesen, ändern, archivieren und ihre Abläufe prüfen.
 ---
 
 # Ava bedienen: Aufgaben

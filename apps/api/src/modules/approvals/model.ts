@@ -16,7 +16,7 @@ export const RequestKind = t.Union(
   ],
   {
     description:
-      'What kind of action it is: send (mail, messages, anything outside Helena), publish ' +
+      'What kind of action it is: send (mail, messages, anything outside {appName}), publish ' +
       '(push, deploy, release), pay, delete, write (a change the Autopilot level holds back), ' +
       'execute (a risky command or code), credentials (keys, tokens, grants) or other.',
   },
@@ -104,7 +104,7 @@ export const createApprovalBody = t.Object({
   scope: t.Optional(
     t.Union(ActionScope.anyOf, {
       description:
-        'Where the action takes effect: workspace for Helena data or the project workspace, ' +
+        'Where the action takes effect: workspace for {appName} data or the project workspace, ' +
         'external for third-party services or files outside it. This describes the approval ' +
         'card only; the actual tool still enforces its own policy.',
     }),

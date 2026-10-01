@@ -1,4 +1,10 @@
-import { declaredCategory, resolveText, type ActionCategory, type Connector } from '@helena/sdk';
+import {
+  declaredCategory,
+  renderDisplayName,
+  resolveText,
+  type ActionCategory,
+  type Connector,
+} from '@helena/sdk';
 import type { ConfigField } from '@repo/agent-tools';
 import { registries } from '#shared/helena';
 
@@ -53,8 +59,11 @@ function connectorEntry(connector: Connector, locale = 'en'): UnifiedIntegration
 }
 
 // Read at call time: a plugin's connectors join the registry at start.
-export function integrationCatalog(locale = 'en'): UnifiedIntegration[] {
-  return registries.connectors.list().map((connector) => connectorEntry(connector, locale));
+export function integrationCatalog(locale = 'en', displayName = 'Ava'): UnifiedIntegration[] {
+  return renderDisplayName(
+    registries.connectors.list().map((connector) => connectorEntry(connector, locale)),
+    displayName,
+  );
 }
 
 function byKey(key: string): UnifiedIntegration | undefined {

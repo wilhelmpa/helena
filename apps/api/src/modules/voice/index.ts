@@ -153,7 +153,7 @@ export const voiceRoutes = new Elysia({ name: 'voice', detail: { tags: ['Voice']
         summary: 'Read the voice settings',
         description:
           'The pause that ends a spoken turn, the words the transcription should know (and the ' +
-          'names Helena adds itself), the local voice and its speed, and the model agents ' +
+          'names {appName} adds itself), the local voice and its speed, and the model agents ' +
           'answer spoken turns with.',
       },
     },

@@ -1,4 +1,5 @@
 import { FollowupInbox } from './followups';
+import { renderDisplayName } from '@helena/sdk';
 import { DEFAULTS, type AgentRuntimeConfig, type ToolProfile } from './config';
 import type { EventSink } from './events';
 import { HelenaClient, type HelenaApi, type MemoryState } from './helena-client';
@@ -116,18 +117,24 @@ function helenaOf(input: AgentRunInput): HelenaApi | null {
   if (!config || !url) return null;
   const key = input.env[config.apiKeyEnv ?? 'ITSAPLAN_API_KEY'];
   if (!key) return null;
-  return new HelenaClient(url, key, {
-    runId: Number(input.env.ITSAPLAN_RUN_ID) || null,
-    messageId: Number(input.env.ITSAPLAN_MESSAGE_ID) || null,
-    claim: Number(input.env.VOLITION_WORK_CLAIM) || undefined,
-  });
+  return new HelenaClient(
+    url,
+    key,
+    {
+      runId: Number(input.env.ITSAPLAN_RUN_ID) || null,
+      messageId: Number(input.env.ITSAPLAN_MESSAGE_ID) || null,
+      claim: Number(input.env.VOLITION_WORK_CLAIM) || undefined,
+    },
+    fetch,
+    input.config.displayName,
+  );
 }
 
 function storeOf(input: AgentRunInput, helena: HelenaApi | null): SessionStore {
   if (input.sessions) return input.sessions;
   const kind = input.config.sessions?.store ?? (helena ? 'helena' : 'memory');
   if (kind === 'helena') {
-    if (!helena) throw new Error('sessions in Helena need Helena');
+    if (!helena) throw new Error(`sessions in ${input.config.displayName ?? 'Ava'} need the API`);
     return new HelenaSessionStore(helena);
   }
   if (kind === 'file') {
@@ -153,6 +160,7 @@ function policyOf(config: AgentRuntimeConfig, helena: HelenaApi | null) {
 }
 
 export async function runAgent(input: AgentRunInput): Promise<LoopResult> {
+  input = { ...input, config: renderDisplayName(input.config, input.config.displayName) };
   const { config } = input;
   const helena = helenaOf(input);
   const connections: McpConnection[] = [];
@@ -266,11 +274,11 @@ export async function runAgent(input: AgentRunInput): Promise<LoopResult> {
         return null;
       });
       tools.push(
-        memoryTool(helena, () => learningSession, memory),
+        memoryTool(helena, () => learningSession, memory, config.displayName),
         sessionSearchTool(helena),
       );
     }
-    tools.push(...(input.extraTools ?? []));
+    tools.push(...renderDisplayName(input.extraTools ?? [], config.displayName));
     const voice = input.env?.VOLITION_VOICE === '1';
     const direct = voice
       ? new Set(LOOP_TOOLS.filter((name) => tools.some((entry) => entry.name === name)))

@@ -298,7 +298,7 @@ export const decisionRoutes = new Elysia({
       detail: {
         summary: 'List the decision classes',
         description:
-          'Every kind of typed decision Helena asks (model router, mail classifier, receipt ' +
+          'Every kind of typed decision {appName} asks (model router, mail classifier, receipt ' +
           "matching, general), with the team's setting, the newest eval on the chosen " +
           'connection, whether it can be switched on, and the last seven days in numbers.',
       },

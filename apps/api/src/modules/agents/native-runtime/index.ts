@@ -128,7 +128,7 @@ export const nativeRuntimeRoutes = new Elysia({
       runnerAgent: true,
       body: createSessionBody,
       response: { 200: SessionIdResponse, ...errors(400, 401, 403) },
-      detail: { summary: "Start a session of Helena's own agent loop" },
+      detail: { summary: "Start a session of {appName}'s own agent loop" },
     },
   )
   .get(

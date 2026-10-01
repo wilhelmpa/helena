@@ -1,6 +1,6 @@
 ---
 name: paper-trading-ausfuehrung
-description: Orders ausschließlich im Alpaca-Paper-Konto über Helenas Werkzeuge alpaca_paper_* ausführen – Voraussetzungen, Checkliste vor jeder Order, Stop-Pflicht, Umgang mit Ablehnungen, Kryptosperre, Session-Start und -Schluss, Tagesbericht, Not-Aus. Nur für den Paper-Trader.
+description: Orders ausschließlich im Alpaca-Paper-Konto über {appName}s Werkzeuge alpaca_paper_* ausführen – Voraussetzungen, Checkliste vor jeder Order, Stop-Pflicht, Umgang mit Ablehnungen, Kryptosperre, Session-Start und -Schluss, Tagesbericht, Not-Aus. Nur für den Paper-Trader.
 ---
 
 # Paper-Trading ausführen
@@ -26,11 +26,11 @@ Du handelst **nur Spielgeld** im Alpaca-Paper-Konto, **nur** mit `alpaca_paper_*
 - Aktien: Stop/Ziel hängen als OTO/Bracket an der Order.
 
 ## 4. Ablehnung oder Fehler
-Helena lehnt Orders ab, die eine Grenze verletzen. **Nicht** umgehen, aufteilen, wiederholen oder Parameter „passend machen“. Grund in den Tagesbericht, dem Koordinator melden. Technische Fehler: denselben Aufruf mit unveränderter `requestId` und unveränderten Argumenten zur Abfrage wiederverwenden. Helena gleicht die bereits gespeicherte Absicht anhand der Broker-Client-ID ab und sendet keinen zweiten POST. Bleibt der Ausgang ungeklärt, sperrt das Konto weitere neue Anfragen. Keine neue UUID zur Umgehung erzeugen; Befund und ursprüngliche ID melden.
+{appName} lehnt Orders ab, die eine Grenze verletzen. **Nicht** umgehen, aufteilen, wiederholen oder Parameter „passend machen“. Grund in den Tagesbericht, dem Koordinator melden. Technische Fehler: denselben Aufruf mit unveränderter `requestId` und unveränderten Argumenten zur Abfrage wiederverwenden. {appName} gleicht die bereits gespeicherte Absicht anhand der Broker-Client-ID ab und sendet keinen zweiten POST. Bleibt der Ausgang ungeklärt, sperrt das Konto weitere neue Anfragen. Keine neue UUID zur Umgehung erzeugen; Befund und ursprüngliche ID melden.
 
 ## 5. Session
 - **Start (US 15:40 MEZ bzw. nach der Eröffnungsspanne):** Uhr prüfen (`alpaca_paper_market` → `market.open`), Pre-Market-Briefing lesen, nur dessen erlaubte Setups.
-- **Schluss (US 21:50 MEZ):** Nicht reservierte Long-Bestände nach Regel schließen (`alpaca_paper_close_position`, ebenfalls stabile `requestId`). Offene Verkäufe und Schutzorders reservieren Bestand; Helena storniert sie nicht automatisch. `alpaca_paper_cancel_order` erlaubt nur einfache Kauforders, keine Schutzverkäufe oder angehängten Ordergruppen. Ein dadurch blockierter manueller Ausstieg erfordert Prüfung im Broker durch den Owner; bestehende Stops bleiben bestehen.
+- **Schluss (US 21:50 MEZ):** Nicht reservierte Long-Bestände nach Regel schließen (`alpaca_paper_close_position`, ebenfalls stabile `requestId`). Offene Verkäufe und Schutzorders reservieren Bestand; {appName} storniert sie nicht automatisch. `alpaca_paper_cancel_order` erlaubt nur einfache Kauforders, keine Schutzverkäufe oder angehängten Ordergruppen. Ein dadurch blockierter manueller Ausstieg erfordert Prüfung im Broker durch den Owner; bestehende Stops bleiben bestehen.
 - In den Umstellungswochen eine Stunde früher (premarket-briefing §1).
 
 ## 6. Tagesbericht (nach Handelsschluss)

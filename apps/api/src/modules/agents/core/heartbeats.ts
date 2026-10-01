@@ -1,4 +1,12 @@
-import { agentHeartbeatEvent, agentRun, aiAgent, db, helenaDecision } from '@repo/db';
+import { renderDisplayName } from '@helena/sdk';
+import {
+  agentHeartbeatEvent,
+  agentRun,
+  aiAgent,
+  db,
+  getDisplayName,
+  helenaDecision,
+} from '@repo/db';
 import { and, asc, eq, inArray, isNull, lte, ne, or, sql } from 'drizzle-orm';
 import { enqueueAgentRun } from './run-queue';
 import { isHeartbeatWorkTime, nextHeartbeatAt } from './heartbeat-time';
@@ -72,6 +80,7 @@ async function precheckHeartbeat(input: {
 }
 
 export async function fireDueAgentHeartbeats(now = new Date()): Promise<number> {
+  const displayName = await getDisplayName();
   const due = await db
     .select({ id: aiAgent.id, model: aiAgent.model, dueAt: aiAgent.heartbeatNextAt })
     .from(aiAgent)
@@ -241,7 +250,7 @@ export async function fireDueAgentHeartbeats(now = new Date()): Promise<number> 
             sourceActivityId: null,
             trigger: 'heartbeat',
             prompt: [
-              current.heartbeatInstructions ||
+              renderDisplayName(current.heartbeatInstructions, displayName) ||
                 'Review your assigned work and take the next useful step.',
               '',
               `${candidate.reason}: ${candidate.title}`,

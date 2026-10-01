@@ -1,7 +1,7 @@
 import { timingSafeEqual } from 'node:crypto';
 import { lstat, readFile } from 'node:fs/promises';
 import { Elysia } from 'elysia';
-import { aiAgent, db, user } from '@repo/db';
+import { aiAgent, db, getDisplayName, user } from '@repo/db';
 import { eq } from 'drizzle-orm';
 import { getSessionFromHeaders } from '@repo/auth';
 import { HttpError } from '#shared/lib';
@@ -287,6 +287,7 @@ export const agentBrowserGatewayInternalRoutes = new Elysia({
           ? await taskByToken(body.agentKey.slice(4))
           : null;
       return {
+        displayName: await getDisplayName(),
         agentId: agent.id,
         agentName: await displayName(agent),
         teamId: agent.teamId,

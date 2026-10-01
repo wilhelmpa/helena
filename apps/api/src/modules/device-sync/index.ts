@@ -55,7 +55,7 @@ export const deviceSyncRoutes = new Elysia({
       detail: {
         summary: 'Accept a device and share the vault folder with it',
         description:
-          'Adds a device that asked to connect and shares the folder Helena with it. The device then offers the folder to its owner.',
+          'Adds a device that asked to connect and shares the folder {appName} with it. The device then offers the folder to its owner.',
       },
     },
   )

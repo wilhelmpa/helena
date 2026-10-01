@@ -88,7 +88,7 @@ export async function importTemplateBundle(
     update: input.update === true,
   });
   try {
-    await importBundle(log, teamId, bundle);
+    await importBundle(log, teamId, bundle, { displayName: await getDisplayName() });
   } catch (error) {
     log.warn(`Stopped: ${error instanceof Error ? error.message : String(error)}`);
   }

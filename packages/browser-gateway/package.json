@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@helena/sdk": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "@repo/net": "workspace:*",
     "jev-browser": "github:Ying-Kai-Liao/jev-browser#e35ab134f65033d29c528132d92bf06e8d6adcb5",

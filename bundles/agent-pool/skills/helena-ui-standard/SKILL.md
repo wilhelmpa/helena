@@ -1,12 +1,12 @@
 ---
 name: helena-ui-standard
-description: Der verbindliche UI-Standard von Helena (Kopfzeile, Typografie, Flächen, Buttons, Mobil, Klickbarkeit) und wie man eine Seite dagegen prüft. Nutze ihn, bevor du eine Helena-Oberfläche entwirfst, änderst oder reviewst, und für jedes Design-Review mit Screenshots.
+description: Der verbindliche UI-Standard von {appName} (Kopfzeile, Typografie, Flächen, Buttons, Mobil, Klickbarkeit) und wie man eine Seite dagegen prüft. Nutze ihn, bevor du eine {appName}-Oberfläche entwirfst, änderst oder reviewst, und für jedes Design-Review mit Screenshots.
 ---
 
-# Helena UI-Standard
+# {appName} UI-Standard
 
 Die Regeln des Owners, an einer Stelle. Jede Seite folgt ihnen; eine Seite, die es nicht tut, ist ein Fehler.
-Referenz im Code: `docs/volition/ui-standard.md` (Helena-Repo). Die **Seitenleiste ist die Referenz** für Schrift, Größe und Flächen.
+Referenz im Code: `docs/volition/ui-standard.md` ({appName}-Repo). Die **Seitenleiste ist die Referenz** für Schrift, Größe und Flächen.
 
 ## Die Regeln
 
@@ -45,8 +45,8 @@ Keine anderen Größen, keine `text-[Npx]`, keine eigenen Schriftarten.
 
 ### Sprache und Namen
 - Alle Texte über i18n (`next-intl`), in **allen** Sprachdateien (`apps/web/messages/<locale>/`), nicht hart im Code.
-- Produktname ist nur **Helena** – kein anderer Produkt- oder Firmenname, auch nicht der des Upstream-Projekts (einzige Ausnahme: die AGPL-Attribution auf der About-Seite und in LICENSE/NOTICE/README).
-- Im LAN läuft Helena über http: Zwischenablage und IDs nur über `copyText`/`uuid` aus `@/utils/clipboard` und `@/utils/uuid`.
+- Produktname ist nur **{appName}** – kein anderer Produkt- oder Firmenname, auch nicht der des Upstream-Projekts (einzige Ausnahme: die AGPL-Attribution auf der About-Seite und in LICENSE/NOTICE/README).
+- Im LAN läuft {appName} über http: Zwischenablage und IDs nur über `copyText`/`uuid` aus `@/utils/clipboard` und `@/utils/uuid`.
 
 ## Vorgehen beim Design-Review
 

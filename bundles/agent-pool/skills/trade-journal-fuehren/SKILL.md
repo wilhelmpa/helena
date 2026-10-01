@@ -17,7 +17,7 @@ Front Matter ergänzen: `ausstieg`, `ergebnis_usd`, `ergebnis_r` (= Ergebnis / a
 
 ## 3. Täglicher Abgleich
 - `alpaca_paper_orders` (status `all`, seit gestern) gegen die Journal-Einträge: jede Order mit `clientOrderId` „helena-<strategie>-v<version>-…“ braucht einen Eintrag; Teilausführungen und Bracket-Beine gehören zum selben Eintrag.
-- Fehlt ein Eintrag: nachtragen (als „nachgetragen“ markieren) und im Tagesbericht vermerken. Orders ohne Helena-Präfix: sofort dem Owner melden (dürfte es nicht geben).
+- Fehlt ein Eintrag: nachtragen (als „nachgetragen“ markieren) und im Tagesbericht vermerken. Orders ohne `helena-`-Präfix: sofort dem Owner melden (dürfte es nicht geben).
 
 ## 4. Qualität
 - Zahlen aus dem Paper-Konto übernehmen, nicht schätzen; Zeiten mit Zeitzone.

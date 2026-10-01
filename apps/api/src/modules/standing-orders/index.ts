@@ -118,7 +118,7 @@ export const standingOrderRoutes = new Elysia({
     },
     {
       response: { 200: OrderListResponse, ...commonErrors },
-      detail: { summary: 'List Helena standing orders' },
+      detail: { summary: 'List {appName} standing orders' },
     },
   )
   .post(
@@ -128,7 +128,7 @@ export const standingOrderRoutes = new Elysia({
     {
       body: orderBody,
       response: { 200: OrderResponse, ...commonErrors },
-      detail: { summary: 'Create a Helena standing order' },
+      detail: { summary: 'Create a {appName} standing order' },
     },
   )
   .post(
@@ -151,7 +151,7 @@ export const standingOrderRoutes = new Elysia({
       body: orderBody,
       response: { 200: OrderResponse, ...commonErrors },
       detail: {
-        summary: 'Propose a Helena standing order',
+        summary: 'Propose a {appName} standing order',
         ...mcpTool('propose_helena_standing_order'),
       },
     },
@@ -166,7 +166,7 @@ export const standingOrderRoutes = new Elysia({
       params: helenaOrderParams,
       body: orderPatch,
       response: { 200: OrderResponse, ...commonErrors },
-      detail: { summary: 'Update a Helena standing order' },
+      detail: { summary: 'Update a {appName} standing order' },
     },
   )
   .delete(
@@ -178,7 +178,7 @@ export const standingOrderRoutes = new Elysia({
     {
       params: helenaOrderParams,
       response: { 200: OrderResponse, ...commonErrors },
-      detail: { summary: 'Delete a Helena standing order' },
+      detail: { summary: 'Delete a {appName} standing order' },
     },
   )
   .post(
@@ -194,6 +194,6 @@ export const standingOrderRoutes = new Elysia({
       params: helenaOrderParams,
       body: orderDecision,
       response: { 200: OrderResponse, ...commonErrors, ...errors(409) },
-      detail: { summary: 'Decide a Helena standing order proposal' },
+      detail: { summary: 'Decide a {appName} standing order proposal' },
     },
   );

@@ -15,7 +15,7 @@
 
 - Nach der Anrede ein Komma, danach klein weiter („Sehr geehrte Frau Weber,\n\nvielen Dank …").
 - Titel beibehalten, wenn der Absender sie nutzt (Frau Dr. Weber).
-- Grußformel ohne Komma; darunter der Name des Owners. Die Signatur ergänzt Helena nicht automatisch – schreibe sie aus, wenn sie im Thread üblich ist.
+- Grußformel ohne Komma; darunter der Name des Owners. Die Signatur ergänzt {appName} nicht automatisch – schreibe sie aus, wenn sie im Thread üblich ist.
 
 ## Aufbau
 1. **Betreff**: konkret, ≤ 60 Zeichen, mit Kennung, wenn es eine gibt („Rechnung 2026-114 – Rückfrage zur Position 3", „Termin Elternabend – Vorschlag 14.10."). Bei Antworten den bestehenden Betreff lassen.

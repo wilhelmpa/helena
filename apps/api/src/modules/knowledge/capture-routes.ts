@@ -186,7 +186,7 @@ export const captureRoutes = new Elysia({
       detail: {
         summary: 'List where things can be saved',
         description:
-          'The registered capture targets (Helena\'s Inbox and daily note, and those of plugins), for the surfaces that offer "save to knowledge".',
+          'The registered capture targets ({appName}\'s Inbox and daily note, and those of plugins), for the surfaces that offer "save to knowledge".',
       },
     },
   )
@@ -204,7 +204,7 @@ export const captureRoutes = new Elysia({
       detail: {
         summary: 'Save something into the knowledge',
         description:
-          'Save text (a finding, a quote, a chat answer, a summary) as a new note in the Inbox of a project (`projectKey`) or of Home, with where it came from (`origin`, a URL or the Helena item `from`). With target "journal" it becomes a line in today\'s daily note instead. Returns the note\'s path; link the task in the text with [[KEY-n]].',
+          'Save text (a finding, a quote, a chat answer, a summary) as a new note in the Inbox of a project (`projectKey`) or of Home, with where it came from (`origin`, a URL or the {appName} item `from`). With target "journal" it becomes a line in today\'s daily note instead. Returns the note\'s path; link the task in the text with [[KEY-n]].',
         ...mcpTool('capture_note', { idempotentHint: false, openWorldHint: false }),
       },
     },

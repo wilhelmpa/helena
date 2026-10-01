@@ -103,7 +103,7 @@ export const connectorRoutes = new Elysia({
       detail: {
         summary: 'List the connectors',
         description:
-          'What kinds of accounts and credentials Helena can hold, their services and agent tools with action categories.',
+          'What kinds of accounts and credentials {appName} can hold, their services and agent tools with action categories.',
       },
     },
   )
@@ -255,7 +255,7 @@ export const connectorRoutes = new Elysia({
         },
         { additionalProperties: true },
       ),
-      detail: { summary: "Google's return to Helena after signing in", hide: true },
+      detail: { summary: "Google's return to {appName} after signing in", hide: true },
     },
   )
 
@@ -334,7 +334,7 @@ export const connectorRoutes = new Elysia({
     response: { 200: GogStatusResponse, ...commonErrors },
     detail: {
       summary: 'List the accounts gog holds',
-      description: 'The accounts gog holds a token for that Helena does not list yet.',
+      description: 'The accounts gog holds a token for that {appName} does not list yet.',
     },
   })
 
@@ -352,7 +352,7 @@ export const connectorRoutes = new Elysia({
       response: { 200: GoogleAccountResponse, ...commonErrors },
       detail: {
         summary: 'List an account gog holds',
-        description: 'No token moves: Helena reaches the account through gog.',
+        description: 'No token moves: {appName} reaches the account through gog.',
       },
     },
   )
@@ -397,7 +397,7 @@ export const connectorRoutes = new Elysia({
       detail: {
         summary: 'Connect an MCP server that signs in with OAuth',
         description:
-          'Discovers the server, registers Helena as its client and returns the address to ' +
+          'Discovers the server, registers {appName} as its client and returns the address to ' +
           'sign in at. In paste mode, paste the address the browser ended on with the ' +
           'finish call.',
       },
@@ -474,7 +474,7 @@ export const connectorRoutes = new Elysia({
         },
         { additionalProperties: true },
       ),
-      detail: { summary: "An MCP server's return to Helena after signing in", hide: true },
+      detail: { summary: "An MCP server's return to {appName} after signing in", hide: true },
     },
   )
 

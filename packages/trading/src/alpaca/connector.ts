@@ -16,8 +16,8 @@ export function alpacaPaperConnector(deps: PaperToolDeps = {}): Connector {
     id: ALPACA_PAPER_CONNECTOR,
     label: { en: 'Alpaca paper trading (demo money)', de: 'Alpaca Paper-Trading (Spielgeld)' },
     description: {
-      en: 'An Alpaca paper account: simulated orders for US stocks, ETFs and crypto. Paper keys only (they start with PK); Helena refuses live keys and never reaches the live trading API.',
-      de: 'Ein Alpaca-Paper-Konto: simulierte Orders für US-Aktien, ETFs und Krypto. Nur Paper-Schlüssel (beginnen mit PK); Helena lehnt Live-Schlüssel ab und erreicht die Live-Handels-API nie.',
+      en: 'An Alpaca paper account: simulated orders for US stocks, ETFs and crypto. Paper keys only (they start with PK); {appName} refuses live keys and never reaches the live trading API.',
+      de: 'Ein Alpaca-Paper-Konto: simulierte Orders für US-Aktien, ETFs und Krypto. Nur Paper-Schlüssel (beginnen mit PK); {appName} lehnt Live-Schlüssel ab und erreicht die Live-Handels-API nie.',
     },
     icon: 'candlestick-chart',
     credentialSchema: [

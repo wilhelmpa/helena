@@ -117,11 +117,11 @@ export function parseManifest(raw: unknown, options: { builtin?: boolean } = {})
   }
   const manifest = result.data as PluginManifest;
   if (!options.builtin && (manifest.id === 'helena' || manifest.id.startsWith('helena.'))) {
-    throw new ManifestError(`The plugin id "${manifest.id}" is reserved for Helena's own plugins`);
+    throw new ManifestError(`The plugin id "${manifest.id}" is reserved for built-in plugins`);
   }
   if (!semver.satisfies(SDK_VERSION, manifest.sdk, { includePrerelease: true })) {
     throw new ManifestError(
-      `${manifest.id} needs @helena/sdk ${manifest.sdk}; this Helena has ${SDK_VERSION}`,
+      `${manifest.id} needs @helena/sdk ${manifest.sdk}; this application has ${SDK_VERSION}`,
     );
   }
   return manifest;
@@ -132,7 +132,7 @@ export function manifestJsonSchema(): Record<string, unknown> {
   return {
     $schema: schema.$schema,
     $id: 'urn:helena:schema:plugin-manifest:v1',
-    title: 'Helena plugin manifest',
+    title: 'Plugin manifest',
     ...schema,
   };
 }

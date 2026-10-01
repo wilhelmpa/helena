@@ -51,7 +51,7 @@
     "id": "mail-1",
     "group": "mail",
     "tool": "draft_reply",
-    "prompt": "Im Helena-Projekt VOL105: Bereite für Mailthread 105 die Antwort „Wir melden uns morgen“ vor. Speichere ausschließlich einen Entwurf.",
+    "prompt": "Im {appName}-Projekt VOL105: Bereite für Mailthread 105 die Antwort „Wir melden uns morgen“ vor. Speichere ausschließlich einen Entwurf.",
     "result": "Mailentwurf 1051 gespeichert, nichts versendet.",
     "answer": "1051"
   },
@@ -59,7 +59,7 @@
     "id": "mail-2",
     "group": "mail",
     "tool": "draft_reply",
-    "prompt": "Im Helena-Projekt VOL105: Lege für Mailthread 106 die Antwort „Der Termin passt“ nur als Entwurf an.",
+    "prompt": "Im {appName}-Projekt VOL105: Lege für Mailthread 106 die Antwort „Der Termin passt“ nur als Entwurf an.",
     "result": "Mailentwurf 1052 gespeichert, nichts versendet.",
     "answer": "1052"
   },
@@ -181,7 +181,7 @@
     "id": "decide-1",
     "group": "decide",
     "tool": "decide",
-    "prompt": "Protokolliere mit Helenas Entscheidungsfunktion eine Wahl für die Testfrage: Eine kurze FAQ-Antwort ist gefragt. Wähle zwischen A (drei Dateien lesen) und B (das bereits belegte Faktum verwenden).",
+    "prompt": "Protokolliere mit {appName}s Entscheidungsfunktion eine Wahl für die Testfrage: Eine kurze FAQ-Antwort ist gefragt. Wähle zwischen A (drei Dateien lesen) und B (das bereits belegte Faktum verwenden).",
     "result": "Entscheidung D-105 protokolliert: Variante B, Konfidenz 0,91.",
     "answer": "B"
   },
@@ -189,7 +189,7 @@
     "id": "decide-2",
     "group": "decide",
     "tool": "decide",
-    "prompt": "Protokolliere mit Helenas Entscheidungsfunktion eine Wahl für die Testfrage: Bei täglich wechselnden Daten, prüfe wöchentlich oder monatlich? Gib die getroffene Wahl an.",
+    "prompt": "Protokolliere mit {appName}s Entscheidungsfunktion eine Wahl für die Testfrage: Bei täglich wechselnden Daten, prüfe wöchentlich oder monatlich? Gib die getroffene Wahl an.",
     "result": "Entscheidung D-106 protokolliert: wöchentliche Prüfung, Konfidenz 0,88.",
     "answer": "wöchentlich"
   },
@@ -345,5 +345,19 @@
     },
     "result": "Produktseite Rucksack. Preis: 49 €.",
     "answer": "49 €"
+  },
+  {
+    "id": "delegation-179",
+    "group": "delegation",
+    "tool": "update_issue",
+    "prompt": "Delegiere die bestehende Aufgabe VOL105-7 (issueId 7) an den Projekt-Agenten API-Prüfer (delegateUserId agent-fixture). Ändere nur die Delegation mit update_issue und bestätige sie mit der Agenten-ID.",
+    "expectedInput": {
+      "update_issue": {
+        "issueId": 7,
+        "delegateUserId": "agent-fixture"
+      }
+    },
+    "result": "Aufgabe VOL105-7 ist an agent-fixture delegiert; ein Lauf wurde eingereiht.",
+    "answer": "agent-fixture"
   }
 ]

@@ -252,6 +252,7 @@ export interface LocalAiChatAnswer {
 }
 
 export interface LocalAiEvalContext {
+  displayName?: string;
   // The model under test (its id on the server).
   model: string;
   signal?: AbortSignal;

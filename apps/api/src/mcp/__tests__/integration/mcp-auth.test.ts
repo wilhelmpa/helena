@@ -70,6 +70,31 @@ describe('MCP transport', () => {
     const message = JSON.parse(text.includes('data:') ? text.split('data: ')[1]! : text);
     expect(message.result.serverInfo.title).toBe('Atlas');
     expect(message.result.instructions).toContain('Atlas');
+    const listed = await app.handle(
+      new Request('http://localhost/mcp', {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${created.key}`,
+          'content-type': 'application/json',
+          accept: 'application/json, text/event-stream',
+        },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} }),
+      }),
+    );
+    const listedText = await listed.text();
+    const tools = JSON.parse(
+      listedText.startsWith('event:') || listedText.startsWith('data:')
+        ? listedText
+            .split('\n')
+            .filter((line) => line.startsWith('data: '))
+            .map((line) => line.slice(6))
+            .join('\n')
+        : listedText,
+    ).result.tools;
+    const proposal = tools.find((tool: { name: string }) => tool.name === 'request_approval');
+    expect(proposal.description).toContain('Atlas');
+    expect(JSON.stringify(tools)).not.toContain('{appName}');
+    expect(proposal.name).toBe('request_approval');
   });
 });
 

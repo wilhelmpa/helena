@@ -99,7 +99,7 @@ export const runtimeViewRoutes = new Elysia({
           'Without `q` a page of the sessions the runtime keeps, newest first; with `q` the ' +
           'sessions whose messages match. Only the sessions the person may read: of runs in ' +
           'their projects, of their own chats, and, for someone who sees the whole team, the ' +
-          'sessions Helena did not start. Each names its run or chat when Helena knows it.',
+          'sessions {appName} did not start. Each names its run or chat when {appName} knows it.',
       },
     },
   )

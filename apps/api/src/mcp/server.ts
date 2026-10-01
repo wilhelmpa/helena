@@ -1,3 +1,4 @@
+import { renderDisplayName } from '@helena/sdk';
 import { observeTool } from '#modules/root-access/provenance';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
@@ -86,7 +87,7 @@ function brandDescriptions<T>(value: T, displayName: string): T {
     Object.entries(value).map(([key, item]) => [
       key,
       typeof item === 'string' && ['title', 'description', 'summary'].includes(key)
-        ? item.replaceAll('Helena', displayName)
+        ? item.replaceAll('{appName}', displayName)
         : brandDescriptions(item, displayName),
     ]),
   ) as T;
@@ -264,6 +265,7 @@ export async function buildMcpServer(
     try {
       const input = await validate(tool.inputSchema, args);
       const result = await tool.handler(input, {
+        displayName,
         agent: await callerAgent(userId),
         project: await callProject(args),
         caller: { userId, auth: credential },
@@ -272,7 +274,10 @@ export async function buildMcpServer(
       return toCallToolResult(result);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      return refusal(error instanceof SchemaError ? 400 : 500, message);
+      return refusal(
+        error instanceof SchemaError ? 400 : 500,
+        renderDisplayName(message, displayName),
+      );
     }
   });
 

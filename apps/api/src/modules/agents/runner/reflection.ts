@@ -68,8 +68,9 @@ export function reflectionPrompt(reason: ReflectionReason, displayName = 'Ava'):
       'this order: patch a skill you used in this session, extend an existing skill that ' +
       'covers the class, add a references/ file to one, create a skill named for the class ' +
       'of task, never for this one task. Read a skill with skill_view before you change it.',
-    `Leave the skills in the plan-managed category alone: ${displayName} manages them and puts back any ` +
-      'change. Do not save details of this one task, secrets, missing tools or other setup ' +
+    `Leave the skills in the plan-managed category alone: these are templates maintained by the ${displayName} application. ` +
+      'The application name identifies the product, not you or another person. This restriction applies only to those managed templates; ' +
+      'you may create or update your own learned skills for verified reusable procedures. Do not save details of this one task, secrets, missing tools or other setup ' +
       'problems, or anything you are not sure of.',
     'Most tasks teach nothing new. A task that went as expected in a few ordinary steps (look ' +
       'something up, change a field, confirm) needs no memory and no skill, however many ' +
@@ -96,7 +97,9 @@ export function chatReflectionPrompt(displayName = 'Ava'): string {
       'quirks, project conventions, and paths and endpoints that matter.',
     'Create or patch a skill (skill_manage) only when the conversation worked out how to do a ' +
       'class of task, step by step. Read a skill with skill_view before you change it.',
-    `Leave the skills in the plan-managed category alone: ${displayName} manages them. Do not save ` +
+    `Leave the skills in the plan-managed category alone: these are templates maintained by the ${displayName} application. ` +
+      'The application name identifies the product, not you or another person. This restriction applies only to those managed templates; ' +
+      'you may create or update your own learned skills for verified reusable procedures. Do not save ' +
       'what your memory or instructions already hold, details of this one conversation, ' +
       'secrets, or anything you are not sure of.',
     'If nothing is worth keeping, answer "Nothing to save." Otherwise answer with one short ' +

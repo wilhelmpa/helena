@@ -5,7 +5,7 @@ description: Ablage und Verknüpfung im Trading-Wissen (Obsidian-kompatibler Vau
 
 # Trading-Wissen: ablegen und verknüpfen
 
-Das Wissen ist ein Obsidian-kompatibler, git-versionierter Vault. Helena liest ihn (`search_knowledge`, `read_document`, `list_folder`, `backlinks`) und schreibt Notizen (`write_note`). **Jede Notiz hat Front Matter, entsteht aus einer Vorlage und ist verlinkt – keine verwaisten Notizen.**
+Das Wissen ist ein Obsidian-kompatibler, git-versionierter Vault. {appName} liest ihn (`search_knowledge`, `read_document`, `list_folder`, `backlinks`) und schreibt Notizen (`write_note`). **Jede Notiz hat Front Matter, entsteht aus einer Vorlage und ist verlinkt – keine verwaisten Notizen.**
 
 ## Ordner (unter `Projects/<KEY>/Docs/`)
 | Ordner / Notiz | Inhalt | Dateiname |

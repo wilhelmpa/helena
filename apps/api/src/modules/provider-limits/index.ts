@@ -93,7 +93,7 @@ export const providerLimitRoutes = new Elysia({
       detail: {
         summary: 'Read how often the plan limits are read',
         description:
-          'Whether Helena asks the runners on its own, the interval in minutes, and the share ' +
+          'Whether {appName} asks the runners on its own, the interval in minutes, and the share ' +
           'from which a window counts as close to its limit.',
       },
     },
@@ -111,7 +111,7 @@ export const providerLimitRoutes = new Elysia({
       detail: {
         summary: 'Change how often the plan limits are read',
         description:
-          'The interval Helena asks the runners in (5–60 minutes), whether it does on its own, ' +
+          'The interval {appName} asks the runners in (5–60 minutes), whether it does on its own, ' +
           'and the share from which a window counts as close to its limit.',
       },
     },

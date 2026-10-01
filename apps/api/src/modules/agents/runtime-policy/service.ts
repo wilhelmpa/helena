@@ -1,3 +1,4 @@
+import { renderDisplayName } from '@helena/sdk';
 import {
   applyNativeSkillActions,
   listNativeSkills,
@@ -139,10 +140,11 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
       level: (await resolveLevel(agent.id, project.id)).level,
     })),
   );
+  const brandedSkills = renderDisplayName(skills, displayName);
   const snapshot = {
     displayName,
     agent: { id: agent.id, name: agent.name, username: agent.username, agentRole: agent.agentRole },
-    instructions: agent.instructions,
+    instructions: renderDisplayName(agent.instructions, displayName),
     model: agent.model,
     runtimePolicy: {
       ...agent.runtimePolicy,
@@ -180,23 +182,36 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
     skills:
       agent.runtimePolicy.runtime === 'helena'
         ? [
-            ...skills,
-            ...(await listNativeSkills(agent.id)).map((skill) => ({
-              id: 0,
-              slug: `learned/${skill.path}`,
-              name: skill.name,
-              description: skillDescription(skill),
-              markdown: skill.markdown,
-              files: skill.files,
-            })),
+            ...brandedSkills,
+            ...renderDisplayName(
+              (await listNativeSkills(agent.id)).map((skill) => ({
+                id: 0,
+                slug: `learned/${skill.path}`,
+                name: skill.name,
+                description: skillDescription(skill),
+                markdown: skill.markdown,
+                files: skill.files,
+              })),
+              displayName,
+            ),
           ]
-        : skills,
+        : brandedSkills,
     configuredTools: tools.map(({ id, toolKey, integrationKey }) => ({
       id,
       toolKey,
       integrationKey,
     })),
-    mcpServers,
+    mcpServers: mcpServers.map((server) =>
+      server.name === BROWSER_GATEWAY_MCP_SERVER_NAME
+        ? {
+            ...server,
+            env: [
+              ...server.env.filter((entry) => entry.name !== 'VOLITION_DISPLAY_NAME'),
+              { name: 'VOLITION_DISPLAY_NAME', value: displayName },
+            ],
+          }
+        : server,
+    ),
     webLogins,
     vaultAccess,
     learning: {
@@ -322,7 +337,7 @@ function soul(
   } = sections;
   const bounded = (text: string, key: keyof typeof limits, label: string) => {
     const cut = truncateContext(
-      text,
+      renderDisplayName(text, displayName),
       contextFileLimit(contextTokens, limits[key], overrides[key] !== undefined),
     );
     return cut.truncated
@@ -364,35 +379,38 @@ function soul(
   ]
     .filter(Boolean)
     .join('\n\n');
-  return [
-    own
-      ? bounded(own, 'soul', 'SOUL.md')
-      : `You are ${config.name} (@${agent.username}), an agent of this team. Be direct: a short ` +
-        'question gets a short answer, and finished work gets a short report of what changed, ' +
-        'what is verified and what is left.',
-    SOUL_GENERATED_MARKER,
-    ...files
-      .filter((file) => file.path !== 'SOUL.md' && file.content.trim())
-      .map(
-        (file) =>
-          `## ${file.path}\n\n${bounded(file.content.trim(), 'teamInstructions', file.path)}`,
+  return renderDisplayName(
+    [
+      own
+        ? bounded(own, 'soul', 'SOUL.md')
+        : `You are ${config.name} (@${agent.username}), an agent of this team. Be direct: a short ` +
+          'question gets a short answer, and finished work gets a short report of what changed, ' +
+          'what is verified and what is left.',
+      SOUL_GENERATED_MARKER,
+      ...files
+        .filter((file) => file.path !== 'SOUL.md' && file.content.trim())
+        .map(
+          (file) =>
+            `## ${file.path}\n\n${bounded(file.content.trim(), 'teamInstructions', file.path)}`,
+        ),
+      ...(instructions
+        ? [`## Instructions\n\n${bounded(instructions, 'agentInstructions', 'Agent instructions')}`]
+        : []),
+      projectsPreamble(agent.projects).trim(),
+      ...agent.projects.map((project) =>
+        bounded(
+          projectInstructionsPreamble(project).trim(),
+          'projectInstructions',
+          `Project ${project.key} instructions`,
+        ),
       ),
-    ...(instructions
-      ? [`## Instructions\n\n${bounded(instructions, 'agentInstructions', 'Agent instructions')}`]
-      : []),
-    projectsPreamble(agent.projects).trim(),
-    ...agent.projects.map((project) =>
-      bounded(
-        projectInstructionsPreamble(project).trim(),
-        'projectInstructions',
-        `Project ${project.key} instructions`,
-      ),
-    ),
-    bounded(teamText, 'teamInstructions', 'Team and Ava instructions'),
-  ]
-    .filter(Boolean)
-    .join('\n\n')
-    .concat('\n');
+      bounded(teamText, 'teamInstructions', `Team and ${displayName} instructions`),
+    ]
+      .filter(Boolean)
+      .join('\n\n')
+      .concat('\n'),
+    displayName,
+  );
 }
 
 // A run's task states that it is autonomous; a chat message arrives without such a frame,

@@ -1,6 +1,6 @@
 ---
 name: ava-bedienen-ziele
-description: Helena-Ziele und ihren Bezug zu Aufgaben lesen und Fortschritt melden.
+description: {appName}-Ziele und ihren Bezug zu Aufgaben lesen und Fortschritt melden.
 ---
 
 # Ava bedienen: Ziele

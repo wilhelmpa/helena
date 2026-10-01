@@ -137,6 +137,7 @@ export function helenaAgentConfig(
     ['openai-codex', 'claude-code'].includes(entry.provider),
   );
   return {
+    displayName: snapshot.displayName ?? 'Ava',
     model: snapshot.model ?? '',
     fallbackModels: fallbacks
       .filter((entry) => !['openai-codex', 'claude-code'].includes(entry.provider))
@@ -346,7 +347,7 @@ export class HelenaRuntimeAdapter implements RuntimeAdapter {
   async runSettings(work?: WorkRef): Promise<RunSettings> {
     await this.ensure();
     const applied = this.applied;
-    if (!applied) throw new Error(this.problem ?? "Helena's runtime policy is not available yet");
+    if (!applied) throw new Error(this.problem ?? 'The agent runtime policy is not available yet');
     const env: Record<string, string> = {
       ...(isolationEnabled() && this.config.isolation !== undefined && { HELENA_ISOLATED: '1' }),
     };

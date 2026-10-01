@@ -1,5 +1,6 @@
 import { dispatchFollowups } from '../native-runtime/followups';
 import {
+  renderDisplayName,
   contextFileLimit,
   effectiveContextLimits,
   normalizeContextLimits,
@@ -686,6 +687,7 @@ async function claimAdmittedRun(agent: RunnerAgent): Promise<RunnerRun | null> {
           agent,
           { key: row.projectKey, name: row.projectName, description: row.projectDescription },
           forPrompt,
+          await getDisplayName(),
         ) +
         (await activeOrderContext(row.projectId, agent.id)) +
         issueWhySection(why) +
@@ -738,9 +740,10 @@ function buildSystemPrompt(
   agent: RunnerAgent,
   project: Pick<RunnerProject, 'key' | 'name' | 'description'>,
   run: RunForPrompt & Pick<ClaimedRow, 'projectInstructions' | 'agentProjectInstructions'>,
+  displayName: string,
 ): string {
   const limits = effectiveContextLimits(null, agent.contextLimits);
-  const instructions = agent.instructions?.trim();
+  const instructions = renderDisplayName(agent.instructions, displayName)?.trim();
   const own = instructions
     ? truncateContext(
         instructions,
@@ -757,7 +760,7 @@ function buildSystemPrompt(
     agentProjectInstructions: run.agentProjectInstructions,
   });
   const projectCut = truncateContext(
-    projectText,
+    renderDisplayName(projectText, displayName),
     contextFileLimit(
       131_072,
       limits.projectInstructions,

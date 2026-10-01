@@ -12,7 +12,7 @@ const keySource = t.Union([t.Literal('file'), t.Literal('stored'), t.Literal('no
 
 export const LocalModel = t.Object({
   id: t.String({ description: 'The model as the server names it' }),
-  modelId: t.String({ description: 'As Helena names it: `helena-<slug>/<id>`' }),
+  modelId: t.String({ description: 'As {appName} names it: `helena-<slug>/<id>`' }),
   name: t.String(),
   unit: t.Nullable(unit),
   capabilities: t.Array(t.String()),
@@ -64,7 +64,7 @@ export const ServerOptions = t.Object({
       t.Array(capability, {
         description:
           'What its chat models can do beyond chatting, where the server does not say; null: ' +
-          'what Helena derived',
+          'what {appName} derived',
       }),
     ),
   ),
@@ -216,7 +216,7 @@ export const LocalAiSettings = t.Object({
       ),
       experimental: t.Boolean(),
       inMasterDefault: t.Boolean(),
-      wired: t.Boolean({ description: 'Helena already sends this work to local AI' }),
+      wired: t.Boolean({ description: '{appName} already sends this work to local AI' }),
       modes: t.Array(mode, {
         description:
           'The modes the class offers: work that runs as an agent turn keeps its configured ' +

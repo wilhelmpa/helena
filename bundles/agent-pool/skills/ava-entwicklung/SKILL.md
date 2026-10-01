@@ -1,6 +1,6 @@
 ---
 name: ava-entwicklung
-description: Ava/Home entwickelt das eigene System mit Codex-Aufträgen, Branch-Review, Gate, Web-Artefakt, Probestart, Deploy und Nachprüfung über auditierte Entwicklungswerkzeuge.
+description: {appName}/Home entwickelt das eigene System mit Codex-Aufträgen, Branch-Review, Gate, Web-Artefakt, Probestart, Deploy und Nachprüfung über auditierte Entwicklungswerkzeuge.
 ---
 
 # Ava treibt die Entwicklung voran
@@ -11,7 +11,7 @@ Reihe einen klar begrenzten Auftrag mit `enqueue_codex_task` ein: `name` ist ein
 
 Jeder Auftrag nennt die aktuelle Release-Basis samt voller SHA, einen eigenen Zielbranch, das konkrete Problem, erwartetes Verhalten und gezielte Abnahmekriterien. Verlange Tests rot→grün, passende Typechecks, Lint, Prettier und bei API-Änderungen Routenabdeckung/OpenAPI. Codex prüft vor dem Bericht immer den vollständigen Web-Lint. Codex bearbeitet genau seinen Auftrag und führt keinen Vollgate aus; Ava/Home übernimmt anschließend die Orchestrierung.
 
-Codex macht Backend/API/Runner/Datenbank/Skripte. Sichtbare UI gestaltet Claude; nötige Daten, Hooks und minimale unformatierte Einbindungen verwenden vorhandene Bausteine aus `@/design-system` oder `components/helena`. Keine eigenen Stile oder Seitenlayouts. Intern heißen neue Bezeichner `volition`, das sichtbare Produkt heißt Helena. Bestehende Namen werden nicht stückweise umbenannt.
+Codex macht Backend/API/Runner/Datenbank/Skripte. Sichtbare UI gestaltet Claude; nötige Daten, Hooks und minimale unformatierte Einbindungen verwenden vorhandene Bausteine aus `@/design-system` oder `components/helena`. Keine eigenen Stile oder Seitenlayouts. Intern heißen neue Bezeichner `volition`, das sichtbare Produkt heißt {appName}. Bestehende Namen werden nicht stückweise umbenannt.
 
 Codex arbeitet genau einen Auftrag ab, verändert nie `/srv/volition/source/plan`, nutzt kein sudo und deployt nicht. Ergebnis ist ein Branch, der nach `/srv/volition/source/plan` gepusht wird. Keine Secrets lesen oder ausgeben, keine echten Owner-Konten, keine Logins oder Downloads/Installationen; Bun nur offline. Wenn die Aufgabe deutlich größer wird oder blockiert ist, stoppt Codex und meldet es.
 

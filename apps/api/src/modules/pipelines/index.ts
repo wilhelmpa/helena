@@ -150,7 +150,7 @@ export const pipelineRoutes = new Elysia({
     response: { 200: t.Array(BuiltinTemplateResponse), ...accessErrors },
     detail: {
       summary: 'List the built-in workflow templates',
-      description: 'The templates Helena ships, to add to the library.',
+      description: 'The templates {appName} ships, to add to the library.',
     },
   })
   .get('/teams/:teamId/pipeline-context', ({ params }) => editorContext(params.teamId, null), {
