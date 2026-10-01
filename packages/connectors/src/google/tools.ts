@@ -79,6 +79,7 @@ interface GoogleToolSpec<S extends TSchema> {
     command: string;
     args(input: Static<S>): string[];
     stdin?(input: Static<S>): Promise<string>;
+    result?(output: unknown, input: Static<S>, ctx: GoogleToolContext): Promise<unknown>;
   };
 }
 
@@ -112,7 +113,8 @@ function tool<S extends TSchema>(spec: GoogleToolSpec<S>): GoogleTool {
         throw new Error(`${spec.name} is not available for an account kept in gog.`);
       }
       const stdin = spec.gog.stdin ? await spec.gog.stdin(typed) : undefined;
-      return bounded(await ctx.gog(spec.gog.command, spec.gog.args(typed), stdin));
+      const output = await ctx.gog(spec.gog.command, spec.gog.args(typed), stdin);
+      return bounded(spec.gog.result ? await spec.gog.result(output, typed, ctx) : output);
     },
   };
 }
@@ -547,7 +549,7 @@ const FILE_FIELDS = 'id,name,mimeType,modifiedTime,size,webViewLink,owners(email
 // A plain text is searched in names and contents; Drive query syntax passes as it is.
 function driveQuery(query: string): string {
   const drivesyntax =
-    /\b(name|fullText|mimeType|modifiedTime|parents|trashed|owners)\b\s*(=|!=|contains|in|<|>)/.test(
+    /\bsharedWithMe\b|\b(name|fullText|mimeType|modifiedTime|createdTime|trashed|starred)\b\s*(=|!=|contains|<|>)|'(?:\\.|[^'\\])*'\s+in\s+(parents|owners|writers|readers)\b/.test(
       query,
     );
   if (drivesyntax) return query;
@@ -599,27 +601,93 @@ async function pdfText(bytes: Buffer): Promise<string> {
   }
 }
 
+type DriveFile = {
+  id?: string;
+  name?: string;
+  mimeType?: string;
+  size?: string | number;
+  modifiedTime?: string;
+};
+
+function gogDriveFile(output: unknown): DriveFile {
+  const value = output as { file?: DriveFile } | null;
+  const file = value?.file ?? (output as DriveFile);
+  if (!file || typeof file !== 'object' || typeof file.mimeType !== 'string')
+    throw new Error('The gog broker returned no Drive file metadata.');
+  return file;
+}
+
+async function gogDriveDownload(
+  ctx: GoogleToolContext,
+  fileId: string,
+  file: DriveFile,
+  format?: string,
+): Promise<Buffer> {
+  if (
+    file.mimeType === 'application/vnd.google-apps.folder' ||
+    file.mimeType === 'application/vnd.google-apps.shortcut'
+  )
+    throw new Error('Drive folders and shortcuts are not files.');
+  if (!format && Number(file.size ?? 0) > MAX_DRIVE_BYTES)
+    throw new Error('Drive file exceeds the 50 MB limit.');
+  const result = (await ctx.gog!('drive.download', [
+    'drive',
+    'download',
+    fileId,
+    ...(format ? [`--format=${format}`] : []),
+  ])) as { base64?: string } | null;
+  if (
+    typeof result?.base64 !== 'string' ||
+    result.base64.length > Math.ceil(MAX_DRIVE_BYTES / 3) * 4
+  )
+    throw new Error('The gog broker returned invalid or oversized Drive content.');
+  const bytes = Buffer.from(result.base64, 'base64');
+  if (bytes.length > MAX_DRIVE_BYTES || bytes.toString('base64') !== result.base64)
+    throw new Error('The gog broker returned invalid or oversized Drive content.');
+  return bytes;
+}
+
 const DRIVE_TOOLS = [
   tool({
     name: 'google_drive_search',
     service: 'drive',
     category: 'read',
     description:
-      "Find files in Google Drive by name or content (plain text), or with Drive query syntax (e.g. mimeType = 'application/pdf').",
+      "Find Google Drive files, including files shared with you and shared drives. Use Workspace tools before the browser. Queries: sharedWithMe or 'folderId' in parents; use nextPageToken as pageToken for more results.",
     input: T.Object({
       query: T.String({ maxLength: 500 }),
       max: T.Optional(T.Integer({ minimum: 1, maximum: 100, default: 20 })),
+      pageToken: T.Optional(T.String({ maxLength: 1024 })),
     }),
     summarize: (input) => `Search Drive: ${input.query}`,
     async helena(input, auth) {
       const listed = await driveApi(auth).files.list({
         q: driveQuery(input.query),
         pageSize: input.max ?? 20,
-        fields: `files(${FILE_FIELDS})`,
+        fields: `files(${FILE_FIELDS}),nextPageToken`,
+        pageToken: input.pageToken,
         supportsAllDrives: true,
         includeItemsFromAllDrives: true,
       });
-      return { files: listed.data.files ?? [] };
+      return { files: listed.data.files ?? [], nextPageToken: listed.data.nextPageToken ?? null };
+    },
+    gog: {
+      command: 'drive.search',
+      args: (input) => [
+        'drive',
+        'search',
+        driveQuery(input.query),
+        '--raw-query',
+        `--max=${input.max ?? 20}`,
+        ...(input.pageToken ? [`--page=${input.pageToken}`] : []),
+      ],
+      async result(output) {
+        const value = output as { files?: unknown[]; nextPageToken?: string } | null;
+        return {
+          files: Array.isArray(output) ? output : (value?.files ?? []),
+          nextPageToken: value?.nextPageToken ?? null,
+        };
+      },
     },
   }),
   tool({
@@ -627,7 +695,7 @@ const DRIVE_TOOLS = [
     service: 'drive',
     category: 'read',
     description:
-      'Drive-Datei samt PDF-Text lesen. Für Drive-Dateien nie den Browser verwenden. Beispiel: {"account":"me@example.com","fileId":"abc"}.',
+      'Drive-Datei samt PDF-Text lesen. Google-Dateien zuerst über Workspace-Werkzeuge bearbeiten; Browser erst nach belegtem API-Zugriffsfehler und Prüfung weiterer freigegebener Konten verwenden. Beispiel: {"account":"me@example.com","fileId":"abc"}.',
     input: T.Object({ fileId: T.String({ maxLength: 300 }) }),
     summarize: (input) => `Read Drive file ${input.fileId}`,
     async helena(input, auth) {
@@ -674,13 +742,33 @@ const DRIVE_TOOLS = [
       }
       return { file: meta.data, text: clip(text) };
     },
+    gog: {
+      command: 'drive.get',
+      args: (input) => ['drive', 'get', input.fileId, `--fields=${FILE_FIELDS}`],
+      async result(output, input, ctx) {
+        const file = gogDriveFile(output);
+        const mime = file.mimeType!;
+        const format = EXPORTS[mime] === 'text/csv' ? 'csv' : EXPORTS[mime] ? 'txt' : undefined;
+        let text = '';
+        if (
+          format ||
+          mime.startsWith('text/') ||
+          mime === 'application/json' ||
+          mime === 'application/pdf'
+        ) {
+          const bytes = await gogDriveDownload(ctx, input.fileId, file, format);
+          text = mime === 'application/pdf' ? await pdfText(bytes) : bytes.toString('utf8');
+        }
+        return { file, text: clip(text) };
+      },
+    },
   }),
   tool({
     name: 'google_drive_save_to_vault',
     service: 'drive',
     category: 'write',
     description:
-      'Drive-Datei im Projekt-Vault speichern; asReceipt legt sie als Beleg ab. Für Drive-Dateien nie den Browser verwenden. Beispiel: {"account":"me@example.com","fileId":"abc","folder":"Files/Belege","asReceipt":true}.',
+      'Drive-Datei im Projekt-Vault speichern; asReceipt legt sie als Beleg ab. Google-Dateien zuerst über Workspace-Werkzeuge bearbeiten; Browser erst nach belegtem API-Zugriffsfehler und Prüfung weiterer freigegebener Konten verwenden. Beispiel: {"account":"me@example.com","fileId":"abc","folder":"Files/Belege","asReceipt":true}.',
     input: T.Object({
       fileId: T.String({ maxLength: 300 }),
       folder: T.Optional(T.String({ maxLength: 1024, default: 'Files' })),
@@ -724,6 +812,30 @@ const DRIVE_TOOLS = [
         folder: input.folder ?? 'Files',
         asReceipt: input.asReceipt ?? false,
       });
+    },
+    gog: {
+      command: 'drive.get',
+      args: (input) => ['drive', 'get', input.fileId, `--fields=${FILE_FIELDS}`],
+      async result(output, input, ctx) {
+        if (!ctx.saveToVault) throw new Error('Vault access is unavailable.');
+        const file = gogDriveFile(output);
+        const exported =
+          file.mimeType!.startsWith('application/vnd.google-apps.') &&
+          file.mimeType !== 'application/vnd.google-apps.folder' &&
+          file.mimeType !== 'application/vnd.google-apps.shortcut';
+        const bytes = await gogDriveDownload(ctx, input.fileId, file, exported ? 'pdf' : undefined);
+        return ctx.saveToVault({
+          stream: Readable.from([bytes]),
+          fileId: input.fileId,
+          name:
+            input.name ??
+            (exported ? `${file.name ?? input.fileId}.pdf` : (file.name ?? input.fileId)),
+          mimeType: exported ? 'application/pdf' : file.mimeType!,
+          modifiedTime: file.modifiedTime ?? null,
+          folder: input.folder ?? 'Files',
+          asReceipt: input.asReceipt ?? false,
+        });
+      },
     },
   }),
   tool({

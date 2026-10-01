@@ -12,6 +12,7 @@
 #
 # HELENA_GOG_BINARY / HELENA_GOG_HOME override the paths for tests only; sudo's env_reset
 # drops them, and the sudoers rule allows no arguments.
+import base64
 import json
 import os
 import re
@@ -25,6 +26,7 @@ HOME = os.environ.get('HELENA_GOG_HOME', '/var/lib/volition-google/gog')
 TIMEOUT = 80
 MAX_INPUT = 2 * 1024 * 1024
 MAX_OUTPUT = 8 * 1024 * 1024
+MAX_DRIVE_BYTES = 50 * 1024 * 1024
 
 EMAIL = re.compile(r'^[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,253}\.[A-Za-z]{2,63}$')
 SERVICES = {'gmail', 'calendar', 'drive', 'docs', 'sheets', 'contacts', 'tasks', 'people', 'slides', 'forms'}
@@ -38,6 +40,9 @@ COMMANDS = {
     'gmail.send': {'words': ['gmail', 'send'], 'positional': 0, 'flags': ['--raw-file', '-']},
     'gmail.trash': {'words': ['gmail', 'trash'], 'positional': 1, 'flags': []},
     'calendar.events': {'words': ['calendar', 'events'], 'positional': 1, 'flags': ['--from=', '--to=', '--max=', '--query=']},
+    'drive.search': {'words': ['drive', 'search'], 'positional': 1, 'flags': ['--raw-query', '--max=', '--page=']},
+    'drive.get': {'words': ['drive', 'get'], 'positional': 1, 'flags': ['--fields=']},
+    'drive.download': {'words': ['drive', 'download'], 'positional': 1, 'flags': ['--format=pdf', '--format=txt', '--format=csv']},
     'contacts.search': {'words': ['contacts', 'search'], 'positional': 1, 'flags': ['--max=']},
 }
 
@@ -168,11 +173,26 @@ def handle(request):
         stdin = request.get('stdin')
         if stdin is not None and (not isinstance(stdin, str) or command != 'gmail.send'):
             raise Refused('input not allowed')
-        out = gog(
-            ['--account', email_of(request), '--enable-commands-exact', command, '--json', '--results-only', '--no-input', *args],
-            stdin=stdin,
-        )
-        return parsed(out)
+        email = email_of(request)
+        options = ['--account', email, '--enable-commands-exact', command, '--json', '--no-input']
+        if command == 'drive.download':
+            with tempfile.TemporaryDirectory(prefix='volition-drive-') as directory:
+                output = Path(directory, 'content')
+                gog([*options, *args, f'--out={output}'])
+                try:
+                    with output.open('rb') as content:
+                        size = os.fstat(content.fileno()).st_size
+                        if size > MAX_DRIVE_BYTES:
+                            raise Refused('Drive file exceeds the 50 MB limit')
+                        data = content.read(MAX_DRIVE_BYTES + 1)
+                except OSError:
+                    raise Refused('gog returned no readable Drive content')
+                if len(data) > MAX_DRIVE_BYTES:
+                    raise Refused('Drive file exceeds the 50 MB limit')
+                return {'base64': base64.b64encode(data).decode('ascii')}
+        if command != 'drive.search':
+            options.append('--results-only')
+        return parsed(gog([*options, *args], stdin=stdin))
     raise Refused('unknown operation')
 
 

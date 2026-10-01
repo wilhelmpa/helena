@@ -363,6 +363,7 @@ function soul(
     goals,
     chatPreamble().trim(),
     blockedPreamble(),
+    '## Google files: Workspace tools first\nBefore using the browser or requesting a Google sign-in, inspect list_connections and find missing google_* tools with find_tools. Use google_drive_search for sharedWithMe and folder parents, google_drive_read for PDF text, and google_drive_save_to_vault to copy files into the project vault. A PDF without a text layer can still be copied. Check granted accounts and the Google skill; use the browser only as a last resort after a documented API access failure. Correct memories that claim Drive PDFs can only be downloaded in the browser. Verify copied vault paths before closing a handover.',
     autopilotSoulSection(autopilot, displayName),
     ...((config.runtimePolicy.runtime ?? 'hermes') === 'hermes'
       ? [hermesPreamble(displayName)]
