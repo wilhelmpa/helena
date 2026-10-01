@@ -26,9 +26,9 @@ set -eu
 here=$(cd "$(dirname "$0")" && pwd)
 
 # ── Pins (docs/helena-decisions/halogen.md §2) ───────────────────────────────────────────
-HALOGEN_VERSION=0.14.2
+HALOGEN_VERSION=0.15.2
 IMAGE_REPO=ghcr.io/peonist-ai/halogen-flash-server
-IMAGE_DIGEST=sha256:f3f99aa48f3a051f18da9ee24b333ca108fe745773fd036a365fe1875871d0be
+IMAGE_DIGEST=sha256:f5f5ced369500843555b8ac4ca05178fe350e22cbfb3a9460467b2715865569b
 IMAGE=$IMAGE_REPO@$IMAGE_DIGEST
 FILES=$here/files.tsv
 MODEL_ID=halogen-qwen3.8-flash-next
@@ -171,6 +171,34 @@ weights_check() {
   return 0
 }
 
+setting() {
+  settings=$here/halogen.conf
+  [ ! -f "$CONF" ] || settings=$CONF
+  value=$(sed -n "s/^$1=//p" "$settings" | tail -n 1)
+  if grep -q "^$1=" "$settings"; then printf '%s' "$value"; else printf '%s' "$2"; fi
+}
+
+checkpoint_check() {
+  checkpoint=$(setting HALOGEN_CHECKPOINT /models/w4b/qwen38-flash-next-w4b.hgn)
+  overlay=$(setting HALOGEN_CK_OVERLAY /models/w4b/qwen38-flash-next-w4b.overlay.hgn)
+  case "$checkpoint" in
+    /gguf/*) weights_check; return ;;
+    /models/*) ;;
+    *) say "MISSING unsupported checkpoint path: $checkpoint"; return 1 ;;
+  esac
+  missing=0
+  for artifact in "$checkpoint" "$overlay"; do
+    [ -n "$artifact" ] || continue
+    case "$artifact" in
+      /models/*)
+        if [ -s "$MODELS/${artifact#/models/}" ]; then say "ok      $artifact";
+        else say "MISSING $artifact (stage the pinned HGN artifact first)"; missing=1; fi ;;
+      *) say "MISSING unsupported overlay path: $artifact"; missing=1 ;;
+    esac
+  done
+  return "$missing"
+}
+
 weights_pull() {
   files | awk -F '\t' '$1 == "weights"' | while IFS="$(printf '\t')" read -r kind repo revision path bytes sum; do
     dir=$(repo_dir "$repo")
@@ -249,17 +277,19 @@ install_all() {
   command -v nft >/dev/null || [ "$DRY_RUN" = 1 ] || die "nftables is missing"
   [ -e /dev/kfd ] || [ "$DRY_RUN" = 1 ] || die "no /dev/kfd: the GPU's compute device (amdgpu, kernel 7.x)"
 
-  say "== the weights ($WEIGHTS_REPO @ ${WEIGHTS_REVISION%${WEIGHTS_REVISION#????????}})"
-  weights_check || [ "$DRY_RUN" = 1 ] || die "the weights are missing: $0 weights pull (94 GB, owner's OK first)"
+  say "== the selected checkpoint"
+  checkpoint_check || [ "$DRY_RUN" = 1 ] || die "the selected checkpoint is missing; stage W4B or select and fetch the pinned IQ4 weights"
 
   say "== the image (pinned by digest: $HALOGEN_VERSION)"
   if [ "$DRY_RUN" = 0 ] && podman image exists "$IMAGE"; then say "have $IMAGE"; else
     run podman pull "$IMAGE"
   fi
 
-  say "== MTP head and tokenizer (pinned, checked) in $MODELS"
+  say "== tokenizer and selected MTP head (pinned, checked) in $MODELS"
   run install -d -m 0755 "$STATE" "$MODELS" "$MODELS/tokenizer" "$CACHE"
-  files | awk -F '\t' '$1 == "head" || $1 == "tokenizer"' | while IFS="$(printf '\t')" read -r kind repo revision path bytes sum; do
+  run mkdir -p "$(repo_dir "$WEIGHTS_REPO")"
+  mtp_head=$(setting HALOGEN_MTP_HEAD '')
+  files | awk -F '\t' -v mtp_head="$mtp_head" '$1 == "tokenizer" || ($1 == "head" && mtp_head != "")' | while IFS="$(printf '\t')" read -r kind repo revision path bytes sum; do
     fetch "$repo" "$revision" "$path" "$bytes" "$sum" "$MODELS/$path"
   done
 
@@ -398,8 +428,10 @@ status() {
   else
     say "settings:      missing ($CONF)"
   fi
-  weights_check >/dev/null 2>&1 && say "weights:       present ($WEIGHTS_REPO)" || say "weights:       MISSING ($0 weights check)"
-  cache_status
+  say "checkpoint:    $(setting HALOGEN_CHECKPOINT /models/w4b/qwen38-flash-next-w4b.hgn)"
+  say "overlay:       $(setting HALOGEN_CK_OVERLAY /models/w4b/qwen38-flash-next-w4b.overlay.hgn)"
+  checkpoint_check || true
+  case "$(setting HALOGEN_CHECKPOINT /models/w4b/qwen38-flash-next-w4b.hgn)" in /gguf/*) cache_status ;; esac
   health=$(curl -fsS --max-time 5 "http://127.0.0.1:$PORT/health" 2>/dev/null || true)
   if [ -n "$health" ]; then
     say "health:        $(printf '%s' "$health" | python3 -c 'import json,sys; d=json.load(sys.stdin); v=d.get("version") or {}; print(d.get("status"), v.get("engine"), "·", d.get("model"), "· slots", d.get("slots"), "· busy", d.get("in_flight"), "queued", d.get("queued"), "· vision", "on" if (d.get("vision") or {}).get("enabled") else "off")' 2>/dev/null)"

@@ -22,7 +22,7 @@ FILES = HERE.parent / 'files.tsv'
 
 IMAGE = (
     'ghcr.io/peonist-ai/halogen-flash-server@'
-    'sha256:f3f99aa48f3a051f18da9ee24b333ca108fe745773fd036a365fe1875871d0be'
+    'sha256:f5f5ced369500843555b8ac4ca05178fe350e22cbfb3a9460467b2715865569b'
 )
 WEIGHTS_REPO_DIR = 'models--unsloth--Qwen3.8-Flash-Next-GGUF'
 WEIGHTS_REVISION = '38bb39ee97821de2c9009abb7e93950eec396e66'
@@ -136,10 +136,8 @@ class HalogenInstallTest(unittest.TestCase):
         unit = self.render('unit')
         self.assertIn(
             f'-v /var/lib/helena-ai/models/hub/{WEIGHTS_REPO_DIR}:/gguf:ro', unit)
-        self.assertIn(
-            f'HALOGEN_CHECKPOINT=/gguf/snapshots/{WEIGHTS_REVISION}/UD-IQ4_XS/'
-            'Qwen3.8-Flash-Next-UD-IQ4_XS-00001-of-00003.gguf', unit)
-        self.assertIn('HALOGEN_MTP_HEAD=/models/qwen38-flash-next-mtp.hgn', unit)
+        self.assertIn('Environment=HALOGEN_CHECKPOINT=/models/w4b/qwen38-flash-next-w4b.hgn', unit)
+        self.assertIn('-e HALOGEN_MTP_HEAD \\', unit)
         self.assertIn('HALOGEN_TOKENIZER=/models/tokenizer', unit)
         self.assertIn('-v /var/lib/helena-halogen/models:/models:ro', unit)
         self.assertIn('EnvironmentFile=/etc/helena/halogen.conf', unit)
@@ -154,6 +152,43 @@ class HalogenInstallTest(unittest.TestCase):
         unit = self.render('unit')
         for name in re.findall(r'^#?(HALOGEN_[A-Z_]+)=', conf, re.M):
             self.assertIn(f'-e {name}', unit)
+
+    def test_w4b_is_the_default_and_iq4_can_be_selected_in_the_settings(self):
+        conf = (HERE.parent / 'halogen.conf').read_text()
+        self.assertIn('HALOGEN_CHECKPOINT=/models/w4b/qwen38-flash-next-w4b.hgn', conf)
+        self.assertIn('HALOGEN_CK_OVERLAY=/models/w4b/qwen38-flash-next-w4b.overlay.hgn', conf)
+        self.assertIn('HALOGEN_MTP_HEAD=\n', conf)
+        unit = self.render('unit')
+        self.assertIn('-e HALOGEN_CHECKPOINT \\', unit)
+        self.assertIn('-e HALOGEN_CK_OVERLAY \\', unit)
+        self.assertIn('-e HALOGEN_MTP_HEAD \\', unit)
+
+    def test_install_checks_the_selected_w4b_artifacts_instead_of_iq4_shards(self):
+        # Exercise the check in dry-run mode; it must name missing W4B files without downloading them.
+        out = self.dry('install')
+        self.assertIn('w4b/qwen38-flash-next-w4b.hgn', out)
+        self.assertIn('w4b/qwen38-flash-next-w4b.overlay.hgn', out)
+        self.assertNotIn('MISSING UD-IQ4_XS/', out)
+
+    def test_status_requires_both_w4b_files_and_keeps_an_existing_iq4_selection(self):
+        models = Path(self.root, 'var/lib/helena-halogen/models/w4b')
+        models.mkdir(parents=True)
+        (models / 'qwen38-flash-next-w4b.hgn').write_bytes(b'staged checkpoint')
+        out = run('status', root=self.root).stdout
+        self.assertIn('ok      /models/w4b/qwen38-flash-next-w4b.hgn', out)
+        self.assertIn('MISSING /models/w4b/qwen38-flash-next-w4b.overlay.hgn', out)
+        (models / 'qwen38-flash-next-w4b.overlay.hgn').write_bytes(b'staged overlay')
+        self.assertNotIn('MISSING /models/w4b/', run('status', root=self.root).stdout)
+        conf = Path(self.root, 'etc/helena/halogen.conf')
+        conf.parent.mkdir(parents=True)
+        conf.write_text(f'HALOGEN_CHECKPOINT=/gguf/snapshots/{WEIGHTS_REVISION}/UD-IQ4_XS/'
+                        'Qwen3.8-Flash-Next-UD-IQ4_XS-00001-of-00003.gguf\n'
+                        'HALOGEN_CK_OVERLAY=\nHALOGEN_MTP_HEAD=/models/qwen38-flash-next-mtp.hgn\n')
+        out = self.dry('install')
+        self.assertIn('MISSING UD-IQ4_XS/', out)
+        self.assertNotIn('MISSING /models/w4b/', out)
+        self.assertIn('have ' + str(conf), out)
+        self.assertIn('qwen38-flash-next-mtp.hgn', out)
 
     # ── the firewall ──────────────────────────────────────────────────────────────────────
 
@@ -189,7 +224,7 @@ class HalogenInstallTest(unittest.TestCase):
         self.assertIn(f'would: podman pull {IMAGE}', out)
         for kind, repo, revision, path, *_ in rows():
             url = f'https://huggingface.co/{repo}/resolve/{revision}/{path}'
-            if kind == 'weights':
+            if kind in {'weights', 'head'}:
                 self.assertNotIn(url, out)
             else:
                 self.assertIn(url, out)

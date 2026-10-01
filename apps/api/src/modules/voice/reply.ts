@@ -157,7 +157,7 @@ async function streamAnswer(
           tools: request.tools?.map((tool) => ({ type: 'function', function: tool })),
           tool_choice: 'auto',
           max_tokens: request.maxTokens,
-          temperature: 0.3,
+          temperature: 0,
           stream: true,
           stream_options: { include_usage: true },
           reasoning_effort: 'none',

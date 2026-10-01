@@ -9,10 +9,29 @@ Host memory policy, measured limits, kernel research and maintenance steps:
 at its next start, including with an existing settings file; that file can override it.
 Kernel boot arguments remain a separate manual decision.
 
+The default is Halogen 0.15.2 with W4B. Stage `w4b/qwen38-flash-next-w4b.hgn` and
+`w4b/qwen38-flash-next-w4b.overlay.hgn` under `/var/lib/helena-halogen/models` before
+installing; the installer checks both files and does not download W4B artifacts. The overlay
+supplies MTP, so `HALOGEN_MTP_HEAD` is empty. Checkpoint selection lives in
+`/etc/helena/halogen.conf` and is passed through the standard unit.
+
+For IQ4 rollback, set these three values in that settings file, drain local agent work,
+stop all ROCm consumers together, and start Halogen before TTS and embedding:
+
+```sh
+HALOGEN_CHECKPOINT=/gguf/snapshots/38bb39ee97821de2c9009abb7e93950eec396e66/UD-IQ4_XS/Qwen3.8-Flash-Next-UD-IQ4_XS-00001-of-00003.gguf
+HALOGEN_CK_OVERLAY=
+HALOGEN_MTP_HEAD=/models/qwen38-flash-next-mtp.hgn
+```
+
+The IQ4 shards and cache remain available for this rollback. After either start, verify
+health and a tool call before restoring admission. Four slots share 262144 KV positions;
+GPU weights remain locked in memory.
+
 | File | What it is |
 |---|---|
 | `install.sh` | status, install (image by digest, MTP head and tokenizer, settings, network, firewall, unit, forwarders), weights check/pull, verify, cache status/clear, uninstall |
-| `files.tsv` | every file Halogen reads: repository, revision, path, size, SHA-256 |
+| `files.tsv` | IQ4 rollback shards, MTP head and tokenizer pins: repository, revision, path, size, SHA-256 |
 | `halogen.conf` | the tunables, copied once to `/etc/helena/halogen.conf` |
 | `systemd/helena-halogen.service.in` | the unit, rendered by `install.sh` (`install.sh render unit` shows it) |
 | `helena-halogen.nft.in` | the firewall table (`install.sh render nft`) |
@@ -29,7 +48,7 @@ the new unit takes effect at the next restart.
 2. `sudo ./install.sh --dry-run install`, then `sudo ./install.sh install`:
    - image: already present by digest, no download;
    - MTP head and tokenizer: already in `/var/lib/helena-halogen/models`, checked by SHA-256;
-   - `/etc/helena/halogen.conf` with 2 slots / 262,144 positions / 16,384 tokens and
+   - `/etc/helena/halogen.conf` with W4B, 4 slots / 262,144 positions / 16,384 tokens and
      `HALOGEN_REASONING_EFFORT=medium` (an existing file is kept);
    - user `helena-halogen-fwd`, podman network `helena-halogen` (10.89.73.0/29, no DNS);
    - firewall table `inet helena_halogen` loaded (this blocks the test proxy
