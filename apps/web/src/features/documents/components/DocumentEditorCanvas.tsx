@@ -115,7 +115,7 @@ export default function DocumentEditorCanvas({
   return (
     <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
       {editable && !embedded && (
-        <div className="sticky top-0 z-10 border-b bg-background/92 px-3 py-1.5 backdrop-blur-xl supports-[backdrop-filter]:bg-background/78 md:px-5">
+        <div className="sticky top-0 z-10 border-b bg-background px-3 py-1.5 md:px-5">
           <div className="mx-auto w-full max-w-[920px]">
             <DocumentToolbar editor={editor} onUploadImage={upload.mutateAsync} />
           </div>
