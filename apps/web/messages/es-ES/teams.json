@@ -433,7 +433,13 @@
         "model": "Modelo que resume",
         "modelDefault": "Automático (modelo propio o IA local)"
       },
-      "behaviourTitle": "Comportamiento"
+      "behaviourTitle": "Comportamiento",
+      "chatBudget": {
+        "title": "Chat time limit",
+        "seconds": "Time limit in seconds",
+        "summarize": "Give a final answer when the time limit is reached",
+        "summarySeconds": "Additional time for the final answer in seconds"
+      }
     },
     "runtimeConflicts": {
       "title": "Modificado fuera de {appName}",

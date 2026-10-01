@@ -4,6 +4,7 @@ import {
   type ActionCategory,
   type ActionScope,
 } from '@helena/sdk';
+import { CompactThreadPage } from '#modules/mail/threads/compact';
 import type { DeclaredPermission } from '#shared/guards';
 import type { McpApp } from './types';
 import routeToolCatalog from './route-tool-catalog.json';
@@ -60,6 +61,14 @@ export interface McpRouteTool {
   // `x-permission` on the route's detail. Absent on a route that asks only for
   // project membership.
   permission?: DeclaredPermission;
+  access?:
+    | 'team-manager'
+    | 'team-owner'
+    | 'decision-reader'
+    | 'agent-inspector'
+    | 'person-only'
+    | 'project-owner'
+    | 'root-owner';
   // The connector whose accounts the tool acts with. The tool is listed only to an
   // agent that holds a grant on one of them.
   connector?: string;
@@ -241,6 +250,7 @@ function generateRouteTools(app: McpApp): McpRouteTool[] {
             connector?: string;
           };
           'x-permission'?: DeclaredPermission;
+          'x-access'?: McpRouteTool['access'];
         }
       | undefined;
     const catalogEntry = catalog.get(`${route.method} ${route.path}`);
@@ -269,8 +279,11 @@ function generateRouteTools(app: McpApp): McpRouteTool[] {
       pathParams,
       hasBody: hooks.body != null,
       inputSchema: mergeInputSchema(hooks, pathParams),
-      outputSchema: outputSchema(hooks.response),
+      outputSchema: outputSchema(
+        tool === 'list_mail_threads_newest_first' ? { 200: CompactThreadPage } : hooks.response,
+      ),
       permission: detail?.['x-permission'],
+      ...(detail?.['x-access'] && { access: detail['x-access'] }),
       ...(detail?.['x-mcp']?.connector && { connector: detail['x-mcp'].connector }),
       // The catalog's action category supplies MCP hints for sends, publications,
       // credential changes and executions that the HTTP method cannot express.

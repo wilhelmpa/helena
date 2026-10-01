@@ -565,3 +565,38 @@ test('native Home root tool is carried directly through the full profile', () =>
   );
   expect(config.tools).toMatchObject({ profile: 'voll', core: ['run_as_root'] });
 });
+
+test('chat budget settings survive the API snapshot to native config binding', () => {
+  const settings = {
+    chatBudgetSeconds: 1200,
+    chatBudgetBehavior: 'fail' as const,
+    chatSummarySeconds: 30,
+  };
+  expect(
+    helenaAgentConfig({ ...snapshot, helena: { ...snapshot.helena, ...settings } }, [], {
+      url: 'http://localhost:3000',
+    }).limits,
+  ).toMatchObject(settings);
+});
+
+test('model step metrics reach the persisted AG-UI run timeline', async () => {
+  const events: { type: string; name?: string; value?: unknown }[] = [];
+  const stream = new AnswerStream('helena-jsonl', 'thread', '1', async (batch) => {
+    events.push(...batch);
+  });
+  const metric = {
+    type: 'usage',
+    step: 3,
+    model: 'local/w4b',
+    inputTokens: 100,
+    outputTokens: 20,
+    reasoningTokens: 17,
+    reasoningDurationMs: 800,
+    durationMs: 1200,
+  };
+  stream.write(lines(metric));
+  await stream.finish('');
+  expect(
+    events.find((event) => event.type === 'CUSTOM' && event.name === 'volition.model-step')?.value,
+  ).toEqual(metric);
+});

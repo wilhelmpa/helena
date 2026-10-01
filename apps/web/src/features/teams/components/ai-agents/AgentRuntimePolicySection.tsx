@@ -23,6 +23,7 @@ import { AgentFormSection } from './AgentFormSection';
 import AgentRuntimeConflicts from './AgentRuntimeConflicts';
 import { runtimeSelectionForModel } from './AgentRuntimePolicySection.logic';
 import FallbackModelsEditor from '@/features/agent-runtime/components/FallbackModelsEditor';
+import AgentChatBudgetSettings from './AgentChatBudgetSettings';
 import AgentCompressionSettings from './AgentCompressionSettings';
 
 const AGENT_DEFAULT = '__agent_default__';
@@ -123,6 +124,13 @@ export default function AgentRuntimePolicySection({
       />
 
       <AgentRuntimeConflicts conflicts={conflicts} onTakeOver={takeOverSoul} />
+      {runtime === 'helena' && (
+        <AgentChatBudgetSettings
+          value={policy.helena ?? {}}
+          disabled={!canEdit}
+          onChange={(helena) => patchPolicy({ helena })}
+        />
+      )}
       <SettingsGroup
         title={t('behaviourTitle')}
         advanced={

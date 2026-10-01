@@ -28,6 +28,7 @@ import type { McpCredential } from './credential';
 import { toolError } from './result';
 import { visibleConnectors } from '#modules/connectors/tools';
 import { callConfiguredTool, configuredToolsOf } from '#modules/agents/tools/run';
+import { routeAccessForAgent } from './access';
 import { SERVER_INFO } from './info';
 import { getDisplayName } from '@repo/db';
 
@@ -127,6 +128,7 @@ export async function buildMcpServer(
 
   const routes = new Map(routeTools(app).map((route) => [route.name, route]));
   const teamId = await callerTeam(userId);
+  const mayOffer = await routeAccessForAgent(userId, teamId);
   const needsTeam = (route: McpRouteTool) => route.pathParams.includes(TEAM_PARAM);
   // The access center's connector tools (routes that act with a Google account …) are
   // listed only to an agent that holds a grant on one of the connector's accounts; the
@@ -141,6 +143,8 @@ export async function buildMcpServer(
     .limit(1);
   const listed = () =>
     servedTools().filter((tool) => {
+      const route = routes.get(tool.name);
+      if (route && !mayOffer(route)) return false;
       if (
         routes.get(tool.name)?.path.startsWith('/agent-development/') &&
         homeCaller?.role !== 'home'

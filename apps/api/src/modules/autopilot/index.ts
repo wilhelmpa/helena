@@ -94,7 +94,7 @@ export const autopilotRoutes = new Elysia({ name: 'autopilot', detail: { tags: [
       body: budgetsBody,
       issueBudget: 'edit',
       response: { 200: t.Array(BudgetStatusSchema), ...commonErrors },
-      detail: { summary: 'Set task budgets' },
+      detail: { 'x-access': 'person-only', summary: 'Set task budgets' },
     },
   )
   .get('/projects/:projectKey/autopilot', ({ project }) => projectAutopilot(project.id), {
@@ -138,6 +138,7 @@ export const autopilotRoutes = new Elysia({ name: 'autopilot', detail: { tags: [
       body: budgetsBody,
       response: { 200: ProjectAutopilotResponse, ...commonErrors },
       detail: {
+        'x-access': 'person-only',
         summary: "Set the project's budgets",
         description:
           'Tokens, euros (estimated from the model prices) or seconds of work per UTC day, week or ' +
@@ -222,6 +223,7 @@ export const autopilotRoutes = new Elysia({ name: 'autopilot', detail: { tags: [
       body: budgetsBody,
       response: { 200: AgentAutopilotResponse, ...commonErrors },
       detail: {
+        'x-access': 'person-only',
         summary: "Set an agent's budgets",
         description:
           'Tokens, euros (estimated) or seconds of work per UTC day, week or month for everything the ' +

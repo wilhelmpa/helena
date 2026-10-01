@@ -4,7 +4,13 @@ import type { ModelFactory } from '../models';
 
 // A scripted model for the loop's tests: each call to it takes the next turn of the script.
 export type Turn =
-  | { text: string; reasoning?: string; inputTokens?: number; finishReason?: 'stop' | 'length' }
+  | {
+      text: string;
+      reasoning?: string;
+      reasoningTokens?: number;
+      inputTokens?: number;
+      finishReason?: 'stop' | 'length';
+    }
   | {
       calls: { name: string; input: unknown; id?: string }[];
       text?: string;
@@ -14,9 +20,9 @@ export type Turn =
   | { error: string }
   | { hang: true };
 
-const usage = (input = 100, output = 20) => ({
+const usage = (input = 100, output = 20, reasoning = 0) => ({
   inputTokens: { total: input, noCache: input, cacheRead: 0, cacheWrite: 0 },
-  outputTokens: { total: output, text: output, reasoning: 0 },
+  outputTokens: { total: output, text: output - reasoning, reasoning },
 });
 
 let callCounter = 0;
@@ -54,7 +60,7 @@ function partsOf(turn: Turn): LanguageModelV4StreamPart[] {
       unified: turn.finishReason ?? ('calls' in turn ? 'tool-calls' : 'stop'),
       raw: turn.finishReason ?? ('calls' in turn ? 'tool_calls' : 'stop'),
     },
-    usage: usage(turn.inputTokens),
+    usage: usage(turn.inputTokens, 20, 'reasoningTokens' in turn ? turn.reasoningTokens : 0),
   });
   return parts;
 }

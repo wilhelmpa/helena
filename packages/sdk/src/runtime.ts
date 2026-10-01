@@ -84,7 +84,16 @@ export type RuntimeStreamEvent =
       exitCode?: number | null;
     }
   // The context size of the last model call: tokens read (cache included) and written.
-  | { type: 'usage'; inputTokens: number; outputTokens: number }
+  | {
+      type: 'usage';
+      inputTokens: number;
+      outputTokens: number;
+      step?: number;
+      model?: string;
+      reasoningTokens?: number;
+      reasoningDurationMs?: number;
+      durationMs?: number;
+    }
   | { type: 'result'; text: string; exitCode?: number; error?: string; reason?: string }
   // What the whole command spent, summed over its model calls (OpenTelemetry GenAI counts),
   // for a runtime that reports its own totals (Helena's own loop).

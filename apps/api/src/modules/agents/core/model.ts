@@ -106,6 +106,27 @@ export const runtimePolicy = t.Object({
   helena: t.Optional(
     t.Object(
       {
+        chatBudgetSeconds: t.Optional(
+          t.Integer({
+            minimum: 60,
+            maximum: 7200,
+            description: 'Zeitgrenze für Chats in Sekunden (Standard 900).',
+          }),
+        ),
+        chatBudgetBehavior: t.Optional(
+          t.Union([t.Literal('summarize'), t.Literal('fail')], {
+            description:
+              'Bei Zeitgrenze abschließend ohne Werkzeuge antworten (Standard summarize) oder fehlschlagen.',
+          }),
+        ),
+        chatSummarySeconds: t.Optional(
+          t.Integer({
+            minimum: 5,
+            maximum: 180,
+            description:
+              'Zusätzliche Zeit für den Abschluss ohne Werkzeuge (Standard 60 Sekunden).',
+          }),
+        ),
         toolProfile: t.Optional(
           t.Union(
             [

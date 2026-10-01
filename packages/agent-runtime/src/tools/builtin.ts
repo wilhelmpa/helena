@@ -466,3 +466,24 @@ export function learnSkillTool(
     },
   };
 }
+
+// Edit distance gives useful hints even when the unknown name contains a typo.
+export function closestToolNames(name: string, names: string[]): string[] {
+  function distance(other: string): number {
+    let row = Array.from({ length: other.length + 1 }, (_, i) => i);
+    for (let i = 0; i < name.length; i++) {
+      const next = [i + 1];
+      for (let j = 0; j < other.length; j++)
+        next.push(
+          Math.min(next[j]! + 1, row[j + 1]! + 1, row[j]! + (name[i] === other[j] ? 0 : 1)),
+        );
+      row = next;
+    }
+    return row[other.length]!;
+  }
+  return names
+    .map((name) => ({ name, distance: distance(name) }))
+    .sort((a, b) => a.distance - b.distance || a.name.localeCompare(b.name))
+    .slice(0, 3)
+    .map((entry) => entry.name);
+}

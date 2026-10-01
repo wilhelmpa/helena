@@ -1,3 +1,4 @@
+import { DecisionClassView } from '#modules/decisions/model';
 import { t } from 'elysia';
 
 export const triageBatchBody = t.Object({
@@ -26,4 +27,42 @@ export const TriageBatchResponse = t.Object({
       error: t.Optional(t.String()),
     }),
   ),
+});
+
+export const TriageOverviewResponse = t.Object({
+  projectId: t.Number(),
+  accountId: t.Nullable(t.Number()),
+  accounts: t.Array(t.Object({ id: t.Number(), address: t.String(), enabled: t.Boolean() })),
+  total: t.Number(),
+  counts: t.Object({
+    status: t.Record(t.String(), t.Number()),
+    category: t.Record(t.String(), t.Number()),
+    priority: t.Record(t.String(), t.Number()),
+  }),
+  unresolved: t.Object({
+    total: t.Number(),
+    hasMore: t.Boolean(),
+    items: t.Array(
+      t.Object({
+        threadId: t.Number(),
+        accountId: t.Number(),
+        subject: t.String(),
+        snippet: t.String(),
+        lastMessageAt: t.String(),
+        status: t.String(),
+      }),
+    ),
+  }),
+  runsScope: t.Literal('project'),
+  lastRuns: t.Array(
+    t.Object({
+      id: t.String(),
+      status: t.String(),
+      createdAt: t.String(),
+      finishedAt: t.Nullable(t.String()),
+      error: t.Nullable(t.String()),
+      triage: t.Any(),
+    }),
+  ),
+  settings: DecisionClassView,
 });

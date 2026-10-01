@@ -93,9 +93,10 @@ export const runTimelineRoutes = new Elysia({
       teamPermission: ['ai_agents', 'read'],
       response: { 200: RunDetailResponse, ...commonErrors },
       detail: {
+        'x-access': 'agent-inspector',
         summary: 'Read one run of an agent',
         description:
-          'The run with its task, result, session, and what it spent per model. People only.',
+          'The run with its task, result, session, and what it spent per model. Home and authorized owner delegates may inspect within their team.',
       },
     },
   )
@@ -115,6 +116,7 @@ export const runTimelineRoutes = new Elysia({
       teamPermission: ['ai_agents', 'read'],
       response: { 200: RunEventPageResponse, ...commonErrors },
       detail: {
+        'x-access': 'agent-inspector',
         summary: "Read a run's timeline",
         description:
           'The AG-UI events of the run in order; pass the `next` of a page as `after` to read ' +
@@ -138,6 +140,7 @@ export const runTimelineRoutes = new Elysia({
       teamPermission: ['ai_agents', 'edit'],
       response: { 201: ContinueRunResponse, ...commonErrors, ...errors(409) },
       detail: {
+        'x-access': 'agent-inspector',
         summary: "Continue a run's session",
         description:
           "Queue a new run of the agent that resumes the finished run's session with the " +

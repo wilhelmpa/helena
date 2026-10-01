@@ -433,7 +433,13 @@
         "model": "Model that summarises",
         "modelDefault": "Automatic (own model or local AI)"
       },
-      "behaviourTitle": "Behaviour"
+      "behaviourTitle": "Behaviour",
+      "chatBudget": {
+        "title": "Chat time limit",
+        "seconds": "Time limit in seconds",
+        "summarize": "Give a final answer when the time limit is reached",
+        "summarySeconds": "Additional time for the final answer in seconds"
+      }
     },
     "runtimeConflicts": {
       "title": "Changed outside {appName}",

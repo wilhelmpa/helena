@@ -433,7 +433,13 @@
         "model": "Модель для сводки",
         "modelDefault": "Автоматически (своя модель или локальный ИИ)"
       },
-      "behaviourTitle": "Поведение"
+      "behaviourTitle": "Поведение",
+      "chatBudget": {
+        "title": "Chat time limit",
+        "seconds": "Time limit in seconds",
+        "summarize": "Give a final answer when the time limit is reached",
+        "summarySeconds": "Additional time for the final answer in seconds"
+      }
     },
     "runtimeConflicts": {
       "title": "Изменено вне {appName}",

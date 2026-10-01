@@ -215,6 +215,7 @@ export const mailDraftRoutes = new Elysia({
       params: draftParams,
       response: { 200: DraftResponse, ...commonErrors, ...errors(409) },
       detail: {
+        'x-access': 'person-only',
         summary: 'Send a mail draft',
         description: 'The worker sends it after ten seconds, the time left to undo it.',
       },

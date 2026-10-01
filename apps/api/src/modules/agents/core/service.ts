@@ -196,6 +196,10 @@ export function agentRuntimes(): AgentRuntimeKind[] {
 export const AGENT_RUNTIMES: AgentRuntimeKind[] = BASE_RUNTIMES;
 
 export interface AgentHelenaSettings {
+  chatBudgetSeconds?: number;
+  chatBudgetBehavior?: 'summarize' | 'fail';
+  chatSummarySeconds?: number;
+
   toolProfile?: 'assistent' | 'recherche' | 'coder-lite' | 'voll';
   escalation?: {
     mode?: 'auto' | 'never' | 'always';
@@ -217,6 +221,17 @@ export function helenaSettings(value: unknown): AgentHelenaSettings | undefined 
   if (!value || typeof value !== 'object') return undefined;
   const raw = value as Record<string, unknown>;
   const out: AgentHelenaSettings = {};
+  for (const [key, min, max] of [
+    ['chatBudgetSeconds', 60, 7200],
+    ['chatSummarySeconds', 5, 180],
+  ] as const) {
+    const value = raw[key];
+    if (typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max)
+      out[key] = value;
+  }
+  if (raw.chatBudgetBehavior === 'summarize' || raw.chatBudgetBehavior === 'fail')
+    out.chatBudgetBehavior = raw.chatBudgetBehavior;
+
   if (TOOL_PROFILES.includes(raw.toolProfile as never)) {
     out.toolProfile = raw.toolProfile as AgentHelenaSettings['toolProfile'];
   }

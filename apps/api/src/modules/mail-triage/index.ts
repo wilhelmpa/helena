@@ -2,10 +2,13 @@ import { Elysia, t } from 'elysia';
 import { authContext } from '#shared/auth-context';
 import { requireUser } from '#shared/access';
 import { commonErrors, errors } from '#shared/responses';
+import { mailGuards } from '#modules/mail/guards';
 import { guards } from '#shared/guards';
 import { mcpTool } from '#mcp/generate';
-import { triageBatchBody, TriageBatchResponse } from './model';
-import { threadAccess } from '#modules/mail/access';
+import { triageBatchBody, TriageBatchResponse, TriageOverviewResponse } from './model';
+import { mailTriageOverview } from './overview';
+
+import { assertMailAccess, threadAccess } from '#modules/mail/access';
 import {
   acceptSuggestion,
   classificationsOfThreads,
@@ -68,6 +71,22 @@ export const mailTriageRoutes = new Elysia({
 })
   .use(authContext)
   .use(guards)
+  .use(mailGuards)
+  .get(
+    '/projects/:projectKey/mail-triage/overview',
+    ({ project, query }) => mailTriageOverview(project.teamId, project.id, query.accountId),
+    {
+      permission: ['mail', 'read'],
+      query: t.Object({ accountId: t.Optional(t.Numeric({ minimum: 1 })) }),
+      response: { 200: TriageOverviewResponse, ...commonErrors },
+      detail: {
+        summary: 'Read the mail triage overview of a project',
+        description:
+          'Assess triage in one call: thread counts by status/category/priority, up to 25 unsure, failed or unclassified threads, last five triage routine runs and settings/evaluation of helena.mail. Optional accountId filters counts and unresolved threads; routine outcomes are project-wide. hasMore explicitly marks an incomplete unresolved list. Does not send, delete or change mail.',
+        ...mcpTool('get_mail_triage_overview', undefined, 'read'),
+      },
+    },
+  )
   .post(
     '/projects/:projectKey/mail-triage/run',
     async ({ project, body, request, user }) => {
@@ -91,7 +110,7 @@ export const mailTriageRoutes = new Elysia({
       return result;
     },
     {
-      permission: ['mail', 'edit'],
+      mailTriage: true,
       body: triageBatchBody,
       response: { 200: TriageBatchResponse, ...commonErrors, ...errors(409) },
       detail: {
@@ -130,7 +149,7 @@ export const mailTriageRoutes = new Elysia({
   .post(
     '/mail/threads/:threadId/classification',
     async ({ params, user, request }) => {
-      await threadAccess(params.threadId, user, 'edit', request.headers);
+      await threadAccess(params.threadId, user, 'triage', request.headers);
       return { classification: await classifyThreadNow(params.threadId, requireUser(user).id) };
     },
     {
@@ -139,19 +158,24 @@ export const mailTriageRoutes = new Elysia({
         200: t.Object({ classification: t.Nullable(MailClassification) }),
         ...commonErrors,
       },
-      detail: { summary: 'Classify a mail thread now' },
+      detail: { summary: 'Classify a mail thread now', 'x-permission': ['mail', 'triage'] },
     },
   )
 
   .patch(
     '/mail/threads/:threadId/classification',
     async ({ params, body, user, request }) => {
-      await threadAccess(params.threadId, user, 'edit', request.headers);
+      const thread = await threadAccess(params.threadId, user, 'triage', request.headers);
+      if (body.projectId !== undefined && body.projectId !== thread.projectId)
+        await assertMailAccess(thread.teamId, body.projectId, user, 'triage', request.headers);
       return correctClassification(params.threadId, body, requireUser(user).id);
     },
     {
       params: threadParams,
       body: t.Object({
+        status: t.Optional(
+          t.Union([t.Literal('classified'), t.Literal('unsure'), t.Literal('failed')]),
+        ),
         category: t.Optional(t.String({ maxLength: 40 })),
         priority: t.Optional(t.String({ maxLength: 20 })),
         projectId: t.Optional(t.Nullable(t.Integer({ minimum: 1 }))),
@@ -159,6 +183,7 @@ export const mailTriageRoutes = new Elysia({
       }),
       response: { 200: MailClassification, ...commonErrors },
       detail: {
+        'x-permission': ['mail', 'triage'],
         summary: "Correct a mail thread's classification",
         description: 'The right answer is kept and goes to the decision log for the evals.',
       },
@@ -168,7 +193,7 @@ export const mailTriageRoutes = new Elysia({
   .post(
     '/mail/threads/:threadId/classification/accept',
     async ({ params, body, user, request }) => {
-      await threadAccess(params.threadId, user, 'edit', request.headers);
+      await threadAccess(params.threadId, user, 'triage', request.headers);
       return acceptSuggestion(params.threadId, body.kind, requireUser(user).id);
     },
     {
@@ -176,6 +201,7 @@ export const mailTriageRoutes = new Elysia({
       body: t.Object({ kind: t.Union([t.Literal('task'), t.Literal('agent')]) }),
       response: { 200: MailClassification, ...commonErrors },
       detail: {
+        'x-permission': ['mail', 'triage'],
         summary: "Accept the classifier's suggestion",
         description:
           'Creates the suggested task in the thread’s project, or the task for the configured ' +

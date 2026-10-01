@@ -17,6 +17,7 @@ import { messageText, type SessionItem, type SessionStore } from './session';
 import { looksSecret, redactSecrets } from '@helena/facts';
 import type { AgentTool, PolicyQuestion, ToolOutput } from './tools/types';
 import { boundedToolResult } from './tool-result';
+import { closestToolNames } from './tools/builtin';
 
 // Helena's agent loop. One model call per step through the AI SDK (streaming, the tools
 // given without `execute`), then Helena runs the calls of that step itself: the policy
@@ -129,7 +130,8 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
   let budgetStarted = started;
   const kind = config.kind ?? 'run';
   const budgetMs =
-    (config.limits?.runBudgetSeconds ??
+    ((kind === 'chat' ? config.limits?.chatBudgetSeconds : undefined) ??
+      config.limits?.runBudgetSeconds ??
       (kind === 'chat' ? DEFAULTS.chatBudgetSeconds : DEFAULTS.runBudgetSeconds)) * 1000;
   const queueRetry = new LocalQueueRetry(
     (config.limits?.localModelQueueSeconds ??
@@ -147,6 +149,18 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
   const discovered = new Set<string>();
   let chain = [...input.models];
   if (chain.length === 0) throw new Error('no model to run on');
+
+  function modelTool(entry: AgentTool) {
+    return tool({
+      description: entry.description,
+      inputSchema: jsonSchema(entry.inputSchema as Parameters<typeof jsonSchema>[0], {
+        validate: (value) =>
+          value && typeof value === 'object' && !Array.isArray(value)
+            ? { success: true, value }
+            : { success: false, error: new Error('Tool arguments must be a JSON object') },
+      }),
+    });
+  }
 
   // ── the session ──
   let sessionId = input.sessionId;
@@ -297,13 +311,16 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     escalation: Escalation,
     lastText: string,
   ): Promise<LoopResult | 'switched' | null> => {
+    if (escalation.reason === 'failure' && config.escalation?.onFailure === false) return null;
     if (!escalation.target && config.escalation?.central && escalation.reason === 'failure') {
       const central = centralEscalation(
         config.escalation,
         input.prompt,
         input.env,
         escalation.detail,
-        ++failureAttempts,
+        escalation.detail === 'budget-80'
+          ? Math.max(++failureAttempts, config.escalation.central.failure.localAttempts)
+          : ++failureAttempts,
       );
       if (!central) return null;
       escalation = central;
@@ -446,6 +463,52 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
   const stepSignal = () =>
     input.followups ? AbortSignal.any([input.signal, input.followups.signal]) : input.signal;
 
+  async function summarizeBudget(): Promise<LoopResult> {
+    const notice = 'Zeitgrenze erreicht';
+    const fallback = `${notice}. ${lastText || 'Die Recherche konnte innerhalb der Zeitgrenze nicht abgeschlossen werden.'}\nOffen: abschließende Prüfung der ursprünglichen Frage.`;
+    const messages: ModelMessage[] = [
+      ...contextMessages(),
+      {
+        role: 'user',
+        content:
+          'Zeitgrenze erreicht. Antworte jetzt abschließend ohne Werkzeuge: Fasse die belegten Ergebnisse zusammen, nenne offene Fragen und Grenzen. Behaupte keine nicht geprüften Ergebnisse.',
+      },
+    ];
+    let text = fallback;
+    step += 1;
+    sink.emit({ type: 'text', delta: `\n\n${notice}.\n\n` });
+    try {
+      const outcome = await callModel(
+        chain[0]!,
+        messages,
+        {},
+        (config.limits?.chatSummarySeconds ?? 60) * 1000,
+        undefined,
+        true,
+      );
+      spend.steps += 1;
+      for (const key of [
+        'inputTokens',
+        'outputTokens',
+        'cacheReadTokens',
+        'cacheWriteTokens',
+        'reasoningTokens',
+      ] as const)
+        spend[key] += outcome.usage[key];
+      if (!outcome.text.trim()) sink.emit({ type: 'text', delta: fallback });
+      if (outcome.text.trim())
+        text = outcome.text.includes(notice)
+          ? outcome.text.trim()
+          : `${notice}. ${outcome.text.trim()}`;
+    } catch {
+      if (input.signal.aborted)
+        return finish({ status: 'failed', text: lastText, exitCode: 130, reason: 'aborted' });
+      sink.emit({ type: 'text', delta: text });
+    }
+    await save([{ role: 'assistant', content: text }], step);
+    return finish({ status: 'success', text, exitCode: 0, reason: 'budget' });
+  }
+
   for (;;) {
     await consumeInstructions();
     if (input.signal.aborted) {
@@ -453,6 +516,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     }
     const elapsed = now() - budgetStarted;
     if (elapsed >= budgetMs) {
+      if (kind === 'chat' && config.limits?.chatBudgetBehavior !== 'fail') return summarizeBudget();
       const escalated = await escalate({ reason: 'failure', detail: 'budget' }, lastText);
       if (escalated && escalated !== 'switched') return escalated;
       return finish({
@@ -502,15 +566,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     }
     for (const name of [...offered].sort()) {
       const entry = toolsByName.get(name)!;
-      toolSet[name] = tool({
-        description: entry.description,
-        inputSchema: jsonSchema(entry.inputSchema as Parameters<typeof jsonSchema>[0], {
-          validate: (value) =>
-            value && typeof value === 'object' && !Array.isArray(value)
-              ? { success: true, value }
-              : { success: false, error: new Error('Tool arguments must be a JSON object') },
-        }),
-      });
+      toolSet[name] = modelTool(entry);
     }
 
     // ── one model call, with the fallback chain ──
@@ -563,6 +619,13 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
       if (input.signal.aborted || (lastError instanceof StepAbort && lastError.why === 'aborted')) {
         return finish({ status: 'failed', text: lastText, exitCode: 130, reason: 'aborted' });
       }
+      if (
+        lastError instanceof StepAbort &&
+        lastError.why === 'budget' &&
+        kind === 'chat' &&
+        config.limits?.chatBudgetBehavior !== 'fail'
+      )
+        return summarizeBudget();
       let failureDetail = 'model-unavailable';
       if (lastError instanceof LocalModelBusy) failureDetail = 'local-model-busy';
       else if (lastError instanceof StepAbort) failureDetail = lastError.why;
@@ -606,11 +669,6 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     spend.cacheWriteTokens += outcome.usage.cacheWriteTokens;
     spend.reasoningTokens += outcome.usage.reasoningTokens;
     lastInputTokens = outcome.usage.inputTokens;
-    sink.emit({
-      type: 'usage',
-      inputTokens: outcome.usage.inputTokens,
-      outputTokens: outcome.usage.outputTokens,
-    });
     if (outcome.text.trim()) lastText = (continuedText + outcome.text).trim();
 
     const assistantContent: Exclude<
@@ -823,6 +881,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     tools: ToolSet,
     leftMs: number,
     queue?: QueueAttempt,
+    final = false,
   ) {
     const firstChunkMs =
       (config.limits?.firstChunkSeconds ??
@@ -860,7 +919,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     );
     // Only an explicitly configured step limit ends a step (153b): the run and chat budgets
     // bound a model call otherwise.
-    const stepLimited = config.limits?.stepSeconds !== undefined;
+    const stepLimited = !final && config.limits?.stepSeconds !== undefined;
     let stepTimer =
       queued || !stepLimited ? undefined : setTimeout(() => stop('step-timeout'), stepMs);
     const requestModel =
@@ -888,6 +947,9 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
       clearTimeout(watchdog);
       watchdog = setTimeout(() => stop('chunk'), chunkMs);
     };
+    const callStarted = performance.now();
+    let reasoningStarted: number | null = null;
+    let reasoningDurationMs = 0;
     let text = '';
     const calls: { id: string; name: string; input: unknown; invalid: boolean; error?: string }[] =
       [];
@@ -907,6 +969,14 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
         messages,
         tools,
         repairToolCall: async ({ toolCall }) => {
+          if (final) return null;
+          const entry = toolsByName.get(toolCall.toolName);
+          if (entry && !Object.hasOwn(tools, entry.name)) {
+            tools[entry.name] = modelTool(entry);
+            active.add(entry.name);
+            discovered.add(entry.name);
+            return toolCall;
+          }
           if (toolCall.toolName !== 'skill_manage') return null;
           try {
             let parsed: unknown = JSON.parse(toolCall.input);
@@ -953,7 +1023,16 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
               sink.emit({ type: 'text', delta: part.text });
             }
             break;
+          case 'reasoning-start':
+            reasoningStarted ??= performance.now();
+            break;
+          case 'reasoning-end':
+            if (reasoningStarted !== null)
+              reasoningDurationMs += performance.now() - reasoningStarted;
+            reasoningStarted = null;
+            break;
           case 'reasoning-delta':
+            reasoningStarted ??= performance.now();
             if (part.text) sink.emit({ type: 'thinking', delta: part.text });
             break;
           case 'tool-call': {
@@ -992,6 +1071,17 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
       clearTimeout(budgetTimer);
       clearTimeout(stepTimer);
       signal.removeEventListener('abort', onAbort);
+      if (reasoningStarted !== null) reasoningDurationMs += performance.now() - reasoningStarted;
+      sink.emit({
+        type: 'usage',
+        step,
+        model: model.id,
+        inputTokens: usage.inputTokens,
+        outputTokens: usage.outputTokens,
+        reasoningTokens: usage.reasoningTokens,
+        reasoningDurationMs: Math.round(reasoningDurationMs),
+        durationMs: Math.round(performance.now() - callStarted),
+      });
     }
     if (why === 'model-busy') throw new LocalModelBusy();
     if (why) throw new StepAbort(why);
@@ -1018,17 +1108,18 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
   }): Promise<{ output: ToolOutput; unknown?: boolean }> {
     const actualName = toolName(call);
     const entry = toolsByName.get(actualName);
-    if (!entry || !active.has(actualName)) {
+    if (!entry) {
+      const similar = closestToolNames(call.name, [...toolsByName.keys()]);
       return {
         unknown: true,
         output: {
-          text: entry
-            ? `The tool ${call.name} is not loaded. Find it with find_tools first.`
-            : `There is no tool ${call.name}.`,
+          text: `There is no tool ${call.name}. Find it with find_tools first.${similar.length ? ` Similar tools: ${similar.join(', ')}.` : ''}`,
           isError: true,
         },
       };
     }
+    active.add(actualName);
+    discovered.add(actualName);
     if (
       call.invalid &&
       !(actualName === 'load_skill' && /unavailable tool ['"]load_name['"]/.test(call.error ?? ''))

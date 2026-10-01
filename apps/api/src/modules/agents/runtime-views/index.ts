@@ -28,8 +28,8 @@ import {
 } from './model';
 
 // What an agent's runtime keeps on its own, read through its runner: its sessions with their
-// full transcripts, its logs, its health and version, its curator. People only; an agent never
-// reads another agent's (or its own) transcripts through these routes.
+// full transcripts, its logs, its health and version, its curator. People and authorized
+// Home/all-project/owner delegates may inspect them within their own team.
 const failures = { ...commonErrors, ...errors(409, 502, 503, 504) };
 const HEALTH_TIMEOUT_MS = 100_000;
 
@@ -94,6 +94,7 @@ export const runtimeViewRoutes = new Elysia({
       teamPermission: ['ai_agents', 'read'],
       response: { 200: SessionsResponse, ...failures },
       detail: {
+        'x-access': 'agent-inspector',
         summary: "List or search an agent's runtime sessions",
         description:
           'Without `q` a page of the sessions the runtime keeps, newest first; with `q` the ' +
@@ -129,6 +130,7 @@ export const runtimeViewRoutes = new Elysia({
       teamPermission: ['ai_agents', 'read'],
       response: { 200: TranscriptResponse, ...failures },
       detail: {
+        'x-access': 'agent-inspector',
         summary: 'Read the transcript of a session',
         description:
           'Every message with its reasoning, tool calls with arguments and results, times and ' +
@@ -167,6 +169,7 @@ export const runtimeViewRoutes = new Elysia({
       teamPermission: ['ai_agents', 'read'],
       response: { 200: LogLinesResponse, ...failures },
       detail: {
+        'x-access': 'agent-inspector',
         summary: "Read an agent's runtime log",
         description: 'The last lines of the runtime log, of one session when named, redacted.',
       },
@@ -187,7 +190,10 @@ export const runtimeViewRoutes = new Elysia({
       params: agentParams,
       teamPermission: ['ai_agents', 'read'],
       response: { 200: HealthResponse, ...failures },
-      detail: { summary: "Check an agent's runtime (hermes doctor)" },
+      detail: {
+        'x-access': 'agent-inspector',
+        summary: "Check an agent's runtime (hermes doctor)",
+      },
     },
   )
 
@@ -205,7 +211,10 @@ export const runtimeViewRoutes = new Elysia({
       params: agentParams,
       teamPermission: ['ai_agents', 'read'],
       response: { 200: VersionResponse, ...failures },
-      detail: { summary: "Read the version of an agent's runtime" },
+      detail: {
+        'x-access': 'agent-inspector',
+        summary: "Read the version of an agent's runtime",
+      },
     },
   )
 
@@ -223,7 +232,10 @@ export const runtimeViewRoutes = new Elysia({
       params: agentParams,
       teamPermission: ['ai_agents', 'read'],
       response: { 200: CuratorStatusResponse, ...failures },
-      detail: { summary: "Read the state of an agent's skill curator" },
+      detail: {
+        'x-access': 'agent-inspector',
+        summary: "Read the state of an agent's skill curator",
+      },
     },
   )
 
@@ -245,6 +257,7 @@ export const runtimeViewRoutes = new Elysia({
       teamPermission: ['ai_agents', 'edit'],
       response: { 202: QueuedResponse, ...failures },
       detail: {
+        'x-access': 'agent-inspector',
         summary: "Run an agent's skill curator now",
         description:
           'Queues a curator review in the runtime; read its outcome with the request route.',
@@ -268,6 +281,7 @@ export const runtimeViewRoutes = new Elysia({
       teamPermission: ['ai_agents', 'edit'],
       response: { 200: CuratorStatusResponse, ...failures },
       detail: {
+        'x-access': 'agent-inspector',
         summary: "Pin or unpin a skill for an agent's curator",
         description:
           'A pinned skill is never archived or changed by the curator. Whether the curator ' +
@@ -288,6 +302,9 @@ export const runtimeViewRoutes = new Elysia({
       params: requestParams,
       teamPermission: ['ai_agents', 'read'],
       response: { 200: RuntimeRequestStateResponse, ...commonErrors },
-      detail: { summary: 'Read the state of a queued runtime request' },
+      detail: {
+        'x-access': 'agent-inspector',
+        summary: 'Read the state of a queued runtime request',
+      },
     },
   );

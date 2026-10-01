@@ -1,4 +1,5 @@
 import { Elysia, t } from 'elysia';
+import { requiresPermission } from '#shared/guards';
 import { authContext } from '#shared/auth-context';
 import { assertPermission, requireTeamPermission, requireUser } from '#shared/access';
 import { noContent } from '#shared/http';
@@ -44,7 +45,10 @@ export const hubInboxRoutes = new Elysia({
     {
       query: sourceListQuery,
       response: { 200: HubInboxSourceListResponse, ...errors(401, 403, 404) },
-      detail: { summary: 'List connected inbox sources' },
+      detail: {
+        summary: 'List connected inbox sources',
+        ...requiresPermission(['integrations', 'read']),
+      },
     },
   )
   .patch(
@@ -109,7 +113,10 @@ export const hubInboxRoutes = new Elysia({
     {
       query: threadListQuery,
       response: { 200: HubInboxThreadPageResponse, ...errors(400, 401, 403, 404) },
-      detail: { summary: 'List unified inbox threads' },
+      detail: {
+        summary: 'List unified inbox threads',
+        ...requiresPermission(['integrations', 'read']),
+      },
     },
   )
   .patch(

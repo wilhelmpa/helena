@@ -114,6 +114,10 @@ export interface RuntimeCompression {
 // Settings of Helena's own loop (runtime `helena`, docs/helena-decisions/zentrale-laufzeit.md):
 // the tools of the agent's role and when it hands a task to a bigger model.
 export interface RuntimeHelenaSettings {
+  chatBudgetSeconds?: number;
+  chatBudgetBehavior?: 'summarize' | 'fail';
+  chatSummarySeconds?: number;
+
   coreTools?: string[];
   toolProfile?: 'assistent' | 'recherche' | 'coder-lite' | 'voll';
   escalation?: {

@@ -124,6 +124,27 @@ export const RuntimePolicySnapshotResponse = t.Object({
   helena: t.Optional(
     t.Object(
       {
+        chatBudgetSeconds: t.Optional(
+          t.Integer({
+            minimum: 60,
+            maximum: 7200,
+            description: 'Zeitgrenze für Chats in Sekunden (Standard 900).',
+          }),
+        ),
+        chatBudgetBehavior: t.Optional(
+          t.Union([t.Literal('summarize'), t.Literal('fail')], {
+            description:
+              'Bei Zeitgrenze abschließend ohne Werkzeuge antworten (Standard summarize) oder fehlschlagen.',
+          }),
+        ),
+        chatSummarySeconds: t.Optional(
+          t.Integer({
+            minimum: 5,
+            maximum: 180,
+            description:
+              'Zusätzliche Zeit für den Abschluss ohne Werkzeuge (Standard 60 Sekunden).',
+          }),
+        ),
         toolProfile: t.Optional(t.String()),
         coreTools: t.Optional(t.Array(t.String())),
         escalation: t.Optional(
@@ -138,6 +159,7 @@ export const RuntimePolicySnapshotResponse = t.Object({
           }),
         ),
         browserBudgetSeconds: t.Optional(t.Number()),
+        localModelQueueSeconds: t.Optional(t.Number()),
       },
       { description: "Settings of {appName}'s own loop, for an agent on the runtime helena." },
     ),

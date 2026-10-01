@@ -19,6 +19,11 @@ export type AgUiEvent =
   | { type: 'RUN_STARTED'; threadId: string; runId: string; protocolVersion: string }
   | { type: 'RUN_FINISHED'; threadId: string; runId: string }
   | { type: 'RUN_ERROR'; message: string; code?: string }
+  | {
+      type: 'CUSTOM';
+      name: 'volition.model-step';
+      value: Extract<RuntimeStreamEvent, { type: 'usage' }>;
+    }
   | { type: 'TEXT_MESSAGE_START'; messageId: string; role: 'assistant' }
   | { type: 'TEXT_MESSAGE_CONTENT'; messageId: string; delta: string }
   | { type: 'TEXT_MESSAGE_END'; messageId: string }
@@ -364,6 +369,9 @@ export class AnswerStream {
         if (!this.sawAnyText) this.appendText(event.text);
         return;
       case 'usage':
+        if (event.step !== undefined)
+          this.queued.push({ type: 'CUSTOM', name: 'volition.model-step', value: event });
+        return;
       case 'spend':
       case 'escalate':
         return;

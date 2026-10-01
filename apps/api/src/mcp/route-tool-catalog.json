@@ -2237,5 +2237,11 @@
     "path": "/teams/:teamId/template-bundles/export",
     "name": "export_team_template_bundle",
     "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/mail-triage/overview",
+    "name": "get_mail_triage_overview",
+    "category": "read"
   }
 ]

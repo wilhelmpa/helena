@@ -433,7 +433,13 @@
         "model": "Modell für die Zusammenfassung",
         "modelDefault": "Automatisch (eigenes Modell oder Lokale KI)"
       },
-      "behaviourTitle": "Verhalten"
+      "behaviourTitle": "Verhalten",
+      "chatBudget": {
+        "title": "Chat-Zeitgrenze",
+        "seconds": "Zeitgrenze in Sekunden",
+        "summarize": "Bei Zeitgrenze abschließend antworten",
+        "summarySeconds": "Zusätzliche Abschlusszeit in Sekunden"
+      }
     },
     "runtimeConflicts": {
       "title": "Außerhalb von {appName} geändert",

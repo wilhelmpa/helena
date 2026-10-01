@@ -1,3 +1,4 @@
+import { compactThreadPage, type CompactThreadPage } from '#modules/mail/threads/compact';
 import { AGENT_PROJECT_HEADER } from '#shared/agent-socket';
 import type { McpApp } from './types';
 import type { McpRouteTool } from './generate';
@@ -81,7 +82,9 @@ export async function dispatchTool(
   });
   if (credential.kind === 'oauth') setMcpOAuthToken(request, credential.accessToken);
   const response = await app.handle(request);
-  const text = await response.text();
+  let text = await response.text();
+  if (response.ok && tool.name === 'list_mail_threads_newest_first')
+    text = JSON.stringify(compactThreadPage(JSON.parse(text) as typeof CompactThreadPage.static));
   return {
     text,
     isError: response.status >= 400,

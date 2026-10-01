@@ -433,7 +433,13 @@
         "model": "用于汇总的模型",
         "modelDefault": "自动（自身模型或本地 AI）"
       },
-      "behaviourTitle": "行为"
+      "behaviourTitle": "行为",
+      "chatBudget": {
+        "title": "Chat time limit",
+        "seconds": "Time limit in seconds",
+        "summarize": "Give a final answer when the time limit is reached",
+        "summarySeconds": "Additional time for the final answer in seconds"
+      }
     },
     "runtimeConflicts": {
       "title": "在 {appName} 之外被更改",
