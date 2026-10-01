@@ -55,7 +55,7 @@ test('a stored classification failure exposes its safe service error', async () 
     error: 'The decision service answered HTTP 503.',
   }));
   expect(result).toMatchObject({
-    status: 'failed',
+    status: 'retry',
     error: 'The decision service answered HTTP 503.',
   });
 });
@@ -100,4 +100,14 @@ test('receipt results include existing and new IDs once, even when another actio
     receiptIds: [88, 89, 90],
     receiptCount: 3,
   });
+});
+
+test('stored classifier failures are deferred without failing actions', async () => {
+  const result = await triageMessageResult('VOL', message, async () => ({
+    status: 'failed',
+    issueId: null,
+    actions: [],
+    error: 'no answer within 15000 ms',
+  }));
+  expect(result).toMatchObject({ status: 'retry', actionFailed: false });
 });

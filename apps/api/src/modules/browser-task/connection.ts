@@ -1,3 +1,4 @@
+import { DecisionBudget, DecisionTimeout } from './decision-budget';
 import { TypeSafeClient, APITimeoutError } from '@typesafe-ai/sdk';
 import { getDisplayName } from '@repo/db';
 import {
@@ -48,6 +49,8 @@ export interface DecisionConnection {
   modelServer: string | null;
   localAiClassId?: string;
   priority?: 'normal' | 'realtime';
+  mailBudget?: { queueMs: number; generationMs: number };
+  decisionSubject?: string | null;
 }
 
 export interface SystemOneReply {
@@ -185,6 +188,7 @@ async function safeAddress(connection: DecisionConnection) {
     address = await addressOf(connection);
   } catch (error) {
     if (error instanceof DecisionConnectionError) throw error;
+    if (error instanceof DecisionTimeout) throw new DecisionConnectionError(504, error.message);
     throw new DecisionConnectionError(
       409,
       'The decision connection could not be loaded (Zugänge).',
@@ -263,7 +267,11 @@ function privateHosts(connection: DecisionConnection, baseUrl = connection.baseU
 }
 
 // The SDK's fetch, through the pinned, SSRF-guarded client.
-export function guardedFetch(allowPrivateHosts: string[], timeoutMs = 20_000): typeof fetch {
+export function guardedFetch(
+  allowPrivateHosts: string[],
+  timeoutMs = 20_000,
+  onInformation?: (statusCode: number) => void,
+): typeof fetch {
   return (async (input: string | URL | Request, init?: RequestInit) => {
     const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
     const raw = init?.headers;
@@ -279,6 +287,7 @@ export function guardedFetch(allowPrivateHosts: string[], timeoutMs = 20_000): t
       body: typeof init?.body === 'string' ? init.body : undefined,
       signal: init?.signal ?? undefined,
       timeoutMs,
+      onInformation,
       maxBytes: 4_000_000,
       allowPrivateHosts,
     });
@@ -344,6 +353,7 @@ export function describeFailure(error: unknown): { status: number; message: stri
       status: 502,
       message: 'The decision request is too large (HTTP 413); reduce its input.',
     };
+  if (status === 504) return { status: 504, message: 'The decision service timed out (HTTP 504).' };
   if (typeof status === 'number' && Number.isInteger(status) && status >= 400 && status <= 599)
     return { status: 502, message: `The decision service answered HTTP ${status}.` };
   if (error instanceof APITimeoutError || (error instanceof Error && error.name === 'TimeoutError'))
@@ -360,26 +370,63 @@ function openAiServer(
   connection: DecisionConnection,
   address: { baseUrl: string; key: string | null; model?: string | null; tokenIds?: TokenIds },
 ): OpenAiCompatibleServer {
-  const fetcher = guardedFetch(privateHosts(connection, address.baseUrl));
+  const budget =
+    isLocalHalogenUrl(address.baseUrl) && connection.mailBudget
+      ? new DecisionBudget(connection.mailBudget.queueMs, connection.mailBudget.generationMs)
+      : null;
   return {
     model: address.model || connection.model,
     ...(isLocalHalogenUrl(address.baseUrl) ? { concurrency: 1 } : {}),
     ...(address.tokenIds && { tokenIds: address.tokenIds }),
     async post(path, body, signal) {
-      const res = await fetcher(priorityProxyBaseUrl(systemOneUrl(address.baseUrl, path)), {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          ...(isLocalHalogenUrl(address.baseUrl)
-            ? { 'x-volition-halogen-priority': connection.priority ?? 'realtime' }
-            : {}),
-          ...(address.key ? { authorization: `Bearer ${address.key}` } : {}),
-        },
-        body: JSON.stringify(body),
-        signal,
-      });
-      if (!res.ok) throw Object.assign(new Error(`HTTP ${res.status}`), { status: res.status });
-      return res.json();
+      const post = async (postSignal: AbortSignal | undefined, admitted?: () => void) => {
+        const fetcher = guardedFetch(
+          privateHosts(connection, address.baseUrl),
+          budget ? 0 : 20_000,
+          (code) => {
+            if (code === 102) admitted?.();
+          },
+        );
+        const res = await fetcher(priorityProxyBaseUrl(systemOneUrl(address.baseUrl, path)), {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            ...(budget ? { 'x-volition-decision-admission': '1' } : {}),
+            ...(isLocalHalogenUrl(address.baseUrl)
+              ? { 'x-volition-halogen-priority': connection.priority ?? 'realtime' }
+              : {}),
+            ...(address.key ? { authorization: `Bearer ${address.key}` } : {}),
+          },
+          body: JSON.stringify(body),
+          signal: postSignal,
+        });
+        if (budget && res.status === 503) {
+          const failure = (await res
+            .clone()
+            .json()
+            .catch(() => null)) as { error?: { code?: string } } | null;
+          if (failure?.error?.code === 'engine_busy')
+            throw new DecisionTimeout('Mail classification queue admission timed out or is full');
+        }
+        if (!res.ok) throw Object.assign(new Error(`HTTP ${res.status}`), { status: res.status });
+        return res.json();
+      };
+      try {
+        return await (budget ? budget.run(signal, post) : post(signal));
+      } finally {
+        if (budget)
+          console.info(
+            '[volition-mail-decision]',
+            JSON.stringify({
+              credentialId: connection.credentialId,
+              messageId: /^mail:\d+$/.test(connection.decisionSubject ?? '')
+                ? Number(connection.decisionSubject!.slice(5))
+                : null,
+              waitMs: Math.round(budget.waitMs),
+              generationMs: Math.round(budget.generationMs),
+            }),
+          );
+      }
     },
   };
 }

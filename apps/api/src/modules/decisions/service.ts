@@ -1,3 +1,4 @@
+import { DecisionTimeout } from '#modules/browser-task/decision-budget';
 import { createHash } from 'node:crypto';
 import {
   decisionOptionIds,
@@ -171,8 +172,6 @@ export function inputHash(
     .digest('hex');
 }
 
-class DecisionTimeout extends Error {}
-
 // One request to a connection under the failsafe: the answer, or a timeout.
 export async function withinFailsafe(
   connection: DecisionConnection,
@@ -242,7 +241,11 @@ export async function askConnection(
 }
 
 function failureOf(error: unknown): { status: DecisionStatus; message: string } {
-  if (error instanceof DecisionTimeout) return { status: 'timeout', message: error.message };
+  if (
+    error instanceof DecisionTimeout ||
+    (error instanceof DecisionConnectionError && error.status === 504)
+  )
+    return { status: 'timeout', message: error.message };
   const message =
     error instanceof DecisionConnectionError
       ? error.message
@@ -335,6 +338,10 @@ export async function decide(request: DecideRequest): Promise<DecideOutcome> {
   const threshold = setting.threshold ?? agentDecision?.threshold ?? cls.defaults.threshold;
   if (!setting.enabled) return emptyOutcome('off', request.questions, threshold, null);
   const timeoutMs = effectiveTimeout(cls, setting);
+  const mail = cls.id === 'helena.mail';
+  const mailBudget = mail
+    ? { queueMs: 60_000, generationMs: Math.max(60_000, timeoutMs) }
+    : undefined;
   const started = Date.now();
   // Public callers resolve access before this point; internal callers also cannot attach
   // another team's project or agent to a request, an input log or its usage records.
@@ -395,6 +402,7 @@ export async function decide(request: DecideRequest): Promise<DecideOutcome> {
       )
       .map(({ attempt }) => attempt);
   }
+  if (mail) attempts = attempts.flatMap((attempt) => [attempt, attempt]);
   let partial: DecideOutcome | null = null;
   let partialIsStage = false;
   let last: { status: DecisionStatus; message: string; connection: DecisionConnection | null } = {
@@ -402,9 +410,14 @@ export async function decide(request: DecideRequest): Promise<DecideOutcome> {
     message: 'no decision model connection is set for this class',
     connection: null,
   };
+  let timedOut = false;
   for (const [index, { credentialId, role }] of attempts.entries()) {
     if (request.signal?.aborted) break;
-    const remaining = timeoutMs - (Date.now() - started);
+    if (mail && index % 2 === 1 && !timedOut) continue;
+    timedOut = false;
+    const remaining = mailBudget
+      ? mailBudget.queueMs + mailBudget.generationMs
+      : timeoutMs - (Date.now() - started);
     if (remaining < 50) break;
     const isStage = role === 'first-stage';
     let connection: DecisionConnection | null = null;
@@ -420,6 +433,7 @@ export async function decide(request: DecideRequest): Promise<DecideOutcome> {
         continue;
       }
       connection = found.connection;
+      if (mailBudget) connection = { ...connection, mailBudget, decisionSubject: request.subject };
       const attemptPolicy = jevDecisionPolicy(
         cls.id,
         connection.backend.id,
@@ -430,8 +444,10 @@ export async function decide(request: DecideRequest): Promise<DecideOutcome> {
         last = { status: 'no_backend', message: 'jev_calibration_abstains', connection };
         continue;
       }
-      // Reserve a share of the same total time budget for each remaining attempt.
-      const share = Math.max(1, Math.floor(remaining / (attempts.length - index)));
+      // Mail retries get a fresh queue/model budget; other classes share their total deadline.
+      const share = mail
+        ? remaining
+        : Math.max(1, Math.floor(remaining / (attempts.length - index)));
       const budget = isStage ? Math.min(share, stage!.policy.timeoutMs) : share;
       const result = isStage
         ? await askFirstStage(request, connection, budget, () => stillEnabled(credentialId))
@@ -467,6 +483,7 @@ export async function decide(request: DecideRequest): Promise<DecideOutcome> {
       partialIsStage = isStage;
     } catch (error) {
       const failure = failureOf(error);
+      timedOut = failure.status === 'timeout';
       last = { ...failure, connection };
       if (isStage) {
         if (await stillEnabled(credentialId).catch(() => false))

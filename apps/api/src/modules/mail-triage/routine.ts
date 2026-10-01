@@ -24,6 +24,7 @@ interface Summary {
   issueIds: number[];
   receiptIds: number[];
   failed: number;
+  retryMessages?: { messageId: number; error: string }[];
   reviewRequired: number;
   hasMore: boolean;
   error?: string;
@@ -57,6 +58,55 @@ async function closeControlTask(taskId: number, projectId: number) {
   await updateIssue(task.id, { columnId: completed.id }, { system: 'Workflow' }, { quiet: true });
 }
 
+function routineTriageState(
+  executor: Pick<typeof db, 'select'>,
+  projectId: number,
+  userId: string,
+  runId: number,
+) {
+  return executor
+    .select({
+      fireId: pipelineRunStep.runId,
+      stepId: pipelineRunStep.stepId,
+      iteration: pipelineRunStep.iteration,
+      state: pipelineRunStep.state,
+      taskId: pipelineRun.issueId,
+      title: pipelineRun.title,
+    })
+    .from(agentRun)
+    .innerJoin(aiAgent, eq(aiAgent.id, agentRun.agentId))
+    .innerJoin(
+      pipelineRunStep,
+      sql`${pipelineRunStep.state}->'agentRunIds' @> ${JSON.stringify([runId])}::jsonb`,
+    )
+    .innerJoin(pipelineRun, eq(pipelineRun.id, pipelineRunStep.runId))
+    .where(
+      and(
+        eq(agentRun.id, runId),
+        eq(aiAgent.userId, userId),
+        eq(agentRun.projectId, projectId),
+        eq(agentRun.status, 'pending'),
+        isNotNull(agentRun.claimedAt),
+        eq(pipelineRun.kind, 'routine'),
+        eq(pipelineRun.projectId, projectId),
+        inArray(pipelineRun.status, ['pending', 'running', 'waiting']),
+        eq(pipelineRunStep.kind, 'delegate'),
+      ),
+    );
+}
+
+export async function routineAttemptedMessages(
+  projectId: number,
+  userId: string,
+  header: string | null,
+) {
+  const runId = Number(header);
+  if (!Number.isSafeInteger(runId) || runId <= 0) return [];
+  const [row] = await routineTriageState(db, projectId, userId, runId);
+  if (!row || !isMailTriageRoutine(row.title)) return [];
+  return (row.state as { mailTriage?: Summary } | null)?.mailTriage?.messageIds ?? [];
+}
+
 export async function recordRoutineTriage(
   projectId: number,
   userId: string,
@@ -66,36 +116,9 @@ export async function recordRoutineTriage(
   const runId = Number(header);
   if (!Number.isSafeInteger(runId) || runId <= 0) return;
   const saved = await db.transaction(async (tx) => {
-    const [row] = await tx
-      .select({
-        fireId: pipelineRunStep.runId,
-        stepId: pipelineRunStep.stepId,
-        iteration: pipelineRunStep.iteration,
-        state: pipelineRunStep.state,
-        taskId: pipelineRun.issueId,
-        title: pipelineRun.title,
-      })
-      .from(agentRun)
-      .innerJoin(aiAgent, eq(aiAgent.id, agentRun.agentId))
-      .innerJoin(
-        pipelineRunStep,
-        sql`${pipelineRunStep.state}->'agentRunIds' @> ${JSON.stringify([runId])}::jsonb`,
-      )
-      .innerJoin(pipelineRun, eq(pipelineRun.id, pipelineRunStep.runId))
-      .where(
-        and(
-          eq(agentRun.id, runId),
-          eq(aiAgent.userId, userId),
-          eq(agentRun.projectId, projectId),
-          eq(agentRun.status, 'pending'),
-          isNotNull(agentRun.claimedAt),
-          eq(pipelineRun.kind, 'routine'),
-          eq(pipelineRun.projectId, projectId),
-          inArray(pipelineRun.status, ['pending', 'running', 'waiting']),
-          eq(pipelineRunStep.kind, 'delegate'),
-        ),
-      )
-      .for('update', { of: pipelineRunStep });
+    const [row] = await routineTriageState(tx, projectId, userId, runId).for('update', {
+      of: pipelineRunStep,
+    });
     if (!row?.taskId || !isMailTriageRoutine(row.title)) return null;
     const state = (row.state ?? {}) as Record<string, unknown>;
     const prior = state.mailTriage as Summary | undefined;
@@ -112,6 +135,19 @@ export async function recordRoutineTriage(
       ],
       receiptIds: [...new Set([...(prior?.receiptIds ?? []), ...batch.receiptIds])],
       failed: (prior?.failed ?? 0) + batch.failed,
+      retryMessages: [
+        ...new Map(
+          [
+            ...(prior?.retryMessages ?? []),
+            ...batch.results
+              .filter((r) => r.status === 'retry')
+              .map((r) => ({
+                messageId: r.messageId,
+                error: r.error ?? 'Classification deferred',
+              })),
+          ].map((r) => [r.messageId, r]),
+        ).values(),
+      ],
       reviewRequired: (prior?.reviewRequired ?? 0) + batch.reviewRequired,
       hasMore: batch.hasMore,
       error: prior?.error ?? batch.results.find((r) => r.error)?.error,
@@ -156,7 +192,9 @@ export async function routineTriageError(runId: string): Promise<string | null> 
   if (!summary?.calls) return 'Mail triage was not executed by the routine agent';
   if (summary.failed)
     return `Mail triage failed for ${summary.failed} operations${summary.error ? `: ${summary.error}` : ''}`;
-  if (summary.hasMore) return 'Mail triage stopped with unprocessed mail';
+
+  if (summary.hasMore && !summary.retryMessages?.length)
+    return 'Mail triage stopped with unprocessed mail';
   return null;
 }
 
@@ -220,6 +258,12 @@ export async function finishRoutineTriage(runId: string, error: string | null): 
     body: [
       `${new Date().toISOString()} · Mail triage · ${runId}: ${error ? 'failed' : 'completed successfully'}.`,
       `${summary?.messageIds.length ?? 0} messages checked; ${summary?.issueIds.length ?? 0} tasks; ${summary?.receiptIds.length ?? 0} receipts; ${summary?.reviewRequired ?? 0} uncertain classifications in the inbox.`,
+      ...(summary?.retryMessages?.length
+        ? [
+            `Retry on next scheduled run: ${summary.retryMessages.map((r) => `${r.messageId} (${r.error})`).join('; ')}.`,
+          ]
+        : []),
+      ...(summary?.hasMore ? ['Additional mail remains for the next scheduled run.'] : []),
       ...(error
         ? [
             `Error: ${error.slice(0, 2000)}. Incident: ${incidentHref ?? `#${incidentId}`}. This control cycle has ended; the next scheduled cycle may retry.`,

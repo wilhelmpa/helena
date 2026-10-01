@@ -32,7 +32,7 @@ export async function triageMessageResult(
           action.kind === 'receipt' ? (action.receiptIds ?? []) : [],
         ) ?? [],
       ),
-      status: result?.status ?? 'skipped',
+      status: result?.status === 'failed' ? 'retry' : (result?.status ?? 'skipped'),
       issueId: result?.issueId ?? null,
       actionFailed: result?.actions.some((action) => action.kind === 'skipped') ?? false,
       ...(result?.error ? { error: result.error } : {}),

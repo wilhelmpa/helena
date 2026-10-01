@@ -14,7 +14,7 @@ import {
   runProjectTriage,
 } from './classify';
 import './config';
-import { recordRoutineTriage } from './routine';
+import { recordRoutineTriage, routineAttemptedMessages } from './routine';
 
 // The mail classifier in the inbox (docs/helena-decisions/decisions.md §5): what it decided
 // for a thread, the owner's corrections, the suggestions the owner accepts, and "Einordnen"
@@ -71,7 +71,17 @@ export const mailTriageRoutes = new Elysia({
   .post(
     '/projects/:projectKey/mail-triage/run',
     async ({ project, body, request, user }) => {
-      const result = await runProjectTriage(project, body.maxMessages ?? 5, request.signal);
+      const attempted = await routineAttemptedMessages(
+        project.id,
+        requireUser(user).id,
+        request.headers.get('x-helena-run'),
+      );
+      const result = await runProjectTriage(
+        project,
+        body.maxMessages ?? 5,
+        request.signal,
+        attempted,
+      );
       await recordRoutineTriage(
         project.id,
         requireUser(user).id,
@@ -87,7 +97,7 @@ export const mailTriageRoutes = new Elysia({
       detail: {
         summary: 'Triage a batch of new inbox mail in this project',
         description:
-          'For native Helena schedules. Uses the enabled Mail decision class and its saved task/receipt preferences. Only connected, enabled accounts and threads in this project. The application task policy excludes newsletters, advertising, pure login/security/recovery notices and problem-free shipping. Uncertain eligibility creates no task: report reviewRequired and unsure message IDs for review, without bypassing the policy through another task tool. Never sends mail or delegates tasks. Repeat while hasMore and failed is zero; stop and report failures. Previously classified mail only retries failed receipt filing, without repeating task creation. receiptIds and receiptCount identify the distinct receipts successfully filed or already present in this run, combining first-time classification and receipt retries; they do not count newly created records. Each result reports the receipts for its classified message. receiptRetries counts successfully retried messages, not receipts; receiptRetries=0 does not mean no receipts were filed. An empty result or failure is not proof that no receipt exists. Each result identifies the classified message with messageId and its thread with threadId. Pass threadId (never messageId) to read_mail; threadHref opens that thread in Helena.',
+          'For native Helena schedules. Uses the enabled Mail decision class and its saved task/receipt preferences. Only connected, enabled accounts and threads in this project. The application task policy excludes newsletters, advertising, pure login/security/recovery notices and problem-free shipping. Uncertain eligibility creates no task: report reviewRequired and unsure message IDs for review, without bypassing the policy through another task tool. Never sends mail or delegates tasks. Repeat while hasMore and failed is zero; stop and report action failures. Classification status retry is deferred to the next scheduled run; report its messageId and error. Earlier attempted messages are excluded for this routine run. Previously classified mail only retries failed receipt filing, without repeating task creation. receiptIds and receiptCount identify the distinct receipts successfully filed or already present in this run, combining first-time classification and receipt retries; they do not count newly created records. Each result reports the receipts for its classified message. receiptRetries counts successfully retried messages, not receipts; receiptRetries=0 does not mean no receipts were filed. An empty result or failure is not proof that no receipt exists. Each result identifies the classified message with messageId and its thread with threadId. Pass threadId (never messageId) to read_mail; threadHref opens that thread in Helena.',
         ...mcpTool('run_mail_triage', undefined, 'execute'),
       },
     },

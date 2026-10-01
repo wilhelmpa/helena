@@ -40,6 +40,7 @@ import {
   retryReceiptFiling,
   classifyMessage,
   classifyPending,
+  runProjectTriage,
 } from '#modules/mail-triage/classify';
 import { intakeMailReceipts } from '#modules/receipts/receipts';
 import { mailTriageConfig } from '#modules/mail-triage/config';
@@ -61,6 +62,8 @@ let answers: Record<string, string | number> = {};
 let answerConfidence: Record<string, number> = {};
 let delayMs = 0;
 let providerUnavailable = false;
+let providerTimeouts = 0;
+let providerTimeoutCalls = 0;
 const seen: { path: string; body: unknown }[] = [];
 
 function pickFor(id: string, keys: string[]): string {
@@ -83,6 +86,13 @@ function readBody(request: import('node:http').IncomingMessage): Promise<string>
 
 beforeAll(async () => {
   systemOne = createServer(async (request, response) => {
+    if (providerTimeouts > 0) {
+      providerTimeouts--;
+      providerTimeoutCalls++;
+      response.writeHead(504, { 'content-type': 'application/json' });
+      response.end('{}');
+      return;
+    }
     if (providerUnavailable) {
       response.writeHead(503, { 'content-type': 'application/json' });
       response.end(JSON.stringify({ detail: 'Test provider unavailable' }));
@@ -172,6 +182,8 @@ beforeEach(async () => {
   answerConfidence = {};
   delayMs = 0;
   providerUnavailable = false;
+  providerTimeouts = 0;
+  providerTimeoutCalls = 0;
   seen.length = 0;
 });
 
@@ -2022,5 +2034,91 @@ describe('agent decision log', () => {
     expect(changed.status).toBe(204);
     expect((await call(agentKey, {})).structuredContent.data.items).toEqual([]);
     expect((await call(agentKey, { projectKey: 'PRIV' })).structuredContent.status).toBe(403);
+  });
+});
+
+describe('mail timeout recovery', () => {
+  it('retries a timeout once and classifies the same message without duplicate rows', async () => {
+    const { asOwner, project, teamId } = await setup();
+    const credentialId = await connection(asOwner, teamId);
+    await switchOn(asOwner, teamId, MAIL_CLASS, credentialId, {
+      config: { task: 'off', receipts: 'off', since: '2026-01-01T00:00:00Z' },
+    });
+    const box = await insertMailAccount(teamId, project.id);
+    const message = await insertMessage({
+      teamId,
+      projectId: project.id,
+      accountId: box.accountId,
+      folderId: box.inboxId,
+    });
+    providerTimeouts = 1;
+    const batch = await asOwner.projects({ projectKey: 'PRIV' })['mail-triage'].run.post({});
+    expect(batch.status).toBe(200);
+    expect(providerTimeoutCalls).toBe(1);
+    expect(batch.data!.failed).toBe(0);
+    expect(batch.data!.results[0]!.status).not.toBe('retry');
+    expect(
+      await db
+        .select()
+        .from(helenaMailClassification)
+        .where(eq(helenaMailClassification.messageId, message.messageRowId)),
+    ).toHaveLength(1);
+    expect((await db.select().from(helenaDecision)).some((row) => row.status === 'timeout')).toBe(
+      true,
+    );
+  });
+
+  it('bounds repeated timeouts, continues the batch, and retries the mail on the next call', async () => {
+    const { asOwner, project, teamId } = await setup();
+    const credentialId = await connection(asOwner, teamId);
+    await switchOn(asOwner, teamId, MAIL_CLASS, credentialId, {
+      config: { task: 'off', receipts: 'off', since: '2026-01-01T00:00:00Z' },
+    });
+    const box = await insertMailAccount(teamId, project.id);
+    const first = await insertMessage({
+      teamId,
+      projectId: project.id,
+      accountId: box.accountId,
+      folderId: box.inboxId,
+    });
+    await insertMessage({
+      teamId,
+      projectId: project.id,
+      accountId: box.accountId,
+      folderId: box.inboxId,
+    });
+    providerTimeouts = 2;
+    const route = asOwner.projects({ projectKey: 'PRIV' })['mail-triage'].run;
+    const batch = await route.post({ maxMessages: 5 });
+    expect(providerTimeoutCalls).toBe(2);
+    expect(batch.data).toMatchObject({
+      processed: 2,
+      failed: 0,
+      results: [
+        { messageId: first.messageRowId, status: 'retry', actionFailed: false },
+        { actionFailed: false },
+      ],
+    });
+    const [stored] = await db
+      .select()
+      .from(helenaMailClassification)
+      .where(eq(helenaMailClassification.messageId, first.messageRowId));
+    expect(stored!.status).toBe('failed');
+    const sameRun = await runProjectTriage(
+      project,
+      5,
+      undefined,
+      batch.data!.results.map((r) => r.messageId),
+    );
+    expect(sameRun.processed).toBe(0);
+    const next = await route.post({});
+    expect(next.data!.processed).toBe(1);
+    expect(next.data!.results[0]!.status).not.toBe('retry');
+    const [recovered] = await db
+      .select()
+      .from(helenaMailClassification)
+      .where(eq(helenaMailClassification.messageId, first.messageRowId));
+    expect(recovered!.id).toBe(stored!.id);
+    expect(recovered!.error).toBeNull();
   });
 });

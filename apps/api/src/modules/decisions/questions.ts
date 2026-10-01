@@ -246,11 +246,12 @@ export function mailContext(mail: {
       fromAddress: mail.fromAddress.slice(0, 300),
       to: mail.to?.slice(0, 300),
       subject: mail.subject.slice(0, 500),
-      attachments: mail.attachments?.slice(0, 50).map((name) => name.slice(0, 200)),
+      attachments: mail.attachments?.slice(0, 10).map((name) => name.slice(0, 100)),
       text: mail.text
+        .replace(/[ \t]+/g, ' ')
         .replace(/\n{3,}/g, '\n\n')
         .trim()
-        .slice(0, 3000),
+        .slice(0, 2000),
     })
   );
 }
