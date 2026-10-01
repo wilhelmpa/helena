@@ -62,6 +62,7 @@ export function localServers(snapshot: RuntimePolicySnapshot): ModelServer[] {
       kind: 'openai-compatible' as const,
       keyEnv: server.keyEnv,
       contextLength: server.contextLength,
+      models: server.models,
       thinkingSwitch: true,
       local: true,
     };

@@ -165,6 +165,7 @@ export const RuntimePolicySnapshotResponse = t.Object({
                 id: t.String(),
                 contextLength: t.Nullable(t.Number()),
                 vision: t.Boolean(),
+                maxOutputTokens: t.Optional(t.Integer({ minimum: 1 })),
               }),
             ),
           }),

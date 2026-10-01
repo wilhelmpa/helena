@@ -15,6 +15,7 @@ export interface ModelServer {
   keyEnv?: string | null;
   // The context window it serves, where known; the compression threshold follows it.
   contextLength?: number | null;
+  models?: { id: string; contextLength?: number | null; maxOutputTokens?: number }[];
   // Local model servers (Qwen templates) switch thinking with chat_template_kwargs.
   thinkingSwitch?: boolean;
   // false: the turns on this server never think (Helena's `<provider>--nothink`).
@@ -110,6 +111,7 @@ export const DEFAULTS = {
   localModelQueueSeconds: 600,
   chatModelQueueSeconds: 180,
   firstChunkSeconds: 30,
+  localFirstChunkSeconds: 120,
   chunkSeconds: 30,
   maxOutputTokens: 4096,
   toolTimeoutSeconds: 120,

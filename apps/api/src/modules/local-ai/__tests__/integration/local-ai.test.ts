@@ -418,6 +418,10 @@ describe('local AI', () => {
       { task: 'compression', provider: 'helena-local', model: 'Qwen3.6-35B-A3B-GGUF' },
     ]);
     expect(runtime?.servers[0]?.models.map((model) => model.id)).toEqual(['Qwen3.6-35B-A3B-GGUF']);
+    policy.units.npu = true;
+    const allowed = runtimeLocalAi(policy, [{ ...row!, models: [npu, gpu] }]);
+    expect(allowed?.servers[0]?.models.find((model) => model.id === npu.id)?.maxOutputTokens).toBe(1024);
+    expect(allowed?.servers[0]?.models.find((model) => model.id === gpu.id)?.maxOutputTokens).toBeUndefined();
   });
 
   it('runs an agent set to a local model on its default while local AI is off', async () => {

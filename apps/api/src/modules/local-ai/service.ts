@@ -876,6 +876,7 @@ export function runtimeLocalAi(
         id: model.id,
         contextLength: model.contextLength,
         vision: model.capabilities.includes('vision'),
+        ...(model.unit === 'npu' && { maxOutputTokens: 1024 }),
       })),
     })),
     helpers,

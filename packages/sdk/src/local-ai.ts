@@ -466,7 +466,7 @@ export interface RuntimeModelServer {
   // The variable the key reaches the runtime in; null for a server without one.
   keyEnv: string | null;
   contextLength: number;
-  models: { id: string; contextLength: number | null; vision: boolean }[];
+  models: { id: string; contextLength: number | null; vision: boolean; maxOutputTokens?: number }[];
   // The server's second address (ModelServerType.noThinkingBaseUrl): the runner writes a
   // second provider there, `localProviderWithoutThinking(provider)`, whose turns do not think.
   // Absent on a server without one, and from an older API.

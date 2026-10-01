@@ -26,6 +26,20 @@ import { modelChain } from '@helena/agent-runtime';
 const lines = (...events: object[]) =>
   `${events.map((event) => JSON.stringify(event)).join('\n')}\n`;
 
+test('carries each local model context and output limit into native model resolution', () => {
+  const servers = localServers({
+    revision: 'small-local-fixture', runtimePolicy: { files: [] }, skills: [],
+    localAi: { helpers: [], servers: [{
+      provider: 'helena-volition-npu', baseUrl: 'http://127.0.0.1:1/v1',
+      keyEnv: null, contextLength: 65536,
+      models: [{ id: 'small', contextLength: 8192, vision: false, maxOutputTokens: 1024 }],
+    }] },
+  });
+  const resolved = modelChain('helena-volition-npu/small', [], servers, null, {}).chain[0]!;
+  expect(resolved.contextLength).toBe(8192);
+  expect(resolved.maxOutputTokens).toBe(1024);
+});
+
 const snapshot: RuntimePolicySnapshot = {
   revision: 'r1',
   model: 'helena-halogen/halogen-qwen3.8-flash-next',

@@ -242,6 +242,38 @@ describe('agent loop', () => {
     expect(result.reason).toBe('model-unavailable');
   });
 
+  test('lets a local model finish a cold prefill longer than thirty seconds', async () => {
+    const model = scriptedModel([{ text: 'Cold prefill completed.' }]);
+    const stream = model.doStream.bind(model);
+    model.doStream = async (options) => {
+      await new Promise((resolve) => setTimeout(resolve, 31_000));
+      return stream(options);
+    };
+    const { result } = await run([], {
+      models: { 'local/flash': model },
+      config: { limits: { runBudgetSeconds: 40 } },
+    });
+    expect(result.status).toBe('success');
+    expect(result.text).toBe('Cold prefill completed.');
+  }, 45_000);
+
+  test('respects the selected small model output cap without raising an explicit lower limit', async () => {
+    for (const requested of [undefined, 64]) {
+      const { result, primary } = await run([{ text: 'ok' }], {
+        config: {
+          servers: [{
+            provider: 'local', kind: 'openai-compatible', baseUrl: 'http://127.0.0.1:1/v1',
+            local: true, contextLength: 65536,
+            models: [{ id: 'flash', contextLength: 8192, maxOutputTokens: 1024 }],
+          }],
+          limits: { maxOutputTokens: requested },
+        },
+      });
+      expect(result.status).toBe('success');
+      expect(primary.doStreamCalls[0]!.maxOutputTokens).toBe(requested ?? 1024);
+    }
+  });
+
   test('hands a task of an escalating kind to Claude Code before the first step', async () => {
     const { result, sink, primary } = await run([{ text: 'nie' }], {
       prompt: 'Prüfe den Vertrag mit dem Lieferanten.',
@@ -409,6 +441,7 @@ describe('agent loop', () => {
             baseUrl: 'http://127.0.0.1:1/v1',
             local: true,
             contextLength: 262_144,
+            models: [{ id: 'flash', contextLength: 262_144, maxOutputTokens: 1024 }],
           },
         ],
         limits: { compressAtTokens: 4000 },
@@ -425,6 +458,7 @@ describe('agent loop', () => {
           message.content.startsWith('Erstelle eine einzige flache Zusammenfassung'),
       ),
     );
+    expect(compression!.maxOutputTokens).toBe(1024);
     expect(compression!.providerOptions?.helenaHalogen).toMatchObject({
       reasoningEffort: 'none',
       chat_template_kwargs: { enable_thinking: false },
