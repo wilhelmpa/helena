@@ -22,6 +22,7 @@ import {
   searchCatalog,
   sessionSearchTool,
   skillTool,
+  sumIntegersTool,
   type ToolCatalogEntry,
 } from './tools/builtin';
 import { FILE_TOOLS } from './tools/files';
@@ -34,6 +35,7 @@ import type { AgentTool, PolicyQuestion } from './tools/types';
 // loop's own), its memory and skills in the system prompt, and the session store.
 
 export const CORE_HELENA_TOOLS = [
+  'sum_integers',
   'list_projects',
   'get_project',
   'list_issues',
@@ -185,7 +187,7 @@ export async function runAgent(input: AgentRunInput): Promise<LoopResult> {
     }
 
     // ── tools ──
-    const tools: AgentTool[] = [clarifyTool];
+    const tools: AgentTool[] = [clarifyTool, sumIntegersTool];
     const taken = new Set<string>([
       'clarify',
       'find_tools',
