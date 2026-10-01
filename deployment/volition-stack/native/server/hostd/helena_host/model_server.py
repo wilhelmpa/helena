@@ -185,7 +185,9 @@ class Driver:
             while True:
                 try:
                     data = self.http(target, '/health')
-                    if target['server'] != 'halogen' or (data.get('status') == 'ok' and data.get('responds') is True):
+                    engine = data.get('engine')
+                    responds = engine.get('responds') if isinstance(engine, dict) else data.get('responds')
+                    if target['server'] != 'halogen' or (data.get('status') == 'ok' and responds is True):
                         if target.get('profile') == 'local-27b-npu':
                             catalog = self.http(target, '/models?show_all=true')
                             model = next((row for row in catalog.get('data', []) if row.get('id') == target['model']), None)

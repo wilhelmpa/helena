@@ -18,6 +18,7 @@ TimeoutStopSec=30
 MemoryHigh=11G
 MemoryMax=12G
 MemorySwapMax=0
+LimitMEMLOCK=12G
 DevicePolicy=closed
 DeviceAllow=/dev/accel/accel0 rw
 InaccessiblePaths=-/dev/kfd -/dev/dri

@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   aiAgent,
+  appSetting,
   db,
   helenaModelServer,
   helenaLocalAiEval,
@@ -238,16 +239,14 @@ describe('global local model API', () => {
       .update(helenaModelServer)
       .set({ models: [] })
       .where(eq(helenaModelServer.slug, 'local'));
-    await db
-      .insert(helenaModelServer)
-      .values({
-        slug: 'volition-npu',
-        name: 'NPU',
-        kind: 'fastflowlm',
-        baseUrl: 'http://127.0.0.1:13309/v1',
-        keySource: 'none',
-        enabled: false,
-      });
+    await db.insert(helenaModelServer).values({
+      slug: 'volition-npu',
+      name: 'NPU',
+      kind: 'fastflowlm',
+      baseUrl: 'http://127.0.0.1:13309/v1',
+      keySource: 'none',
+      enabled: false,
+    });
     await beginGlobalModel('helena-local/Qwen3.8-27B-GGUF', 'local-27b-npu');
     const pending = (await readMaintenance())!;
     pending.operation!.phase = 'commit';
@@ -362,6 +361,19 @@ describe('global local model API', () => {
     const servers = await db.select().from(helenaModelServer);
     expect(servers.find((server) => server.slug === 'halogen')?.enabled).toBe(true);
     expect(servers.find((server) => server.slug === 'local')?.enabled).toBe(false);
+  });
+
+  it('restores an unset default after a failed first switch', async () => {
+    await db.delete(appSetting).where(eq(appSetting.key, DEFAULT_KEY));
+    await beginGlobalModel('helena-local/Qwen27B');
+    const pending = (await readMaintenance())!;
+    pending.operation!.phase = 'rollback-commit';
+    await save(pending);
+    await resumeGlobalModel();
+    expect(await readUncachedSetting<string>(DEFAULT_KEY)).toBeNull();
+    expect(await readUncachedSetting<Record<string, unknown>>(MAINTENANCE_KEY)).toMatchObject({
+      restored: true,
+    });
   });
 
   it('a corrupt state refuses admission and class routes rather than guessing', async () => {
