@@ -166,7 +166,10 @@ export async function startPriorityProxy(options: ProxyOptions) {
         release();
         return;
       }
+      if (scheduled && incoming.headers['x-volition-decision-admission'] === '1')
+        outgoing.writeProcessing();
       const headers = { ...incoming.headers };
+      delete headers['x-volition-decision-admission'];
       delete headers[PRIORITY_HEADER];
       delete headers.connection;
       const tokenLimit =

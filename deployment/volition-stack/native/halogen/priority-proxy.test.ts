@@ -702,3 +702,46 @@ test('queued voice overtakes chat and aged background work', async () => {
   releaseBackground!();
   (await chat)!();
 });
+
+test('decision admission is signalled before generation and removes the internal header', async () => {
+  let forwarded: string | string[] | undefined;
+  const backend = createServer((req, res) => {
+    forwarded = req.headers['x-volition-decision-admission'];
+    setTimeout(() => res.end('{}'), 60);
+  });
+  await new Promise<void>((resolve) => backend.listen(0, '127.0.0.1', resolve));
+  cleanups.push(() => new Promise((resolve) => backend.close(() => resolve())));
+  const dir = await mkdtemp(join(tmpdir(), 'volition-decision-'));
+  const port = (backend.address() as { port: number }).port;
+  const proxy = await startPriorityProxy({
+    hostPorts: [0, 0],
+    backendPorts: [port, port],
+    socketDir: dir,
+  });
+  cleanups.push(async () => {
+    await proxy.close();
+    await rm(dir, { recursive: true, force: true });
+  });
+  const events: number[] = [];
+  await new Promise<void>((resolve, reject) => {
+    const req = request(
+      `http://127.0.0.1:${proxy.ports[0]}/v1/chat/completions`,
+      {
+        method: 'POST',
+        headers: { 'x-volition-decision-admission': '1', 'x-volition-halogen-priority': 'normal' },
+      },
+      (res) => {
+        res.resume();
+        res.on('end', () => {
+          events.push(200);
+          resolve();
+        });
+      },
+    );
+    req.on('information', (info) => events.push(info.statusCode));
+    req.on('error', reject);
+    req.end('{}');
+  });
+  expect(events).toEqual([102, 200]);
+  expect(forwarded).toBeUndefined();
+});

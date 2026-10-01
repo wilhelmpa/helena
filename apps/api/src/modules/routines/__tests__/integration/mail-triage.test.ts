@@ -13,7 +13,7 @@ import {
   stopTestEngine,
   waitForStatus,
 } from '#tests/helpers/engine';
-import { recordRoutineTriage } from '#modules/mail-triage/routine';
+import { recordRoutineTriage, routineAttemptedMessages } from '#modules/mail-triage/routine';
 
 setDefaultTimeout(30_000);
 beforeAll(startEngine);
@@ -184,4 +184,45 @@ test('routine monitoring keeps the queued run even when its timestamp precedes d
     .where(eq(agentRun.id, s.claim.id));
   await finishAgentRun(s.claim.id, { status: 'failed', error: 'synthetic failure' });
   expect((await waitForStatus(s.fire.runId, 'failed')).error).toContain('synthetic failure');
+});
+
+test('deferred classification completes the routine and reports IDs and remaining mail', async () => {
+  const s = await setup();
+  await recordRoutineTriage(s.project.id, s.agentUserId, String(s.claim.id), {
+    accounts: [],
+    processed: 1,
+    receiptRetries: 0,
+    receiptIds: [],
+    receiptCount: 0,
+    failed: 0,
+    reviewRequired: 0,
+    hasMore: true,
+    results: [
+      {
+        messageId: 7447,
+        threadId: 7156,
+        threadHref: '/project/TRIAGE/inbox?thread=7156',
+        receiptIds: [],
+        receiptCount: 0,
+        status: 'retry',
+        issueId: null,
+        actionFailed: false,
+        error: 'Mail classification generation budget exhausted',
+      },
+    ],
+  });
+  expect(await routineAttemptedMessages(s.project.id, s.agentUserId, String(s.claim.id))).toEqual([
+    7447,
+  ]);
+  expect(await routineAttemptedMessages(s.project.id, 'another-user', String(s.claim.id))).toEqual(
+    [],
+  );
+  await finishAgentRun(s.claim.id, { output: 'Deferred mail to the next scheduled run.' });
+  expect((await waitForStatus(s.fire.runId, 'succeeded', 'failed')).status).toBe('succeeded');
+  const comments = (await s.api.issues({ issueId: s.task.id }).feed.get()).data!;
+  expect(
+    comments.items.some(
+      (c) => c.body?.includes('7447') && c.body.includes('Retry on next scheduled run'),
+    ),
+  ).toBe(true);
 });

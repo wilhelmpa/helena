@@ -246,6 +246,7 @@ export interface PinnedRequestInit extends UrlPolicy {
   headers?: Record<string, string> | Headers;
   body?: string | Buffer;
   timeoutMs?: number;
+  onInformation?: (statusCode: number) => void;
   maxBytes?: number;
   // Keep a document prefix for metadata; binary downloads must reject oversized bodies.
   truncateBody?: boolean;
@@ -329,6 +330,7 @@ export async function pinnedFetch(raw: string, init: PinnedRequestInit = {}): Pr
     init.signal?.addEventListener('abort', abort, { once: true });
     req.on('close', () => init.signal?.removeEventListener('abort', abort));
     if (init.signal?.aborted) abort();
+    if (init.onInformation) req.on('information', (info) => init.onInformation!(info.statusCode));
     if (init.timeoutMs) {
       req.setTimeout(init.timeoutMs, () => req.destroy(new Error('request timed out')));
     }

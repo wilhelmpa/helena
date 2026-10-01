@@ -550,6 +550,7 @@ export async function runProjectTriage(
   project: { id: number; teamId: number; key: string },
   maxMessages: number,
   signal?: AbortSignal,
+  attempted: number[] = [],
 ) {
   const team = (await activeTeams()).find((item) => item.teamId === project.teamId);
   if (!team) throw new HttpError(409, 'Enable the Mail classification decision class first.');
@@ -588,21 +589,40 @@ export async function runProjectTriage(
       signal,
     );
     checkTriageCancellation(signal);
-    const batch = await pendingMessages(project.teamId, scoped, maxMessages, [], project.id);
+    const batch = await pendingMessages(project.teamId, scoped, maxMessages, attempted, project.id);
     const results: Awaited<ReturnType<typeof triageMessageResult>>[] = [];
-    for (const message of batch) {
-      checkTriageCancellation(signal);
-      results.push(
-        await triageMessageResult(project.key, message, () =>
-          classifyMessage(project.teamId, scoped, message.id, team.actorUserId, project.id, signal),
-        ),
-      );
+    // Leave time to persist retries and return before the native tool's 120-second limit.
+    const batchDeadline = new AbortController();
+    const batchTimer = setTimeout(() => batchDeadline.abort(), 100_000);
+    const classificationSignal = signal
+      ? AbortSignal.any([signal, batchDeadline.signal])
+      : batchDeadline.signal;
+    try {
+      for (const message of batch) {
+        checkTriageCancellation(signal);
+        if (batchDeadline.signal.aborted) break;
+        results.push(
+          await triageMessageResult(project.key, message, () =>
+            classifyMessage(
+              project.teamId,
+              scoped,
+              message.id,
+              team.actorUserId,
+              project.id,
+              classificationSignal,
+            ),
+          ),
+        );
+      }
+    } finally {
+      clearTimeout(batchTimer);
     }
+    checkTriageCancellation(signal);
     const remaining = await pendingMessages(
       project.teamId,
       scoped,
       1,
-      batch.map((item) => item.id),
+      [...attempted, ...results.map((item) => item.messageId)],
       project.id,
     );
     return {

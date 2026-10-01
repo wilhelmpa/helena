@@ -151,3 +151,25 @@ describe('allowPrivateHosts', () => {
     ).rejects.toBeInstanceOf(UrlNotAllowedError);
   });
 });
+
+describe('pinnedFetch admission information', () => {
+  it('reports HTTP 102 while still waiting for the final response body', async () => {
+    const events: string[] = [];
+    const server = createServer((_req, res) => {
+      res.writeProcessing();
+      setTimeout(() => res.end('done'), 30);
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    try {
+      const port = (server.address() as { port: number }).port;
+      const response = await pinnedFetch(`http://127.0.0.1:${port}/`, {
+        allowPrivateHosts: ['127.0.0.1'],
+        onInformation: (code) => events.push(String(code)),
+      });
+      events.push(await response.text());
+      expect(events).toEqual(['102', 'done']);
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+});
