@@ -261,7 +261,11 @@ async function commitModel(state: MaintenanceState, job: ModelJob, rollback: boo
       ['localAi.policy', policy],
       [MAINTENANCE_KEY, { ...job, ...(rollback ? { restored: true } : { committed: true }) }],
     ] as const;
-    for (const [key, value] of values)
+    for (const [key, value] of values) {
+      if (value === null) {
+        await tx.delete(appSetting).where(eq(appSetting.key, key));
+        continue;
+      }
       await tx
         .insert(appSetting)
         .values({ key, value })
@@ -269,6 +273,7 @@ async function commitModel(state: MaintenanceState, job: ModelJob, rollback: boo
           target: appSetting.key,
           set: { value: sql`excluded.value`, updatedAt: new Date() },
         });
+    }
     for (const server of await listModelServers()) {
       if (!['halogen', 'lemonade'].includes(server.kind) && server.slug !== NPU_SLUG) continue;
       await tx
