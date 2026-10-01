@@ -273,7 +273,7 @@ api_runtime_changed() {
 }
 restart=()
 runner_affected=false
-if changed packages/runner packages/sdk bun.lock \
+if changed packages/runner packages/agent-runtime packages/facts packages/sdk bun.lock \
   deployment/volition-stack/native/systemd/volition-hermes-runner.service \
   deployment/volition-stack/integration/scripts/volition-hermes-catalog.py \
   deployment/volition-stack/integration/scripts/volition-hermes-runner; then
@@ -444,10 +444,10 @@ fi
 # The runner executes a bundle owned by root, so the agent user it runs as cannot replace
 # the code that drives it. The bundle is built by the checkout's owner and installed.
 runner_bundle=$live/packages/runner/dist/cli.js
-if changed packages/runner packages/sdk bun.lock && [[ -n $rollback_to && -f $rollback_dir/runner-cli.js ]]; then
+if changed packages/runner packages/agent-runtime packages/facts packages/sdk bun.lock && [[ -n $rollback_to && -f $rollback_dir/runner-cli.js ]]; then
   echo "restoring the runner bundle"
   install -m 0755 -o root -g volition "$rollback_dir/runner-cli.js" "$runner_bundle"
-elif changed packages/runner packages/sdk bun.lock; then
+elif changed packages/runner packages/agent-runtime packages/facts packages/sdk bun.lock; then
   echo "building the runner"
   # The bundle that ran so far, for the way back.
   if [[ -z $rollback_to && -f $runner_bundle ]]; then

@@ -58,7 +58,17 @@ export function skillQuality(skill: LearnedSkill): string[] {
 }
 
 export function oneOffSkillSource(text: string): boolean {
+  // A source task can explicitly ask for a reusable procedure and include a warning
+  // against one-off results. That warning describes the skill's pitfalls, not the task.
+  const reusableRequest =
+    /\b(?:learn|create|save|write|lerne|erstelle|speichere|schreibe)\b[^.!?\n]{0,160}\b(?:reusable|wiederverwendbar\p{L}*)\b/iu.test(
+      text,
+    ) &&
+    !/\b(?:do not|don't|never|nicht|kein\p{L}*)\b[^.!?\n]{0,160}\b(?:reusable|wiederverwendbar\p{L}*)\b/iu.test(
+      text,
+    );
   const recurring =
+    reusableRequest ||
     /\b(?:monatlich|wöchentlich|regelmäßig|wiederkehrend|monthly|weekly|recurring|each month|every week)\b/iu.test(
       text,
     );

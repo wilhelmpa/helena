@@ -164,6 +164,27 @@ async function setup() {
 
 describe('local AI', () => {
   beforeEach(resetDb);
+  it('offers local models to a native agent with and without a published catalog', async () => {
+    const { asOwner, agent } = await setup();
+    const previous = process.env.HELENA_NATIVE_RUNTIME;
+    process.env.HELENA_NATIVE_RUNTIME = 'on';
+    try {
+      await db
+        .update(aiAgent)
+        .set({ runtimePolicy: { ...agent.runtimePolicy, runtime: 'helena' } })
+        .where(eq(aiAgent.id, agent.id));
+      await asOwner.god['local-ai'].policy.patch({ enabled: true });
+      const chat = asOwner.projects({ projectKey: 'LAI' })['ai-agents']({ agentId: agent.id });
+      const local = 'helena-local/Qwen3.6-35B-A3B-GGUF';
+      expect((await chat.chat.catalog.get()).data!.models.map((model) => model.id)).toContain(local);
+      expect((await chat.chat.post({ prompt: 'Synthetic native model selection', model: local })).status).toBe(200);
+      await db.execute(sql`delete from agent_chat_catalog where agent_id = ${agent.id}`);
+      expect((await chat.chat.catalog.get()).data!.models.map((model) => model.id)).toContain(local);
+    } finally {
+      if (previous === undefined) delete process.env.HELENA_NATIVE_RUNTIME;
+      else process.env.HELENA_NATIVE_RUNTIME = previous;
+    }
+  });
   it('CLI results update the registered model gate without applying a policy', async () => {
     const { server } = await setup();
     const entry = BUILTIN_TASK_CLASSES.find((item) => item.id === 'hermes-helpers')!;
@@ -397,6 +418,10 @@ describe('local AI', () => {
       { task: 'compression', provider: 'helena-local', model: 'Qwen3.6-35B-A3B-GGUF' },
     ]);
     expect(runtime?.servers[0]?.models.map((model) => model.id)).toEqual(['Qwen3.6-35B-A3B-GGUF']);
+    policy.units.npu = true;
+    const allowed = runtimeLocalAi(policy, [{ ...row!, models: [npu, gpu] }]);
+    expect(allowed?.servers[0]?.models.find((model) => model.id === npu.id)?.maxOutputTokens).toBe(1024);
+    expect(allowed?.servers[0]?.models.find((model) => model.id === gpu.id)?.maxOutputTokens).toBeUndefined();
   });
 
   it('runs an agent set to a local model on its default while local AI is off', async () => {

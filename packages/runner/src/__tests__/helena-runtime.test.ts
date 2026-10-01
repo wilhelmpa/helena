@@ -17,6 +17,7 @@ import type { RuntimePolicyClient, RuntimeStatus } from '../policy';
 import { presetArgv, PRESETS } from '../presets';
 import { runtimes } from '../runtimes';
 import { SpendReader } from '../spend';
+import { modelChain } from '@helena/agent-runtime';
 
 // The runtime `helena`: Helena's own loop (packages/agent-runtime), run as `cli.js
 // helena-agent` with its configuration inside the task's JSON on stdin, read back as
@@ -24,6 +25,20 @@ import { SpendReader } from '../spend';
 
 const lines = (...events: object[]) =>
   `${events.map((event) => JSON.stringify(event)).join('\n')}\n`;
+
+test('carries each local model context and output limit into native model resolution', () => {
+  const servers = localServers({
+    revision: 'small-local-fixture', runtimePolicy: { files: [] }, skills: [],
+    localAi: { helpers: [], servers: [{
+      provider: 'helena-volition-npu', baseUrl: 'http://127.0.0.1:1/v1',
+      keyEnv: null, contextLength: 65536,
+      models: [{ id: 'small', contextLength: 8192, vision: false, maxOutputTokens: 1024 }],
+    }] },
+  });
+  const resolved = modelChain('helena-volition-npu/small', [], servers, null, {}).chain[0]!;
+  expect(resolved.contextLength).toBe(8192);
+  expect(resolved.maxOutputTokens).toBe(1024);
+});
 
 const snapshot: RuntimePolicySnapshot = {
   revision: 'r1',
@@ -101,6 +116,49 @@ test('native configuration truncates SOUL with a model-sized limit and reports t
 });
 
 describe('the helena runtime', () => {
+  it('delivers only configured local server keys and refreshes them for each answer', async () => {
+    let supplied = 'synthetic-first';
+    const local = {
+      ...snapshot,
+      localAi: {
+        ...snapshot.localAi!,
+        servers: [{ ...snapshot.localAi!.servers[0]!, keyEnv: 'VOLITION_BATTLE_MODEL_KEY' }],
+      },
+    };
+    const client: RuntimePolicyClient = {
+      runtimePolicy: async () => local,
+      reportRuntimeStatus: async () => {},
+      mcpSecrets: async () => ({}),
+      webLogins: async () => [],
+      modelServerKeys: async () => ({
+        VOLITION_BATTLE_MODEL_KEY: supplied,
+        VOLITION_UNCONFIGURED_MODEL_KEY: 'synthetic-unconfigured',
+      }),
+    };
+    const runner = {
+      name: 'volition-battle',
+      url: 'http://localhost:3001',
+      apiKey: 'synthetic-test-key',
+      agent: 'helena',
+      outputFormat: 'helena-jsonl',
+      timeoutMs: 1000,
+      cwd: '/tmp',
+      env: {},
+    } as RunnerConfig;
+    const adapter = new HelenaRuntimeAdapter(runner, client);
+    const settings = await adapter.runSettings();
+    const config = settings.input!.config as ReturnType<typeof helenaAgentConfig>;
+    expect(settings.env.VOLITION_BATTLE_MODEL_KEY).toBe('synthetic-first');
+    expect(settings.env.VOLITION_UNCONFIGURED_MODEL_KEY).toBeUndefined();
+    expect(modelChain(config.model, config.fallbackModels, config.servers, null, settings.env).chain)
+      .toHaveLength(1);
+    supplied = '';
+    const revoked = await adapter.runSettings();
+    expect(revoked.env.VOLITION_BATTLE_MODEL_KEY).toBe('');
+    expect(modelChain(config.model, config.fallbackModels, config.servers, null, revoked.env).chain)
+      .toHaveLength(0);
+  });
+
   it('uses the host priority proxy and preserves the forwarded sandbox addresses', () => {
     const isolation = process.env.AGENT_ISOLATION;
     try {

@@ -242,6 +242,38 @@ describe('agent loop', () => {
     expect(result.reason).toBe('model-unavailable');
   });
 
+  test('lets a local model finish a cold prefill longer than thirty seconds', async () => {
+    const model = scriptedModel([{ text: 'Cold prefill completed.' }]);
+    const stream = model.doStream.bind(model);
+    model.doStream = async (options) => {
+      await new Promise((resolve) => setTimeout(resolve, 31_000));
+      return stream(options);
+    };
+    const { result } = await run([], {
+      models: { 'local/flash': model },
+      config: { limits: { runBudgetSeconds: 40 } },
+    });
+    expect(result.status).toBe('success');
+    expect(result.text).toBe('Cold prefill completed.');
+  }, 45_000);
+
+  test('respects the selected small model output cap without raising an explicit lower limit', async () => {
+    for (const requested of [undefined, 64]) {
+      const { result, primary } = await run([{ text: 'ok' }], {
+        config: {
+          servers: [{
+            provider: 'local', kind: 'openai-compatible', baseUrl: 'http://127.0.0.1:1/v1',
+            local: true, contextLength: 65536,
+            models: [{ id: 'flash', contextLength: 8192, maxOutputTokens: 1024 }],
+          }],
+          limits: { maxOutputTokens: requested },
+        },
+      });
+      expect(result.status).toBe('success');
+      expect(primary.doStreamCalls[0]!.maxOutputTokens).toBe(requested ?? 1024);
+    }
+  });
+
   test('hands a task of an escalating kind to Claude Code before the first step', async () => {
     const { result, sink, primary } = await run([{ text: 'nie' }], {
       prompt: 'Prüfe den Vertrag mit dem Lieferanten.',
@@ -385,6 +417,20 @@ describe('agent loop', () => {
     const { result } = await run(script, {
       sessions,
       models: { 'helena-halogen/flash': model },
+      helena: {
+        ...selectionClient(async () => ({ names: null })),
+        memory: async () => ({
+          files: [
+            {
+              file: 'MEMORY.md',
+              content: 'volition-battle169c-finch hat die Farbe Zinnober.',
+              sha256: 'synthetic',
+            },
+          ],
+          notes: [],
+          approval: false,
+        }),
+      },
       config: {
         model: 'helena-halogen/flash',
         reasoning: 'high',
@@ -395,6 +441,7 @@ describe('agent loop', () => {
             baseUrl: 'http://127.0.0.1:1/v1',
             local: true,
             contextLength: 262_144,
+            models: [{ id: 'flash', contextLength: 262_144, maxOutputTokens: 1024 }],
           },
         ],
         limits: { compressAtTokens: 4000 },
@@ -411,11 +458,15 @@ describe('agent loop', () => {
           message.content.startsWith('Erstelle eine einzige flache Zusammenfassung'),
       ),
     );
+    expect(compression!.maxOutputTokens).toBe(1024);
     expect(compression!.providerOptions?.helenaHalogen).toMatchObject({
       reasoningEffort: 'none',
       chat_template_kwargs: { enable_thinking: false },
     });
     expect(compression!.providerOptions).not.toHaveProperty('helena-halogen');
+    expect(JSON.stringify(compression!.prompt)).toContain(
+      'volition-battle169c-finch hat die Farbe Zinnober.',
+    );
   });
 
   test('keeps the original session when the memory flush fails', async () => {
@@ -808,4 +859,57 @@ test('two searches keep the first discovered tool available', async () => {
     { extraTools, config: { tools: { profile: 'assistent' } } },
   );
   expect(sink.of('tool-result')[2]!.output).toBe('found tool worked');
+});
+
+test('preserves returned collection counts and valid JSON when a tool response exceeds the context limit', async () => {
+  const receipts = Array.from({ length: 120 }, (_, id) => ({ id, text: 'synthetic '.repeat(80) }));
+  const { sessions, primary } = await run(
+    [
+      { calls: [{ name: 'find_tools', input: { query: 'list_receipts' } }] },
+      { calls: [{ name: 'list_receipts', input: {} }] },
+      ...Array.from({ length: 5 }, (_, index) => ({
+        calls: [{ name: 'write_file', input: { path: `probe${index}.txt`, content: 'synthetic' } }],
+      })),
+      { text: '120 receipts returned.' },
+    ],
+    {
+      config: { tools: { profile: 'voll' } },
+      extraTools: [
+        {
+          name: 'list_receipts',
+          description: 'List synthetic receipts',
+          readOnly: true,
+          inputSchema: { type: 'object', properties: {} },
+          async execute() {
+            return { text: JSON.stringify({ receipts }) };
+          },
+        },
+      ],
+    },
+  );
+  const session = [...sessions.sessions.values()][0]!;
+  const message = session.items.find(
+    (entry) =>
+      entry.message.role === 'tool' &&
+      entry.message.content.some(
+        (part) => part.type === 'tool-result' && part.toolName === 'list_receipts',
+      ),
+  )!.message;
+  if (message.role !== 'tool') throw new Error('Missing tool response');
+  const part = message.content[0]!;
+  if (part.type !== 'tool-result') throw new Error('Missing tool result');
+  const output = part.output;
+  if (output.type !== 'text') throw new Error('Missing text response');
+  const bounded = JSON.parse(output.value);
+  expect(bounded.truncated).toBe(true);
+  expect(bounded.returnedCounts).toEqual({ receipts: 120 });
+  expect(output.value.length).toBeLessThanOrEqual(32_000);
+  const old = primary.doStreamCalls
+    .at(-1)!
+    .prompt.flatMap((message) => (message.role === 'tool' ? message.content : []))
+    .find((part) => part.type === 'tool-result' && part.toolName === 'list_receipts')!;
+  if (old.type !== 'tool-result' || old.output.type !== 'text')
+    throw new Error('Missing old result');
+  expect(JSON.parse(old.output.value).returnedCounts).toEqual({ receipts: 120 });
+  expect(old.output.value.length).toBeLessThanOrEqual(2000);
 });

@@ -18,7 +18,7 @@ import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
 import { addNote, memoryState, proposeMemory } from '../../memory';
 import { consolidateAgentMemory, consolidateNotes } from '../../consolidation';
-import { decideMemoryProposal } from '../../../memory/service';
+import { completeMemoryWrites, decideMemoryProposal } from '../../../memory/service';
 import { reportRuntimeState } from '../../../runtime-policy/service';
 import { compactSession } from '../../sessions';
 import { getRunnerAgent } from '../../../runner/service';
@@ -254,8 +254,37 @@ describe('native runtime hardening', () => {
       (row) => row.status === 'pending',
     )!;
     await decideMemoryProposal(proposal!.id, true, owner.userId, null);
+    for (const adapter of ['helena', 'hermes', 'claude']) {
+      await reportRuntimeState(agent.id, {
+        adapter,
+        status: 'online',
+        appliedRevision: null,
+        capabilities: [],
+        detail: null,
+        inventory: {
+          toolsets: [],
+          mcpServers: [],
+          skills: [],
+          memory: [{ file: 'MEMORY.md', content: 'Stale inventory', truncated: false }],
+        },
+      });
+      expect((await memoryState(agent.id)).files[0]!.content).toBe('Approved revision\n');
+      expect(await db.select().from(agentMemoryRevision)).toHaveLength(1);
+    }
+  });
+  it('keeps approved memory when a switched runtime first reports an empty profile', async () => {
+    const { agent, owner } = await setup();
+    await proposeMemory(agent.id, 'MEMORY.md', 'Approved handoff revision');
+    const proposal = (await db.select().from(agentProposal)).find(
+      (row) => row.status === 'pending',
+    )!;
+    await decideMemoryProposal(proposal.id, true, owner.userId, null);
+    await db
+      .update(aiAgent)
+      .set({ runtimePolicy: { ...agent.runtimePolicy, runtime: 'hermes', memoryApproval: false } })
+      .where(eq(aiAgent.id, agent.id));
     await reportRuntimeState(agent.id, {
-      adapter: 'helena',
+      adapter: 'hermes',
       status: 'online',
       appliedRevision: null,
       capabilities: [],
@@ -264,11 +293,18 @@ describe('native runtime hardening', () => {
         toolsets: [],
         mcpServers: [],
         skills: [],
-        memory: [{ file: 'MEMORY.md', content: 'Stale inventory', truncated: false }],
+        memory: [{ file: 'MEMORY.md', content: '', truncated: false }],
       },
     });
-    expect((await memoryState(agent.id)).files[0]!.content).toBe('Approved revision\n');
+    expect((await memoryState(agent.id)).files[0]!.content).toBe('Approved handoff revision\n');
     expect(await db.select().from(agentMemoryRevision)).toHaveLength(1);
+    await completeMemoryWrites(
+      agent.id,
+      [{ id: 1, kind: 'write-memory', target: 'MEMORY.md', payload: { content: '' }, userId: owner.userId }],
+      [{ id: 1, error: null }],
+    );
+    expect((await memoryState(agent.id)).files[0]!.content).toBe('');
+    expect(await db.select().from(agentMemoryRevision)).toHaveLength(2);
   });
   it('consolidates past notes once and applies the approved database revision', async () => {
     const { agent, owner } = await setup();

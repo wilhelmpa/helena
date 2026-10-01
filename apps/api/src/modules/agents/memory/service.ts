@@ -43,26 +43,37 @@ export async function memoryBaseline(
   return rows.map((row) => ({ ...row, file: row.file as MemoryFile }));
 }
 
-// A version the runner reports that differs from the latest one is recorded as seen. A file
-// reported truncated is not: its content is not the whole file.
+// Legacy runners report their files as observations. Native memory is authoritative in the
+// database, and an empty legacy profile after a runtime switch is not an instruction to clear it.
 export async function recordObservedMemory(
   agentId: number,
   inventory: AgentRuntimeInventory | null | undefined,
 ): Promise<void> {
   if (!inventory) return;
-  const baseline = new Map((await memoryBaseline(agentId)).map((entry) => [entry.file, entry]));
-  for (const entry of inventory.memory) {
-    if (entry.truncated || !FILES.includes(entry.file)) continue;
-    const digest = entry.sha256 ?? sha256(entry.content);
-    if (baseline.get(entry.file)?.sha256 === digest) continue;
-    await db.insert(agentMemoryRevision).values({
-      agentId,
-      file: entry.file,
-      content: entry.content,
-      sha256: digest,
-      source: 'observed',
-    });
-  }
+  await db.transaction(async (tx) => {
+    const [agent] = await tx
+      .select({ policy: aiAgent.runtimePolicy })
+      .from(aiAgent)
+      .where(eq(aiAgent.id, agentId))
+      .for('update');
+    if (!agent || (agent.policy as { runtime?: string })?.runtime === 'helena') return;
+    const baseline = new Map((await memoryBaseline(agentId, tx)).map((entry) => [entry.file, entry]));
+    for (const entry of inventory.memory) {
+      if (entry.truncated || !FILES.includes(entry.file)) continue;
+      const before = baseline.get(entry.file);
+      if (!entry.content.trim() && before?.content.trim()) continue;
+      const digest = entry.sha256 ?? sha256(entry.content);
+      if (before?.sha256 === digest) continue;
+      await tx.insert(agentMemoryRevision).values({
+        agentId,
+        file: entry.file,
+        content: entry.content,
+        sha256: digest,
+        source: 'observed',
+      });
+      baseline.set(entry.file, { file: entry.file, content: entry.content, sha256: digest });
+    }
+  });
 }
 
 export interface MemoryProposalReport {

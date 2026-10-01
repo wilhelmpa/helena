@@ -16,6 +16,7 @@ export interface ResolvedModel {
   modelId: string;
   model: LanguageModel;
   contextLength: number;
+  maxOutputTokens?: number;
   local: boolean;
   queueAdmission?: boolean;
   // Merged into every call on this model (thinking on or off for a local Qwen).
@@ -60,6 +61,7 @@ export function resolveModel(
   const { provider, model } = splitModelId(id);
   const server = servers.find((entry) => entry.provider === provider);
   if (!server) throw new Error(`no model server for provider ${provider}`);
+  const settings = server.models?.find((entry) => entry.id === model);
   if (server.keyEnv && !env[server.keyEnv]) {
     throw new Error(`the key of ${provider} is not in the environment`);
   }
@@ -81,7 +83,8 @@ export function resolveModel(
     provider,
     modelId: model,
     model: factory(server, model, env),
-    contextLength: server.contextLength ?? DEFAULTS.contextLength,
+    contextLength: settings?.contextLength ?? server.contextLength ?? DEFAULTS.contextLength,
+    ...(settings?.maxOutputTokens && { maxOutputTokens: settings.maxOutputTokens }),
     local: server.local === true,
     queueAdmission: server.local === true && isLocalHalogenUrl(server.baseUrl ?? ''),
     providerOptions,

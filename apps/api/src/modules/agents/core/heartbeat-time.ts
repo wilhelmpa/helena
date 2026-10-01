@@ -64,11 +64,11 @@ export function nextHeartbeatAt(clock: HeartbeatClock, after: Date): Date | null
   const formatter = workFormatter(clock);
   const candidate = new Date(after.getTime() + clock.heartbeatIntervalMinutes * 60_000);
   candidate.setUTCSeconds(0, 0);
-  for (let i = 0; i < 14 * 24 * 12; i++) {
+  for (let i = 0; i < 14 * 24 * 60; i++) {
     if (inWindow(clock, candidate, formatter)) {
       return candidate;
     }
-    candidate.setTime(candidate.getTime() + 5 * 60_000);
+    candidate.setTime(candidate.getTime() + 60_000);
   }
   throw new Error('No heartbeat work window in the next 14 days');
 }

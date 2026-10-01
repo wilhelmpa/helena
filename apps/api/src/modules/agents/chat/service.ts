@@ -20,6 +20,7 @@ import {
   agentChatThread,
   agentChatUsage,
   helenaAgentSession,
+  helenaBudget,
   knowledgeItem,
   project,
   team,
@@ -47,7 +48,7 @@ import { isDeepStrictEqual } from 'node:util';
 import type { AutopilotLevel } from '@helena/policy';
 import { resolveLevel } from '#modules/autopilot/levels';
 import { assertProjectNotHeld } from '#modules/autopilot/service';
-import { enforceBudgets } from '#modules/autopilot/budgets';
+import { BUDGET_REASON_PREFIX, enforceBudgets, useChatGrace } from '#modules/autopilot/budgets';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { emergencyStopActive } from '#modules/emergency-stop/service';
 import { recordUsage, type Spend } from '../usage/service';
@@ -1251,7 +1252,22 @@ async function claimAdmittedMessage(agent: RunnerAgent): Promise<ClaimedChat | n
         AND q.role = 'assistant'
         AND q.status IN ('pending', 'streaming')
         AND q.next_attempt_at <= now()
-        AND (SELECT paused_at FROM ai_agent a WHERE a.id = q.agent_id) IS NULL
+        AND EXISTS (
+          SELECT 1 FROM ai_agent a WHERE a.id = q.agent_id
+          AND (
+            a.paused_at IS NULL
+            -- A budget pause stops new work; the one answer already approved must
+            -- still resume after losing its lease. useChatGrace rechecks every
+            -- applicable budget and period before handing the answer out.
+            OR (
+              a.pause_reason LIKE ${BUDGET_REASON_PREFIX + ':%'}
+              AND EXISTS (
+                SELECT 1 FROM ${helenaBudget}
+                WHERE ${helenaBudget.graceRunIds} @> jsonb_build_array(-q.id)
+              )
+            )
+          )
+        )
         -- The thread's reflection continues the same session: an answer waits while one
         -- is out (chat-reflection/service.ts).
         AND NOT EXISTS (
@@ -1277,6 +1293,24 @@ async function claimAdmittedMessage(agent: RunnerAgent): Promise<ClaimedChat | n
   `);
   const row = (rows as unknown as ClaimedRow[])[0];
   if (!row) return null;
+  if (!(await useChatGrace(agent.id, row.projectId, row.id))) {
+    await db
+      .update(agentChatMessage)
+      .set({
+        status: 'pending',
+        attempts: sql`${agentChatMessage.attempts} - 1`,
+        nextAttemptAt: new Date(Date.now() + 30_000),
+      })
+      .where(
+        and(
+          eq(agentChatMessage.id, row.id),
+          eq(agentChatMessage.attempts, row.attempts),
+          eq(agentChatMessage.status, 'streaming'),
+        ),
+      );
+    await enforceBudgets(agent.id, row.projectId, null);
+    return null;
+  }
   await db.delete(agentChatEvent).where(and(eq(agentChatEvent.messageId, row.id), runnerEvent));
   // The agent's instructions reach Hermes through the SOUL.md of its profile, so the
   // message carries no system prompt. A branch whose last answer is the last one of a
@@ -1447,10 +1481,10 @@ async function resumableSession(
 }
 
 // The local models a runtime's picker offers (docs/helena-decisions/local-ai-platform.md):
-// Hermes reaches them as a named provider the runner writes. Claude Code and Codex get none
+// Hermes and Helena reach them as named providers. Claude Code and Codex get none
 // yet. Empty while local AI is off.
 async function localModelsFor(runtime: string): Promise<ChatCatalogModel[]> {
-  if (runtime !== 'hermes') return [];
+  if (runtime !== 'hermes' && runtime !== 'helena') return [];
   try {
     return await localCatalogModelsNow();
   } catch (error) {
@@ -1540,8 +1574,8 @@ export async function readTeamChatCatalog(teamId: number): Promise<ChatCatalog> 
     for (const model of annotated.unavailable)
       if (!unavailable.has(model.id)) unavailable.set(model.id, model);
   }
-  // Local models, while local AI is on, for the Hermes agents' copies.
-  if (rows.some((row) => runtimeOfPolicy(row.runtimePolicy) === 'hermes')) {
+  // Local models, while local AI is on, for Hermes and Helena agents' copies.
+  if (rows.some((row) => ['hermes', 'helena'].includes(runtimeOfPolicy(row.runtimePolicy)))) {
     for (const model of await localModelsFor('hermes'))
       if (!models.has(model.id)) models.set(model.id, model);
   }
