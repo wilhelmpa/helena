@@ -111,7 +111,9 @@ export function KnowledgeRow({
       className={cn(
         'group relative grid min-h-11 shrink-0 grid-cols-[28px_minmax(0,1fr)_minmax(0,190px)_120px] items-center gap-3 rounded-lg px-3.5 max-sm:grid-cols-[22px_minmax(0,1fr)_auto]',
         selected
-          ? 'bg-accent text-accent-foreground shadow-[0_2px_6px_#0003,inset_0_1px_#ffffff0c]'
+          ? // The selected row is an inset (surface fill, no shadow of its own): the box around the
+            // rows is the only thing that carries the card shadow.
+            'bg-accent text-accent-foreground'
           : onClick && 'hover:bg-muted',
       )}
     >

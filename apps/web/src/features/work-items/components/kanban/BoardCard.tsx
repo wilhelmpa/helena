@@ -8,6 +8,7 @@ import { useIsPhone } from '@/hooks/useIsPhone';
 import { usePermissions } from '@/hooks/usePermissions';
 import { isBlocked } from '@/utils/issueLinks';
 import { cn } from '@/lib/utils';
+import { Card } from '@/design-system';
 import type { PropertyKey } from '@/utils/viewSettings';
 import IssueContextMenu from '@/features/issue/components/actions/IssueContextMenu';
 import { useSelection } from '../../context/useSelection';
@@ -67,10 +68,14 @@ export function BoardCard({
 
   return (
     <IssueContextMenu project={project} issue={issue}>
-      <div
+      <Card
         ref={setNodeRef}
         {...attributes}
         {...listeners}
+        interactive
+        selected={selected}
+        gap={2}
+        style={{ cursor: 'grab' }}
         onPointerDown={(e) => {
           pressedAt.current = { x: e.clientX, y: e.clientY };
           listeners?.onPointerDown?.(e);
@@ -95,15 +100,13 @@ export function BoardCard({
           }
         }}
         className={cn(
-          // select-none so a Shift/Cmd-click toggles selection without the browser
-          // also starting a native text selection across cards.
-          'kanban-card board-card relative flex cursor-grab flex-col gap-2 rounded-xl px-4 py-[14px] select-none sm:touch-none',
+          // THE box of the design system (docs/ui-framework.md section 19); the board only adds its
+          // states. select-none so a Shift/Cmd-click toggles selection without the browser also
+          // starting a native text selection across cards.
+          'kanban-card board-card relative select-none sm:touch-none',
           isDragging && 'opacity-40',
           isBlocked(issue) && 'kanban-card-blocked',
           highlighted && 'board-card-highlight',
-          // Selected cards read as a primary-tinted fill, like Linear — no border,
-          // no checkbox (see .kanban-card-selected in globals.css).
-          selected && 'kanban-card-selected',
         )}
       >
         <IssueCardBody
@@ -114,7 +117,7 @@ export function BoardCard({
           onOpen={onOpen}
           readOnly={readOnly}
         />
-      </div>
+      </Card>
     </IssueContextMenu>
   );
 }

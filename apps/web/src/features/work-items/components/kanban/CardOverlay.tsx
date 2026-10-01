@@ -3,6 +3,7 @@ import type { BoardIssue } from '@/lib/api/endpoints/issues';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import { type Maps } from '@/utils/project';
 import type { PropertyKey } from '@/utils/viewSettings';
+import { Card } from '@/design-system';
 import { Badge } from '@/components/ui/badge';
 import { IssueCardBody } from './IssueCardBody';
 
@@ -39,18 +40,19 @@ export function CardOverlay({
         <div className="relative cursor-grabbing opacity-95">
           {/* A drag carrying several issues reads as a deck with stepped edges. */}
           {depths.map((depth) => (
-            <div
+            <Card
               key={depth}
-              className="kanban-card absolute inset-0 rounded-md border border-border/60 shadow-md"
+              pad="none"
+              className="kanban-card absolute inset-0"
               style={{ transform: `translate(${depth * 6}px, ${depth * 6}px)` }}
             />
           ))}
-          <div className="kanban-card board-card relative flex flex-col gap-2 rounded-xl px-4 py-[14px] shadow-lg">
+          <Card gap={2} className="kanban-card board-card relative">
             <IssueCardBody issue={issue} project={project} maps={maps} properties={properties} />
             {count > 1 && (
               <Badge className="absolute -top-2 -right-2 rounded-full shadow">{count}</Badge>
             )}
-          </div>
+          </Card>
         </div>
       ) : null}
     </DragOverlay>
