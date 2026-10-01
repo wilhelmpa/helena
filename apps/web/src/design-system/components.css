@@ -291,7 +291,8 @@ button.ds-pill {
 .ds-card[data-tone='inset'].is-interactive:hover {
   background: var(--surface-3);
 }
-.ds-card.is-selected {
+.ds-card.is-selected,
+.ds-card.is-interactive.is-selected:hover {
   background: var(--surface-3);
 }
 /* A chart node: the box at a size its chart gives it; the content is centred, so the padding is

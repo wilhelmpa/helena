@@ -153,7 +153,12 @@ export function contentFindings(results) {
       }
       if (box.radius !== BOX.radius)
         out.push(`${tag}: Box ${label} hat Radius ${box.radius} statt ${BOX.radius}`);
-      if (box.bg !== '--surface-1' && box.bg !== '--surface-2' && box.bg !== '--surface-3')
+      if (
+        box.bg !== '--surface-1' &&
+        box.bg !== '--surface-2' &&
+        box.bg !== '--surface-3' &&
+        !box.tinted
+      )
         out.push(`${tag}: Box ${label} hat den Hintergrund ${box.bg}, kein Flächen-Token`);
       if (box.kind === 'card' && box.bg === '--surface-1' && !box.shadow)
         out.push(`${tag}: Box ${label} hat keinen Kartenschatten`);

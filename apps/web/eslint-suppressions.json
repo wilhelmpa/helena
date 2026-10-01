@@ -4670,12 +4670,6 @@
   },
   "src/features/work-items/components/calendar/CalendarUnscheduledCard.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 4
-    },
-    "jsx-a11y/click-events-have-key-events": {
-      "count": 1
-    },
-    "jsx-a11y/no-static-element-interactions": {
       "count": 1
     }
   },
@@ -4700,17 +4694,6 @@
       "count": 2
     },
     "no-restricted-imports": {
-      "count": 1
-    }
-  },
-  "src/features/work-items/components/kanban/BoardCard.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 4
-    },
-    "jsx-a11y/click-events-have-key-events": {
-      "count": 1
-    },
-    "jsx-a11y/no-static-element-interactions": {
       "count": 1
     }
   },
@@ -4754,7 +4737,7 @@
       "count": 1
     },
     "better-tailwindcss/no-restricted-classes": {
-      "count": 9
+      "count": 1
     }
   },
   "src/features/work-items/components/kanban/CollapsedColumn.tsx": {

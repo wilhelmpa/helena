@@ -4,6 +4,7 @@ import type { Issue } from '@/lib/api/endpoints/issues';
 import { useIsPhone } from '@/hooks/useIsPhone';
 import { usePermissions } from '@/hooks/usePermissions';
 import { cn } from '@/lib/utils';
+import { Card } from '@/design-system';
 import IssueContextMenu from '@/features/issue/components/actions/IssueContextMenu';
 import type { Maps } from '@/utils/project';
 import type { PropertyKey } from '@/utils/viewSettings';
@@ -35,18 +36,19 @@ export function CalendarUnscheduledCard({
   });
   return (
     <IssueContextMenu project={project} issue={issue}>
-      <div
+      <Card
         ref={setNodeRef}
         {...attributes}
         {...listeners}
+        interactive
+        pad="tight"
+        layout="row"
+        gap={2}
         onClick={(e) => {
           e.preventDefault();
           onOpen(issue.id);
         }}
-        className={cn(
-          'kanban-card flex cursor-pointer items-center gap-2 rounded-md p-2 text-xs sm:touch-none',
-          isDragging && 'opacity-40',
-        )}
+        className={cn('kanban-card items-center text-xs sm:touch-none', isDragging && 'opacity-40')}
       >
         <CalendarChipFace
           issue={issue}
@@ -54,7 +56,7 @@ export function CalendarUnscheduledCard({
           properties={['id', ...properties]}
           maps={maps}
         />
-      </div>
+      </Card>
     </IssueContextMenu>
   );
 }

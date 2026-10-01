@@ -1,5 +1,5 @@
 import { useTranslations } from 'next-intl';
-import { Text } from '@/design-system';
+import { Card, Text } from '@/design-system';
 import type { BoardIssue } from '@/lib/api/endpoints/issues';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import { buildMaps } from '@/utils/project';
@@ -84,7 +84,7 @@ export default function FieldsPreview({
   }
   return (
     <div className="ds-fields-preview" data-kind={view} aria-label={t('preview')}>
-      <div className="kanban-card board-card ds-fields-preview-card" aria-hidden="true">
+      <Card gap={2} className="kanban-card board-card ds-fields-preview-card" aria-hidden="true">
         <IssueCardBody
           issue={sample}
           project={project}
@@ -92,7 +92,7 @@ export default function FieldsPreview({
           properties={properties}
           readOnly
         />
-      </div>
+      </Card>
     </div>
   );
 }

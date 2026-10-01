@@ -622,24 +622,14 @@ html [data-sonner-toast][data-styled='true']:not(:focus-visible) {
   mask-image: linear-gradient(to bottom, #000 calc(100% - 1.5rem), transparent);
 }
 
-/* Kanban card surface — it sits on --kanban-column, so it is lighter than the
-   column in both themes, and it changes its own background on hover instead of
-   highlighting the border. */
-.kanban-card {
-  background-color: var(--kanban-card);
-  transition: background-color 0.12s ease;
-}
-.kanban-card {
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-card);
-}
-.kanban-card:hover {
-  background-color: var(--kanban-card-hover);
-}
-.board-card-highlight {
+/* A board card is THE box (Card, docs/ui-framework.md section 19): its surface, radius, shadow and
+   hover come from the design system. Only the board's own states follow: a card held up by
+   another issue is tinted, an urgent one carries an accent bar INSIDE the same frame. The
+   selectors are doubled so they beat the Card's own surface rules in any order. */
+.ds-card.board-card-highlight {
   box-shadow:
-    0 0 0 1px var(--board-highlight-outline),
-    0 0 28px var(--board-highlight-glow);
+    var(--shadow-card),
+    inset 3px 0 0 var(--board-highlight-outline);
 }
 .board-column-heading {
   font: 500 10px/16px var(--font-mono);
@@ -692,10 +682,10 @@ html [data-sonner-toast][data-styled='true']:not(:focus-visible) {
 }
 /* Held up by another issue: a red-tinted card surface, faint enough to read as a
    shade of the card rather than an error. */
-.kanban-card-blocked {
+.ds-card.kanban-card-blocked:not(.is-selected) {
   background-color: var(--kanban-card-blocked);
 }
-.kanban-card-blocked:hover {
+.ds-card.is-interactive.kanban-card-blocked:not(.is-selected):hover {
   background-color: var(--kanban-card-blocked-hover);
 }
 
@@ -706,13 +696,6 @@ html [data-sonner-toast][data-styled='true']:not(:focus-visible) {
 .row-blocked:hover {
   background-color: var(--row-blocked-hover);
 }
-/* Selected in the board multi-select: a brand-tinted card surface, overriding the
-   base and hover fills. */
-.kanban-card-selected,
-.kanban-card-selected:hover {
-  background-color: var(--kanban-card-selected);
-}
-
 /* Touch screens (docs/volition-design-helena-ui.md "Mobil"): the compact 32px rows
    and controls are sized for a mouse; under a finger every interactive control gets a
    40px target. Keyed on the pointer, not the width, so a narrow desktop window stays

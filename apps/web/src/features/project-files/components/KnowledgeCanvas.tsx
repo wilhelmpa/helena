@@ -82,10 +82,14 @@ const borderColors = ['#645274', '#395e50', '#65483d', '#6b562b'];
 
 function CanvasCard({ id, data }: NodeProps<CardNode>) {
   return (
-    <Card
-      className="group h-full w-full"
-      style={{ boxShadow: `inset 0 0 0 1px ${data.color}, var(--shadow-card)` }}
-    >
+    // THE box of the design system: the frame is the same as every other card. The card's colour
+    // (kept in the file, JSON Canvas) is a dot, not a coloured frame.
+    <Card className="group relative h-full w-full">
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute end-3 top-3 size-1.5 rounded-full"
+        style={{ backgroundColor: data.color }}
+      />
       <Handle
         type="target"
         position={Position.Left}
