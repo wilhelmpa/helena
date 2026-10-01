@@ -2028,14 +2028,14 @@
   {
     "method": "POST",
     "path": "/projects/:projectKey/decisions/task-triage",
-    "name": "classify_task_responsibility_and_priority",
-    "category": "execute"
+    "name": "triage_task",
+    "category": "read"
   },
   {
     "method": "POST",
     "path": "/projects/:projectKey/decisions/agent-route",
-    "name": "select_eligible_agent_for_task",
-    "category": "execute"
+    "name": "route_task_agent",
+    "category": "read"
   },
   {
     "method": "POST",
