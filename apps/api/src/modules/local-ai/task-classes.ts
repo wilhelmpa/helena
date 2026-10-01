@@ -45,7 +45,7 @@ export const BUILTIN_TASK_CLASSES: LocalAiTaskClass[] = [
     unit: 'gpu',
     capability: 'tools',
     priority: 'background',
-    thinking: 'off',
+    thinking: 'low',
     inMasterDefault: false,
     wired: false,
     experimental: true,
@@ -54,7 +54,7 @@ export const BUILTIN_TASK_CLASSES: LocalAiTaskClass[] = [
       if (!context.runSkillUsage) throw new Error('Native skill-usage eval runner unavailable');
       return context.runSkillUsage();
     },
-    evalVersion: 1,
+    evalVersion: 2,
     threshold: 1,
   },
   {

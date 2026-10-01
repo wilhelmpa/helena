@@ -59,6 +59,7 @@ const helena = {
       : { effect: 'allow', reason: 'Autopilot level 3' },
   download: async () => ({ path: 'Projects/EVAL/Inbox/download' }),
   policy: async () => ({}),
+  previews: async () => [],
 } as unknown as HelenaClient;
 
 let session: Promise<PatchrightGatewaySession> | null = null;

@@ -89,6 +89,28 @@ export function hermesMetrics(output: string) {
 
 // The same numbers from Helena's own loop (packages/agent-runtime, helena-jsonl): a call is
 // valid unless its result was an error, as for Hermes; the spend line has the tokens.
+export function nativeEvalError(output: string): string | null {
+  let error: string | null = null;
+  for (const line of output.split('\n')) {
+    let event: Record<string, unknown>;
+    try {
+      event = JSON.parse(line) as Record<string, unknown>;
+    } catch {
+      continue;
+    }
+    if (event.type !== 'result') continue;
+    error =
+      event.exitCode === 0
+        ? null
+        : typeof event.error === 'string' && event.error.trim()
+          ? event.error.slice(-300)
+          : typeof event.reason === 'string' && event.reason.trim()
+            ? event.reason.slice(-300)
+            : null;
+  }
+  return error;
+}
+
 export function helenaMetrics(output: string) {
   let toolCalls = 0;
   let errors = 0;
@@ -298,7 +320,9 @@ export async function evaluateCodingTask(
       aborted: metrics.aborted || output.code !== 0 || output.timedOut,
       durationMs: Date.now() - started,
       testOutput: testsPassed ? null : testOutput,
-      error: output.code === 0 ? null : output.stderr.slice(-300),
+      error:
+        (runtime.kind === 'helena' ? nativeEvalError(output.stdout) : null) ??
+        (output.code === 0 ? null : output.stderr.slice(-300)),
     };
   } finally {
     await rm(directory, { recursive: true, force: true });
