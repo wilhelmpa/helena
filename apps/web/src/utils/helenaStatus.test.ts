@@ -13,6 +13,8 @@ describe('deriveStatus priority', () => {
     ['tool', { chat: 'streaming', tool: 'search', run: 'done' }],
     ['waiting', { chat: 'streaming', tool: 'search', awaitingChoice: true }],
     ['waiting', { voicePhase: 'waiting', chat: 'streaming' }],
+    ['thinking', { chat: 'queued' }],
+    ['waiting', { chat: 'queued', awaitingChoice: true }],
     ['listening', { voicePhase: 'hearing', awaitingChoice: true }],
     ['speaking', { voicePhase: 'speaking', awaitingChoice: true }],
     ['throttled', { budget: 'exhausted', voicePhase: 'speaking' }],
