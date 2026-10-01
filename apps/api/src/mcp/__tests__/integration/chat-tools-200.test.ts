@@ -161,7 +161,7 @@ describe('chat tool access regression 200', () => {
     expect((await request('/projects/OTHER/mail-triage/run', 'POST', {})).status).toBe(403);
   });
 
-  it.each(['home', 'all', 'owner'] as const)(
+  it.each(['home', 'all', 'owner', 'team-owner'] as const)(
     'permits %s delegates to inspect same-team agents',
     async (kind) => {
       const { api, own, created, request } = await setup();
@@ -181,6 +181,13 @@ describe('chat tool access regression 200', () => {
           .update(projectMember)
           .set({ role: 'owner' })
           .where(eq(projectMember.userId, created.agent.userId));
+      }
+      if (kind === 'team-owner') {
+        const { teamMember } = await import('@repo/db');
+        await db
+          .update(teamMember)
+          .set({ role: 'owner' })
+          .where(eq(teamMember.userId, created.agent.userId));
       }
       expect((await request(`/teams/${own.teamId}/ai-agents/${target}/runs`)).status).toBe(200);
       expect(

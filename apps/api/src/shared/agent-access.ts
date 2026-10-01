@@ -1,4 +1,11 @@
-import { aiAgent, db, organizationAgentAssignment, projectMember, project } from '@repo/db';
+import {
+  aiAgent,
+  db,
+  organizationAgentAssignment,
+  projectMember,
+  project,
+  teamMember,
+} from '@repo/db';
 import { and, eq } from 'drizzle-orm';
 
 // Team boundary and project membership remain authoritative for delegated access.
@@ -35,6 +42,12 @@ export async function agentMayInspect(userId: string, teamId: number): Promise<b
   const agent = await agentAccess(userId, teamId);
   if (!agent) return false;
   if (agent.role === 'home' || agent.scope === 'all') return true;
+  const [standing] = await db
+    .select({ role: teamMember.role })
+    .from(teamMember)
+    .where(and(eq(teamMember.teamId, teamId), eq(teamMember.userId, userId)))
+    .limit(1);
+  if (standing?.role === 'owner') return true;
   const [owned] = await db
     .select({ id: project.id })
     .from(projectMember)
