@@ -11,7 +11,13 @@ import {
 import { and, asc, eq, isNull } from 'drizzle-orm';
 import { authContext } from '#shared/auth-context';
 import { guards } from '#shared/guards';
-import { requireProjectAccess, requireTeamMembership, requireUser } from '#shared/access';
+import {
+  assertMcpEnabled,
+  requireProjectAccess,
+  requireTeamMembership,
+  requireUser,
+} from '#shared/access';
+import { isMcpRequest } from '#shared/mcp-request';
 import { HttpError } from '#shared/lib';
 import { noContent } from '#shared/http';
 import { commonErrors, errors } from '#shared/responses';
@@ -183,8 +189,9 @@ export const decisionRoutes = new Elysia({
 
   .post(
     '/projects/:projectKey/decisions/task-triage',
-    async ({ user, params, body }) => {
+    async ({ user, params, body, request }) => {
       const project = await requireProjectAccess(params.projectKey, user);
+      assertMcpEnabled(project, isMcpRequest(request.headers));
       const candidates = await projectDecisionAgents(project.id, project.teamId);
       return triageTask({
         teamId: project.teamId,
@@ -200,14 +207,21 @@ export const decisionRoutes = new Elysia({
         title: t.String({ minLength: 1, maxLength: 300 }),
         description: t.Optional(t.String({ maxLength: 2000 })),
       }),
-      detail: { summary: 'Classify task responsibility and priority' },
+      params: t.Object({ projectKey: t.String({ maxLength: 32 }) }),
+      detail: {
+        summary: 'Classify task responsibility and priority',
+        description:
+          'Suggest a classification without changing or assigning the task. Act only on an act result; escalate uncertain answers to the coordinator.',
+        ...mcpTool('triage_task', { readOnlyHint: true }, 'read'),
+      },
     },
   )
 
   .post(
     '/projects/:projectKey/decisions/agent-route',
-    async ({ user, params, body }) => {
+    async ({ user, params, body, request }) => {
       const project = await requireProjectAccess(params.projectKey, user);
+      assertMcpEnabled(project, isMcpRequest(request.headers));
       const candidates = await projectDecisionAgents(project.id, project.teamId);
       return routeTaskAgent({
         teamId: project.teamId,
@@ -223,7 +237,13 @@ export const decisionRoutes = new Elysia({
         title: t.String({ minLength: 1, maxLength: 300 }),
         description: t.Optional(t.String({ maxLength: 2000 })),
       }),
-      detail: { summary: 'Select an eligible agent for a task' },
+      params: t.Object({ projectKey: t.String({ maxLength: 32 }) }),
+      detail: {
+        summary: 'Select an eligible agent for a task',
+        description:
+          'Suggest a classification without changing or assigning the task. Act only on an act result; escalate uncertain answers to the coordinator.',
+        ...mcpTool('route_task_agent', { readOnlyHint: true }, 'read'),
+      },
     },
   )
 

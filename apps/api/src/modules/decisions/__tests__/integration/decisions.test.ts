@@ -264,6 +264,34 @@ async function switchOn(
 }
 
 describe('decision classes', () => {
+  it('exposes task classification tools to runtimes and honors the project MCP switch', async () => {
+    const { owner, asOwner, project } = await setup();
+    for (const name of ['triage_task', 'route_task_agent']) {
+      const tool = routeTools(app).find((entry) => entry.name === name);
+      expect(tool).toBeDefined();
+      const input = { projectKey: project.key, title: 'Synthetic classification only' };
+      const credential = { kind: 'session' as const, cookie: owner.cookie };
+      const result = await dispatchTool(app, tool!, input, credential, { viaMcpEndpoint: true });
+      expect(result.isError).toBe(false);
+      expect(
+        (
+          await asOwner
+            .teams({ teamId: project.teamId })
+            .mcp.patch({ projects: [{ projectId: project.id, enabled: false }] })
+        ).status,
+      ).toBe(200);
+      const refused = await dispatchTool(app, tool!, input, credential, { viaMcpEndpoint: true });
+      expect(refused.isError).toBe(true);
+      expect(
+        (
+          await asOwner
+            .teams({ teamId: project.teamId })
+            .mcp.patch({ projects: [{ projectId: project.id, enabled: true }] })
+        ).status,
+      ).toBe(200);
+    }
+  });
+
   it('offers private task triage and agent routing through evaluated local decisions', async () => {
     const { asOwner, teamId } = await setup();
     const agent = (

@@ -247,7 +247,7 @@ async function nextPolicy(
   if (next.enabled && !next.credentialId) throw new HttpError(409, 'no_connection');
   for (const [classId, selected] of Object.entries(next.useCases)) {
     const cls = decisionClass(classId);
-    if (!cls || cls.input.cloud !== 'allowed')
+    if (!cls || (cls.input.cloud !== 'allowed' && (selected.enabled || selected.cloudAllowed)))
       throw new HttpError(400, 'This use case does not permit cloud decisions.');
     if (selected.enabled && !selected.cloudAllowed)
       throw new HttpError(400, 'Explicit cloud permission is required for this use case.');

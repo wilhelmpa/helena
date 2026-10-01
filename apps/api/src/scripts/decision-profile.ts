@@ -1,4 +1,5 @@
 import { localModelId } from '@helena/sdk';
+import { JEV_UNVALIDATED_CLASSES } from '../modules/decisions/jev-policy';
 
 export const DECISION_THRESHOLDS: Record<string, number> = {
   'helena.model-router': 0.8,
@@ -37,25 +38,27 @@ export function decisionProfile(
     Object.entries({ ...DECISION_THRESHOLDS, ...LOCAL_ONLY_CLASSES }).map(([id, threshold]) => [
       id,
       {
-        enabled: true,
-        credentialId: 36,
-        fallbackCredentialId: null,
-        threshold,
-        timeoutMs:
-          id === 'helena.mail'
+        enabled: classes[id]?.enabled ?? true,
+        credentialId: classes[id] ? classes[id].credentialId : 36,
+        fallbackCredentialId: classes[id]?.fallbackCredentialId ?? null,
+        threshold: classes[id] ? classes[id].threshold : threshold,
+        timeoutMs: classes[id]
+          ? classes[id].timeoutMs
+          : id === 'helena.mail'
             ? 15_000
             : id === 'helena.trading.news'
               ? 10_000
-              : (classes[id]?.timeoutMs ?? null),
+              : null,
       },
     ]),
   );
   const useCases = { ...(firstStage?.useCases as Record<string, unknown> | undefined) };
   for (const id of Object.keys(DECISION_THRESHOLDS))
-    useCases[id] = { enabled: true, cloudAllowed: true };
+    useCases[id] ??= { enabled: true, cloudAllowed: true };
+  for (const id of JEV_UNVALIDATED_CLASSES) useCases[id] = { enabled: false, cloudAllowed: false };
   for (const id of Object.keys(LOCAL_ONLY_CLASSES))
     useCases[id] = { enabled: false, cloudAllowed: false };
-  const stage = { ...firstStage, enabled: true, credentialId: 46, timeoutMs: 1000, useCases };
+  const stage = { enabled: true, credentialId: 46, timeoutMs: 1000, ...firstStage, useCases };
   const existingClasses = { ...(policy?.classes as Record<string, unknown> | undefined) };
   const classesNext = { ...existingClasses };
   for (const [id, entry] of Object.entries(existingClasses)) {
