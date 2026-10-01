@@ -435,10 +435,10 @@
       },
       "behaviourTitle": "Поведінка",
       "chatBudget": {
-        "title": "Chat time limit",
-        "seconds": "Time limit in seconds",
-        "summarize": "Give a final answer when the time limit is reached",
-        "summarySeconds": "Additional time for the final answer in seconds"
+        "title": "Ліміт часу чату",
+        "seconds": "Ліміт часу в секундах",
+        "summarize": "Дати підсумкову відповідь після досягнення ліміту",
+        "summarySeconds": "Додатковий час на підсумкову відповідь у секундах"
       }
     },
     "runtimeConflicts": {

@@ -435,10 +435,10 @@
       },
       "behaviourTitle": "行为",
       "chatBudget": {
-        "title": "Chat time limit",
-        "seconds": "Time limit in seconds",
-        "summarize": "Give a final answer when the time limit is reached",
-        "summarySeconds": "Additional time for the final answer in seconds"
+        "title": "聊天时间限制",
+        "seconds": "时间限制（秒）",
+        "summarize": "达到时间限制时给出最终回答",
+        "summarySeconds": "最终回答的额外时间（秒）"
       }
     },
     "runtimeConflicts": {

@@ -435,10 +435,10 @@
       },
       "behaviourTitle": "Поведение",
       "chatBudget": {
-        "title": "Chat time limit",
-        "seconds": "Time limit in seconds",
-        "summarize": "Give a final answer when the time limit is reached",
-        "summarySeconds": "Additional time for the final answer in seconds"
+        "title": "Лимит времени чата",
+        "seconds": "Лимит времени в секундах",
+        "summarize": "Дать итоговый ответ по достижении лимита",
+        "summarySeconds": "Дополнительное время на итоговый ответ в секундах"
       }
     },
     "runtimeConflicts": {
