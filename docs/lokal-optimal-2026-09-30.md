@@ -1,3 +1,215 @@
+# Lokale KI: Auftrag 190, Messstand 01.10.2026
+
+Auftrag 190 ersetzt den blockierten Auftrag 188. Der Bootstrap- und Rückweg-Code liegt auf `hub/27b-bootstrap`; die Live-Messungen laufen ohne App-Deploy mit den offiziellen Worktree-Servicefunktionen und einem eigenen temporären hostd. Alle Messungen und Abschlussprüfungen sind abgeschlossen. Codex hat keinen Deploy ausgeführt; Claude übernahm während der Messung die Codeänderungen bis `b1c81ac60` mit Release 12.13 (`98897f4b3`), auf dem die abschließenden 40 Agentenfragen liefen.
+
+## Bootstrap und produktiver Chat
+
+Die Vorschau erlaubt einen leeren Katalog ausschließlich für das bekannte, verwaltete 27B-Profil. Der hostd startet Lemonade/NPU, wartet auf die lokale Modellliste, und erst danach registriert/aktualisiert die API beide Kataloge und veröffentlicht den Standard. Nicht heruntergeladene Ziele, fremde Server-URLs und kollidierende Servertypen bleiben ausgeschlossen; Fehler rollen auf den ursprünglichen Standard zurück, auch wenn dieser vorher nicht gesetzt war. Der Rückweg erkennt Halogens `engine.responds`.
+
+Die Live-Ausführung deckte außerdem drei Helena-Chat-Lücken auf: lokale Kataloge waren nur für `hermes` sichtbar, die native Runtime übergab keine Modellserver-Schlüssel, und ihre Konfiguration löste `volition-local-default` nicht auf. Alle drei sind auf dem Branch behoben und mit rot→grün belegt; auch die globale Modellbindung erhält jetzt die konfigurierte Runtime, statt Helena-Agenten auf Hermes umzustellen; Codex hat die installierte App nicht verändert. Schlüssel werden nur intern von den bestehenden Servicefunktionen verarbeitet und nie ausgegeben.
+
+## 27B-Tuning
+
+Vor jedem GPU-Reload wurden sämtliche ROCm-Dienste gemeinsam gestoppt und mindestens 12 GiB MemAvailable geprüft; Halogen war während des 27B-Betriebs aus. Gemessen wurden je eine Aufwärmanfrage und drei Einzelanfragen mit demselben deutschen Zehn-Satz-Prompt, Temperatur 0, Seed 190 und identischer Qualitätsbedingung. Keine Downloads oder Paketinstallationen.
+
+| Variante | Decode Token/s, Median | Gesamt Token/s | Erster Token, ms | Qualität |
+|---|---:|---:|---:|---|
+| hipblaslt-off | 20.538 | 20.259 | 145.71 | 3/3 |
+| ubatch64 | 20.489 | 20.282 | 147.9 | 3/3 |
+| mtp2-slots3 | 20.48 | 20.273 | 151.92 | 3/3 |
+| mtp2-slots1 | 20.471 | 20.272 | 144.79 | 3/3 |
+| mtp2-slots4 | 20.46 | 20.215 | 151.31 | 3/3 |
+| kv-f16 | 20.445 | 20.235 | 150.52 | 3/3 |
+| ubatch256 | 20.443 | 20.2 | 150.96 | 3/3 |
+| ubatch512 | 20.437 | 20.195 | 151.75 | 3/3 |
+| ubatch1024 | 20.428 | 20.188 | 150.5 | 3/3 |
+| flash-attention-off | 20.409 | 20.052 | 175.49 | 3/3 |
+| baseline-mtp2-slots2 | 20.292 | 20.015 | 164.14 | 3/3 |
+| kv-q8_0 | 19.998 | 19.728 | 143.05 | 3/3 |
+| mtp3-slots2 | 19.867 | 19.671 | 150.27 | 3/3 |
+| mtp1-slots2 | 18.158 | 18.003 | 148.46 | 3/3 |
+| mtp4-slots2 | 18.11 | 17.953 | 148.96 | 3/3 |
+
+Die höchste gemessene Decode-Rate liegt bei 20,538 Token/s (hipBLASLt aus), gegenüber 20,292 Token/s der Ausgangseinstellung: +1,21 %. Das Ziel deutlich über 25 Token/s wurde nicht erreicht. MTP 3/4, q8-KV und größere ubatches verbessern das Ergebnis nicht.
+
+Dauerhaft gespeichert: ROCm, MTP mit zwei Draft-Tokens, zwei Slots mit je 65.536 Kontext, Flash-Attention an und Thinking aus; zusätzliche ubatch-/KV-Flags bleiben auf dem besten gemessenen Standard. `/etc/systemd/system/lemond.service.d/90-volition-27b-tuning.conf` setzt `ROCBLAS_USE_HIPBLASLT=0`; die nativen Modelloptionen und Lemonades `save_options` sind gespeichert. Das permanente Tuning-Drop-in ist vom temporären Mess-Drop-in getrennt.
+
+## Coding und Browser
+
+| Prüfung auf 27B | Ergebnis | Werkzeugaufrufe | Laufzeit |
+|---|---|---|---|
+| Coding 12, Helena Runtime | 12/12 bestanden; keine Schleife, kein Abbruch | 47 gültig | 481,615 s |
+| Browser 20, Helena Runtime | 20/20 bestanden; eine Schleife, kein Abbruch/Timeout | 97/98 gültig | 618,656 s |
+
+Die offiziellen Harnesses liefen mit vorhandenen Offline-Abhängigkeiten, privaten Arbeitsverzeichnissen und lokalem Chromium. Ein nur lokal erreichbarer Testproxy leitete ausschließlich den gemessenen 27B an Lemonade weiter; Coding-/Browser-Kindprozesse erhielten keine Live-Secrets.
+
+## NPU-Klassen und Gemma
+
+Alle vier Modelle waren bereits installiert. Je Modell wurden dieselben sieben offiziellen Klassen mit Thinking aus geprüft; 368 Fälle wurden bewertet, hinzu kamen 120 fehlgeschlagene Logprob-Prüfungen. Die Tabelle beschreibt Modellfähigkeit am privaten FLM-Endpunkt, nicht die Freigabe des installierten Gateways.
+
+| NPU-Modell | Klasse | Score / Grenze | p50, ms | Token/s | Freigabe |
+|---|---|---:|---:|---:|---|
+| Qwen 2B | hermes-helpers | 0.567 / 0.75 | 9219.5 | 25.399 | nein |
+| Qwen 2B | summaries | 0.5 / 0.75 | 2870 | 22.096 | nein |
+| Qwen 2B | triage | – / 0.85 | – | – | nein |
+| Qwen 2B | voice-reply | 0.333 / 0.85 | 1071 | 10.939 | nein |
+| Qwen 2B | routines | 1 / 0.9 | 2893 | 13.214 | ja |
+| Qwen 2B | reflection | 0.567 / 0.85 | 7574.5 | 24.638 | nein |
+| Qwen 2B | coordinator-triage | 0 / 0.8 | 14108 | 26.283 | nein |
+| Qwen 4B | hermes-helpers | 0.867 / 0.75 | 21968 | 14.582 | ja |
+| Qwen 4B | summaries | 0.75 / 0.75 | 6481.5 | 12.464 | ja |
+| Qwen 4B | triage | – / 0.85 | – | – | nein |
+| Qwen 4B | voice-reply | 0.84 / 0.85 | 2403 | 7.031 | nein |
+| Qwen 4B | routines | 1 / 0.9 | 5838.5 | 6.685 | ja |
+| Qwen 4B | reflection | 0.167 / 0.85 | 2917 | 2.002 | nein |
+| Qwen 4B | coordinator-triage | 0.4 / 0.8 | 14000 | 13.187 | nein |
+| Gemma e2b | hermes-helpers | 0.967 / 0.75 | 10405.5 | 16.878 | ja |
+| Gemma e2b | summaries | 1 / 0.75 | 6612 | 14.117 | ja |
+| Gemma e2b | triage | – / 0.85 | – | – | nein |
+| Gemma e2b | voice-reply | 0.467 / 0.85 | 2174 | 6.095 | nein |
+| Gemma e2b | routines | 1 / 0.9 | 2666.5 | 9.319 | ja |
+| Gemma e2b | reflection | 0.167 / 0.85 | 5977.5 | 17.317 | nein |
+| Gemma e2b | coordinator-triage | 0.6 / 0.8 | 13793 | 20.644 | nein |
+| Gemma e4b | hermes-helpers | 1 / 0.75 | 17793.5 | 11.559 | ja |
+| Gemma e4b | summaries | 1 / 0.75 | 11284 | 8.307 | ja |
+| Gemma e4b | triage | – / 0.85 | – | – | nein |
+| Gemma e4b | voice-reply | 0.733 / 0.85 | 2594 | 5.084 | nein |
+| Gemma e4b | routines | 1 / 0.9 | 5662 | 4.418 | ja |
+| Gemma e4b | reflection | 0.967 / 0.85 | 7821 | 9.364 | ja |
+| Gemma e4b | coordinator-triage | 0.8 / 0.8 | 23322 | 11.52 | ja |
+
+Gemma e2b ist auf dem Branch der bevorzugte Helfer: 29/30 Fälle bei 10,406 s p50 statt Qwen 4B mit 26/30 bei 21,968 s. Gemma e4b erzielt 30/30 und besteht zusätzlich Reflection sowie Koordinator-Triage, braucht dafür bei Helfern 17,794 s; es bleibt ausdrücklich auswählbar. Die produktive 27B-Paarmessung vor einem Deploy verwendete Qwen 4B, da das installierte Gateway Gemma noch ablehnte. Der Branch erlaubt Qwen 2B/4B und Gemma e2b/e4b über die bestehende NPU-Steuerung, einschließlich Modellliste und Speicherprüfung.
+
+Die gemessenen cgroup-Speicherspitzen waren 7,128 / 10,310 / 11,001 / 11,001 GiB (Qwen 2B / Qwen 4B / Gemma e2b / Gemma e4b); diese enthalten Dateicache. Alle Testworker hatten nur `/dev/accel/accel0`, keinen ROCm-Zugang, keine Swap-Freigabe, MemoryHigh 11 GiB, MemoryMax 12 GiB und LimitMEMLOCK 12 GiB. Das ursprüngliche LimitMEMLOCK von 8 MiB verhinderte den FLM-Start und ist im Branch korrigiert.
+
+Triage scheitert bei allen vier Modellen an fehlenden Log-Wahrscheinlichkeiten. Routines bestehen am privaten Worker, der installierte Gateway lehnt die offizielle Anfrage mit HTTP 400 wegen des Output-Limits ab. Diese Klassen bleiben produktiv aus; eine Tabellenfreigabe am Testworker wird nicht als produktive Freigabe ausgegeben. Keine der vier NPU-Varianten erreicht die Voice-Schwelle von 0,85.
+
+## Zentrale Klassenprüfung des Profils 27B + Qwen 4B
+
+| Klasse | Ergebnis | Modell | p50, ms | Token/s |
+|---|---:|---|---:|---:|
+| hermes-helpers | 0.8666667 bestanden | qwen3.5:4b | 22222 | 14.447 |
+| summaries | 1 bestanden | Qwen3.8-27B-GGUF | 9340 | 24.313 |
+| triage | 0 gesperrt | qwen3.5:4b | – | – |
+| voice-reply | 1 bestanden | Qwen3.8-27B-GGUF | 1015 | 13.767 |
+| routines | 0 gesperrt | qwen3.5:4b | – | – |
+| reflection | 0.8666667 bestanden | Qwen3.8-27B-GGUF | 7224 | 17.993 |
+| coordinator-triage | 0.6 gesperrt | Qwen3.8-27B-GGUF | 28741 | 21.108 |
+
+27B besteht Summaries, Voice und Reflection sowie Qwen 4B die Helfer; Koordinator-Triage erreicht nur 3/5 statt mindestens 4/5. Fehlgeschlagene Klassen werden von der zentralen Umschaltung ausgeschaltet.
+
+## Jev 48: Parser und ausgeführte Aktionen
+
+Der produktive Parser nimmt 0/48 ursprüngliche Befehle an. Deshalb wurde zusätzlich eine vollständig isolierte Fixture verwendet: echte SQLite-Aufgaben-/Dokumentoperationen und echte Chromium-Navigation, Klicks, Formulare und Ergebnisprüfungen auf lokalen Testseiten, ohne Owner-Daten oder Außenwirkung. Alle 48 identischen Befehle wurden dreimal ausgeführt. Jev verwendete vier native kategoriale Entscheidungen; 27B und Halogen kompakte JSON-Auswahlen über dieselben vier Fragen und Optionen. Die Protokolle unterscheiden sich und die Zeiten sind keine Gleichsetzung der APIs.
+
+| Backend | Intent | Argumente | Werkzeug | Aktionsergebnis | Alle Bedingungen | Entscheidung p50 / p95, ms |
+|---|---:|---:|---:|---:|---:|---:|
+| jev | 120/144 | 116/144 | 29/144 | 24/144 | 24/144 | 251.272 / 298.926 |
+| 27b | 132/144 | 135/144 | 135/144 | 132/144 | 123/144 | 2443.926 / 3370.957 |
+| flash | 134/144 | 135/144 | 134/144 | 134/144 | 128/144 | 1422.898 / 1549.316 |
+
+Es gab keine Modelltransportfehler in diesen finalen drei Läufen; Jev / 27B / Halogen verursachten 120 / 9 / 6 Aktionfehler durch falsche Werkzeug-/Argumentwahl. Jev ist in dieser vollständigen Aufgabe trotz kurzer Entscheidungszeit nicht ausreichend zuverlässig. Der ergänzende reine Intent-/Toolfamilien-Test mit 117/144 und 103/144 wird nicht mit dem Aktionsergebnis verwechselt. Ein abgebrochener 27B-Vorlauf wegen doppelter Brotli-Dekompression des temporären Testproxys ist getrennt archiviert und nicht eingerechnet.
+
+## Sprache
+
+Der bestehende STT-Korpus mit 30 Audios wurde nur transkribiert und nie als Owner-Aktion ausgeführt: 30/30 HTTP 200, kein Aussetzer, rohe WER 28,333 %, p50 7.548,150 ms; 15/42 Fachbegriffe wurden wörtlich erkannt. Die Normalisierung ignoriert Groß-/Kleinschreibung und Satzzeichen, setzt Zahlwörter und Ziffern aber nicht gleich; neben Zahlendarstellungen gab es tatsächliche Fachwortfehler.
+
+Für den Browser-E2E wurde dreimal dieselbe harmlose Frage „Ava, wie viele Minuten haben zwei Stunden?“ eingespielt; identische Audio-Datei und beobachtete Chatantworten, keine Sprachsteuerung von Owner-Objekten. Vorübergehend galt fallbackTimeoutMs 5.000 statt der ursprünglichen 800 ms. Wiederholungen sind warme Messungen mit Antwortcache und erlauben keine Aussage über drei unterschiedliche Fragen. Beim finalen 27B-Lauf waren drei Antworten erfolgreich und dem tatsächlichen 27B-Modell zugeordnet; die schnelle Sprachroute ist keine native Agent-Runtime-Prüfung.
+
+27B: Median bis zum ersten Brückenton 804 ms, bis zur fertigen Antwort 8.997 ms, Transkription 7.001 ms. Der Brückenton ist eine Warteansage, nicht die Modellantwort; die zweite und dritte Antwort nutzten den Cache. Sechs TTS-Anfragen lieferten HTTP 429, keine Audio-Worklet-Fehler. Ein kurzer erster Ton belegt daher keine fehlerfreie oder schnelle Antwort-E2E.
+
+| Sprach-E2E, gleiche warme Frage, je drei erfolgreiche Antworten | Erster Brückenton p50, ms | Antwort fertig p50, ms | Transkription p50, ms | TTS-429 |
+|---|---:|---:|---:|---:|
+| 27B | 804 | 8997 | 7001 | 6 |
+| Halogen | 805 | 8055 | 6192 | 6 |
+
+Der ursprüngliche Sprach-Timeout von 800 ms ist wiederhergestellt. Beide E2E-Läufe sind erfolgreich, aber die tatsächlichen Antwortzeiten und TTS-429 bleiben relevante Qualitätslücken.
+
+| 27B: tatsächliche Sprachansicht | Halogen: tatsächliche Sprachansicht |
+|---|---|
+| ![27B-Sprachmessung](/home/wilhelmpa/agent-work/codex-tasks/190-shots/27b/timing.png) | ![Halogen-Sprachmessung](/home/wilhelmpa/agent-work/codex-tasks/190-shots/halogen/timing.png) |
+
+## Rückweg und Halogen-Klassen
+
+Die zentrale Rückumschaltung hat Lemonade und NPU gestoppt und Halogen nach GPU-Freigabe, Speicherprüfung, Gesundheits- und Werkzeugtest wieder veröffentlicht. Vor dem Halogen-Start wurden über `/proc` keine GPU-Nutzer gefunden und 113,728 GiB MemAvailable gemessen. Der erste Start wurde durch den vorher laufenden Helfer nach zehn Sekunden beendet; der Worktree-Helfer ließ den Kaltstart erfolgreich zu. Ein paralleler `helena-ops`-Deploy stoppte Halogen während der ersten Rückweg-Evals; deren sieben HTTP-502-Ergebnisse sind getrennt archiviert und wurden nach dem stabilen Neustart überprüft. Eine zwischenzeitliche Vermutung zur Wartungssperre wurde nach Prüfung der tatsächlichen Phasen verworfen; daraus wurde keine Codeänderung übernommen.
+
+| Halogen-Klasse, erneute Prüfung | Score | p50, ms | Token/s |
+|---|---:|---:|---:|
+| voice-reply | 1 | 1020 | 25.37 |
+| hermes-helpers | 1 | 11392 | 38.741 |
+| summaries | 1 | 5788 | 38.014 |
+| triage | 1 | 1531 | 20.394 |
+| routines | 1 | 2243 | 32.802 |
+| reflection | 1 | 7635 | 33.197 |
+| coordinator-triage | 1 | 14227 | 37.673 |
+
+Alle sieben Klassen bestanden; die Wartungsmetadaten verweisen auf diese tatsächlichen Wiederholungs-Evals. Die vor dem Wechsel ausgeschalteten Klassen bleiben entsprechend der bisherigen Policy ausgeschaltet, obwohl ihre erneute Qualitätsprüfung bestanden ist.
+
+## 40 echte Agentenfragen und Bereinigung
+
+Alle 40 ursprünglichen echten Agenten beantworteten die Frage ‚10:15 Uhr plus 45 Minuten‘ korrekt mit 11:00 Uhr; Datenbanknachweis: tatsächliches Modell `helena-halogen/halogen-qwen3.8-flash-next`, tatsächliche Runtime `helena`, Status `success` bei 40/40. Median 17.066 s, Maximum 66.254 s einschließlich API-/Runtime-Start und Polling.
+
+Sechs Agenten waren durch den Trading-Pilot vom 27.09. pausiert und wiesen die erste Anfrage vor dem Chatstart ab. Für ihre eine Testfrage wurden sie einzeln vorübergehend freigegeben, während ihr Heartbeat in die Zukunft verschoben war; Pausenzeitpunkt, Grund und nächster Heartbeat sind anschließend exakt wiederhergestellt. Andere Battle-Testagenten wurden nicht als echte 40 gezählt. Die 40 behalten ihre ausdrücklich konfigurierten Halogen-Modelle; um dem globalen Standard zu folgen, ist die bestehende ausdrückliche Modellbindung erforderlich.
+
+| ID | Agent | Antwort, Modell und Runtime geprüft | Trading-Pilot-Pause danach |
+|---:|---|---|---|
+| 1 | Home | ja | unverändert |
+| 4 | Koordinator PRIV | ja | unverändert |
+| 5 | Koordinator FAM | ja | unverändert |
+| 6 | Koordinator VOL | ja | unverändert |
+| 7 | Koordinator VERVE | ja | unverändert |
+| 10 | Coder VOL | ja | unverändert |
+| 11 | Coder VERVE | ja | unverändert |
+| 12 | Content & SEO VOL | ja | unverändert |
+| 34 | QA & Tests VOL | ja | unverändert |
+| 35 | Assistenz FAM | ja | unverändert |
+| 36 | Assistent PRIV | ja | unverändert |
+| 37 | Finanzen & Belege PRIV | ja | unverändert |
+| 38 | Finanzen & Belege VOL | ja | unverändert |
+| 39 | Recherche VOL | ja | unverändert |
+| 40 | Shopify-Entwickler VERVE | ja | unverändert |
+| 41 | QA & Tests VERVE | ja | unverändert |
+| 42 | DevOps & Betrieb VERVE | ja | unverändert |
+| 43 | Code-Reviewer VERVE | ja | unverändert |
+| 44 | Content & SEO VERVE | ja | unverändert |
+| 45 | Markt-Analyst VERVE | ja | unverändert |
+| 46 | UI/UX-Design VERVE | ja | unverändert |
+| 47 | Support VERVE | ja | unverändert |
+| 48 | Technische Doku VERVE | ja | unverändert |
+| 49 | Koordinator ELLI | ja | unverändert |
+| 58 | Koordinator TRADE | ja | unverändert |
+| 59 | Markt-Research TRADE | ja | unverändert |
+| 60 | Chart-Analyse TRADE | ja | ursprünglich wiederhergestellt |
+| 61 | Krypto-Analyse TRADE | ja | ursprünglich wiederhergestellt |
+| 62 | Daytrading-Vorbereitung TRADE | ja | ursprünglich wiederhergestellt |
+| 63 | Risiko & Journal TRADE | ja | unverändert |
+| 64 | Backtesting & Quant TRADE | ja | ursprünglich wiederhergestellt |
+| 65 | Strategie-Entwicklung TRADE | ja | ursprünglich wiederhergestellt |
+| 66 | Paper-Trader TRADE | ja | unverändert |
+| 67 | Finanzen & Belege TRADE | ja | ursprünglich wiederhergestellt |
+| 68 | Assistenz Elli | ja | unverändert |
+| 69 | Finanzen Elli | ja | unverändert |
+| 70 | Schule & Kita FAM | ja | unverändert |
+| 71 | Baby & Gesundheit FAM | ja | unverändert |
+| 73 | Koordinator RES | ja | unverändert |
+| 80 | Assistent VOL | ja | unverändert |
+
+43 eigene Testthreads sind endgültig gelöscht, verbleibende `[Test-190]`-Threads: 0. Der temporäre Proxy-Modellserver, private Chromium-Fixtures, Mess-Proxy, Worktree-hostd, temporäre Unit-Drop-ins und zusätzliche Zugriffs-ACLs sind entfernt beziehungsweise beendet; nach Claudes Deploy neu veröffentlichte echte Chatkataloge wurden erhalten. Die Bench-/Fulltest-Locks sind freigegeben. Endzustand: Halogen, STT und TTS aktiv; Lemonade und NPU einschließlich NPU-Socket aus; Standardprofil `local-halogen`, Wartung `done`, keine Admission-/Proxy-/Start-Sperre, keine fehlgeschlagene Klasse.
+
+Dauerhaft bleibt zusätzlich `/etc/systemd/system/volition-npu.service.d/90-volition-npu-budget.conf` mit MemoryHigh 11 GiB, MemoryMax 12 GiB, MemorySwapMax 0 und LimitMEMLOCK 12 GiB: ohne das Memlock-Limit konnte der vorhandene NPU-Worker nicht starten. Gemmas Gateway-/hostd-Freigabe und die passende native Servicevorlage liegen auf dem Branch; Claude muss diese nativen Dateien zusätzlich zum API-/Runner-Code übernehmen, da die Gemma-Fähigkeit hier am privaten Worker und nicht am alten installierten Gateway gemessen wurde.
+
+## Code, Prüfung und Übergabe
+
+61 gezielte Tests sind grün: globale Modellsteuerung 15, Registrierung 4, hostd-Modellsteuerung 11, NPU-Profil 9, NPU-Gateway 5, Helena-Runner 17. Der letzte Regressionstest zur Runtime-erhaltenden globalen Modellbindung ist rot→grün; API- und Runner-Typecheck, ESLint der geänderten API-/Runner-Dateien und Formatprüfung sind grün. Der vollständige Web-Lint (`bun run lint` in `apps/web`) ergibt 0 Fehler und 5 bestehende Warnungen. Keine Vollgates, Downloads, Paketinstallationen oder Änderungen am Live-Checkout durch Codex.
+
+Keine sichtbare UI wurde verändert. Claude bindet die neue NPU-Auswahl (`npuSelection`/`npuModel`) und die ausdrückliche Agentenbindung an `volition-local-default` in den bestehenden RuntimePicker aus dem Design-System ein; der Backend-/Runner-Weg erhält jetzt die gewählte Runtime. Das Endprofil bleibt Halogen: 27B wurde vollständig gemessen, erreicht mit der besten Variante jedoch nur 20,538 Token/s, während der Halogen-Klassenlauf rund 38,7 Token/s bei Helfern zeigte; diese unterschiedlichen Aufgaben sind kein identischer Durchsatz-Benchmark. Jev-Parser, NPU-Logprob-/Gateway-Grenzen und Sprach-E2E sind keine erledigten Qualitätsziele.
+
+Rohdaten und Nachweise: [Tuning](/home/wilhelmpa/agent-work/codex-tasks/190-evidence/tuning-summary190.json), [NPU](/home/wilhelmpa/agent-work/codex-tasks/190-evidence/npu-summary190.json), [Coding](/home/wilhelmpa/agent-work/codex-tasks/190-evidence/coding12-27b190.json), [Browser](/home/wilhelmpa/agent-work/codex-tasks/190-evidence/browser20-27b190.json), [Jev](/home/wilhelmpa/agent-work/codex-tasks/190-evidence/jev48-summary190.json), [STT](/home/wilhelmpa/agent-work/codex-tasks/190-evidence/stt30-results190.json), [40 Agenten](/home/wilhelmpa/agent-work/codex-tasks/190-evidence/agent40-summary190.json), [Endzustand](/home/wilhelmpa/agent-work/codex-tasks/190-evidence/final-state190.json), [Web-Lint](/home/wilhelmpa/agent-work/codex-tasks/190-evidence/web-lint-final190.log).
+
+---
+
+## Historischer Befund 188
+
 # Lokale KI: Auftrag 188, Stand 01.10.2026
 
 Auftrag 188 ist technisch angehalten; die zentrale Vorschau für „Lokal 27B + NPU“ liefert weiterhin Status 400.
