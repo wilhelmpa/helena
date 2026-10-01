@@ -3,6 +3,7 @@ import {
   db,
   aiAgent,
   agentRun,
+  agentChatMessage,
   approvalRequest,
   helenaPolicyDecision,
   project,
@@ -459,6 +460,25 @@ describe('budgets', () => {
     expect(other.reason).toBe('budget-exhausted');
     const second = (await s.asRunner['agent-chats'].claim.post()).data!.message;
     expect(second).toBeNull();
+    await db
+      .update(agentChatMessage)
+      .set({ nextAttemptAt: new Date(Date.now() - 1_000) })
+      .where(eq(agentChatMessage.id, first.id));
+    const resumed = (await s.asRunner['agent-chats'].claim.post()).data!.message;
+    expect(resumed?.id).toBe(first.id);
+    expect(resumed?.attempts).toBe(2);
+    const [afterResume] = await budgetStatuses({ agentIds: [s.agent.id] });
+    expect(afterResume!.graceRuns).toBe(0);
+    expect(afterResume!.graceRunIds).toEqual([-first.id]);
+    await db
+      .update(aiAgent)
+      .set({ pausedAt: new Date(), pauseReason: 'Owner maintenance' })
+      .where(eq(aiAgent.id, s.agent.id));
+    await db
+      .update(agentChatMessage)
+      .set({ nextAttemptAt: new Date(Date.now() - 1_000) })
+      .where(eq(agentChatMessage.id, first.id));
+    expect((await s.asRunner['agent-chats'].claim.post()).data!.message).toBeNull();
   });
 
   it('reserves one grace run atomically across concurrent claims', async () => {

@@ -20,6 +20,7 @@ import {
   agentChatThread,
   agentChatUsage,
   helenaAgentSession,
+  helenaBudget,
   knowledgeItem,
   project,
   team,
@@ -47,7 +48,7 @@ import { isDeepStrictEqual } from 'node:util';
 import type { AutopilotLevel } from '@helena/policy';
 import { resolveLevel } from '#modules/autopilot/levels';
 import { assertProjectNotHeld } from '#modules/autopilot/service';
-import { enforceBudgets, useChatGrace } from '#modules/autopilot/budgets';
+import { BUDGET_REASON_PREFIX, enforceBudgets, useChatGrace } from '#modules/autopilot/budgets';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { emergencyStopActive } from '#modules/emergency-stop/service';
 import { recordUsage, type Spend } from '../usage/service';
@@ -1251,7 +1252,22 @@ async function claimAdmittedMessage(agent: RunnerAgent): Promise<ClaimedChat | n
         AND q.role = 'assistant'
         AND q.status IN ('pending', 'streaming')
         AND q.next_attempt_at <= now()
-        AND (SELECT paused_at FROM ai_agent a WHERE a.id = q.agent_id) IS NULL
+        AND EXISTS (
+          SELECT 1 FROM ai_agent a WHERE a.id = q.agent_id
+          AND (
+            a.paused_at IS NULL
+            -- A budget pause stops new work; the one answer already approved must
+            -- still resume after losing its lease. useChatGrace rechecks every
+            -- applicable budget and period before handing the answer out.
+            OR (
+              a.pause_reason LIKE ${BUDGET_REASON_PREFIX + ':%'}
+              AND EXISTS (
+                SELECT 1 FROM ${helenaBudget}
+                WHERE ${helenaBudget.graceRunIds} @> jsonb_build_array(-q.id)
+              )
+            )
+          )
+        )
         -- The thread's reflection continues the same session: an answer waits while one
         -- is out (chat-reflection/service.ts).
         AND NOT EXISTS (
