@@ -1,4 +1,5 @@
 import http.client
+import configparser
 import importlib.util
 import json
 import subprocess
@@ -14,6 +15,17 @@ spec.loader.exec_module(npu)
 
 
 class NpuTest(unittest.TestCase):
+    def test_service_can_lock_the_installed_models_inside_its_memory_limit(self):
+        unit = configparser.ConfigParser(interpolation=None)
+        unit.read(HERE / 'systemd' / 'volition-npu.service')
+        service = unit['Service']
+        def gib(option):
+            value = service.get(option, '0')
+            return int(value[:-1]) * 1024**3 if value.endswith('G') else int(value)
+        locked = gib('LimitMEMLOCK')
+        self.assertGreaterEqual(locked, max(npu.MODELS.values()) + 1024**3)
+        self.assertLessEqual(locked, gib('MemoryMax'))
+
     def test_gemma_is_allowed_with_a_budget_that_fits_the_service(self):
         for model in ('gemma4-it:e2b', 'gemma4-it:e4b'):
             self.assertIn(model, npu.MODELS)
@@ -77,8 +89,9 @@ class NpuTest(unittest.TestCase):
                 ('/v1/chat/completions', 'Bearer test-only-key', '{"model":"qwen3.5:2b","max_tokens":9999}', 400),
             ]:
                 conn = http.client.HTTPConnection(*server.server_address)
-                conn.request('POST' if body else 'GET', path, body, {'Authorization': auth})
-                response = conn.getresponse()
+                with patch.object(Path, 'exists', return_value=False):
+                    conn.request('POST' if body else 'GET', path, body, {'Authorization': auth})
+                    response = conn.getresponse()
                 self.assertEqual(response.status, expected)
                 response.read()
                 conn.close()
