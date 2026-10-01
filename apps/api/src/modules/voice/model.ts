@@ -60,6 +60,15 @@ export const TranscriptionResponse = t.Object({
   model: t.String(),
   durationMs: t.Number(),
   latencyMs: t.Number(),
+  timings: t.Object({
+    decodeMs: t.Number(),
+    setupMs: t.Number(),
+    admissionMs: t.Number(),
+    inferenceMs: t.Number(),
+    fallbackMs: t.Number(),
+    totalMs: t.Number(),
+    attempts: t.Number(),
+  }),
 });
 
 export const speechBody = t.Object({

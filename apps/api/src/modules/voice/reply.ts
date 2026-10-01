@@ -53,7 +53,9 @@ const TOTAL_MS = 20_000;
 // Written to the chat in steps like a runner's (packages/runner chat.ts).
 const FLUSH_MS = 120;
 
-async function route(agentId: number): Promise<LocalRoute | null> {
+type VoiceRoute = LocalRoute & { native?: boolean };
+
+async function route(agentId: number): Promise<VoiceRoute | null> {
   if ((await readMaintenance())?.admissionPaused) return null;
   const [agent] = await db
     .select({ runtimePolicy: aiAgent.runtimePolicy, model: aiAgent.model })
@@ -67,7 +69,7 @@ async function route(agentId: number): Promise<LocalRoute | null> {
     if (!parsed || !modelId) return null;
     const server = (await listModelServers()).find((entry) => entry.slug === parsed.slug);
     if (!server) return null;
-    return { server, model: parsed.model, modelId, unit: 'gpu', mode: 'prefer' };
+    return { server, model: parsed.model, modelId, unit: 'gpu', mode: 'prefer', native: true };
   }
   const entry = taskClass(VOICE_REPLY_CLASS);
   if (!entry) return null;
@@ -272,10 +274,13 @@ export async function answerSpokenQuestion(job: SpokenAnswerJob): Promise<void> 
     turns: conversation.turns.slice(0, -1),
     question: question.text,
   });
-  // A cold Flash prefix can take a second before its first token.
-  const firstTokenMs = isLocalHalogenUrl(local.server.baseUrl)
-    ? Math.max(settings.fallbackTimeoutMs, 1_500)
-    : settings.fallbackTimeoutMs;
+  // A native runner would retry the same model after a cold prefix or a busy queue.
+  // Allow that model to start once, within a bounded wait, instead of enqueueing twice.
+  const firstTokenMs = local.native
+    ? Math.max(settings.fallbackTimeoutMs, 5_000)
+    : isLocalHalogenUrl(local.server.baseUrl)
+      ? Math.max(settings.fallbackTimeoutMs, 1_500)
+      : settings.fallbackTimeoutMs;
   const outcome = await streamAnswer(job, local, request, firstTokenMs);
   if (outcome.kind === 'hand-over') {
     await releaseHeldAnswer(job.agentId, job.messageId);

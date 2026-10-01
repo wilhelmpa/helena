@@ -22,6 +22,7 @@ let fake: ReturnType<typeof Bun.serve>;
 const received: { path: string; form?: Record<string, string>; json?: Record<string, unknown> }[] =
   [];
 let whisperReply: Record<string, unknown> = { text: 'Hallo Eywa, wie spät ist es?' };
+let whisperReplies: Record<string, unknown>[] = [];
 
 // The voice reply's model: answers what the conversation answers, hands over the rest.
 const HAND_OVER = /Aufgabe|Mail|Kalender|Docker|Koordinator|Merk dir|Wetter|Server-Update genau/;
@@ -118,7 +119,7 @@ beforeAll(async () => {
         for (const [name, value] of form.entries())
           if (typeof value === 'string') fields[name] = value;
         received.push({ path, form: fields });
-        return Response.json(whisperReply);
+        return Response.json(whisperReplies.shift() ?? whisperReply);
       }
       // qwentts.cpp's tts-server (no key).
       if (path === '/q/v1/models') return Response.json({ data: [{ id: 'qwen3-tts' }] });
@@ -155,6 +156,7 @@ beforeAll(async () => {
 afterAll(() => fake.stop(true));
 
 beforeEach(async () => {
+  whisperReplies = [];
   await resetDb();
   resetVoiceQuotas();
   forgetVoiceVocabulary();
@@ -305,6 +307,10 @@ describe('the ear on the GPU (whisper.cpp)', () => {
       language: 'de',
       temperature: '0',
       response_format: 'verbose_json',
+      audio_ctx: '256',
+      best_of: '1',
+      no_timestamps: 'false',
+      max_len: '1000',
     });
     // The owner's words first, then Helena's.
     expect(form.prompt!.startsWith('Steuerberater Müller, Ava, Eywa, Ewa, Aiwa')).toBe(true);
@@ -332,9 +338,78 @@ describe('the ear on the GPU (whisper.cpp)', () => {
       dropped: 'hallucination',
     });
   });
+
+  it('retries uncertain short speech with the full context and leaves long recordings alone', async () => {
+    const { owner, asOwner } = await setup();
+    await asOwner.account.preferences.patch({ locale: 'de' });
+    await asOwner.god['local-ai'].policy.patch({
+      classes: { transcription: { mode: 'prefer', model: 'helena-ear/whisper' } },
+    });
+    whisperReplies = [
+      {
+        text: 'Unsicher.',
+        segments: [{ text: 'Unsicher.', avg_logprob: -0.5, no_speech_prob: 0.1 }],
+      },
+      { text: 'Die kurze Antwort ist sicher.' },
+    ];
+    expect(await (await upload(owner.cookie, wav(3))).json()).toMatchObject({
+      text: 'Die kurze Antwort ist sicher.',
+      timings: { attempts: 2 },
+    });
+    const forms = received.filter((entry) => entry.path === '/w/v1/audio/transcriptions');
+    expect(forms).toHaveLength(2);
+    expect(forms[0]!.form!.audio_ctx).toBe('256');
+    expect(forms[1]!.form!.audio_ctx).toBeUndefined();
+    received.length = 0;
+    whisperReplies = [
+      {
+        text: 'Hallo. Hallo.',
+        segments: [
+          { text: 'Hallo.', avg_logprob: -0.1, no_speech_prob: 0.1 },
+          { text: ' Hallo.', avg_logprob: -0.1, no_speech_prob: 0.1 },
+        ],
+      },
+      { text: 'Hallo.' },
+    ];
+    expect(await (await upload(owner.cookie, wav(5))).json()).toMatchObject({
+      text: 'Hallo.',
+      timings: { attempts: 2 },
+    });
+    expect(received.find((entry) => entry.form)!.form!.audio_ctx).toBe('512');
+    received.length = 0;
+    expect((await upload(owner.cookie, wav(9))).status).toBe(200);
+    expect(received.find((entry) => entry.form)!.form!.audio_ctx).toBeUndefined();
+  });
 });
 
 describe('the voice on the GPU (qwentts.cpp)', () => {
+  it('holds streaming speech slots until the audio is consumed or cancelled', async () => {
+    const { owner, asOwner } = await setup();
+    await asOwner.god['local-ai'].policy.patch({
+      classes: { speech: { mode: 'prefer', model: 'helena-voice/qwen3-tts' } },
+    });
+    const speak = () =>
+      app.handle(
+        new Request('http://localhost/voice/speech', {
+          method: 'POST',
+          headers: { cookie: owner.cookie, 'content-type': 'application/json' },
+          body: JSON.stringify({ text: 'Eine kurze Antwort.', language: 'de' }),
+        }),
+      );
+    const responses = await Promise.all(Array.from({ length: 4 }, speak));
+    expect(responses.every((response) => response.status === 200)).toBe(true);
+    const busy = await speak();
+    expect(busy.status).toBe(429);
+    await responses[0]!.arrayBuffer();
+    const next = await speak();
+    expect(next.status).toBe(200);
+    await next.body!.cancel();
+    await Promise.all(responses.slice(1).map((response) => response.body!.cancel()));
+    const last = await speak();
+    expect(last.status).toBe(200);
+    await last.arrayBuffer();
+  });
+
   it('streams PCM as it is made, in the chosen voice and the page’s language', async () => {
     const { owner, asOwner } = await setup();
     await asOwner.god['local-ai'].policy.patch({
@@ -470,7 +545,7 @@ describe('the voice reply', () => {
     expect(request.tools.map((tool) => tool.function.name)).toEqual(['hand_to_agent']);
   });
 
-  it('uses the native agent model while the legacy voice class is off', async () => {
+  it('uses the native agent model through a cold first token while the legacy voice class is off', async () => {
     const { asOwner, agent, asAgent } = await setup();
     const previous = process.env.HELENA_NATIVE_RUNTIME;
     process.env.HELENA_NATIVE_RUNTIME = 'on';
@@ -484,8 +559,9 @@ describe('the voice reply', () => {
         });
       expect(updated.error?.value).toBeUndefined();
       expect(updated.status).toBe(200);
+      await asOwner.god.voice.settings.patch({ fallbackTimeoutMs: 300 });
       const sent = await chatOf(asOwner, agent.id).chat.post({
-        prompt: '[Test-171] Hallo, hörst du mich?',
+        prompt: 'Langsam antworten: Hallo, hörst du mich?',
         via: 'voice',
       });
       const thread = chatOf(asOwner, agent.id).threads({ threadId: sent.data!.threadId });

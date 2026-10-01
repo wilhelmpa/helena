@@ -153,6 +153,15 @@ export interface Transcription {
   model: string;
   durationMs: number;
   latencyMs: number;
+  timings: {
+    decodeMs: number;
+    setupMs: number;
+    admissionMs: number;
+    inferenceMs: number;
+    fallbackMs: number;
+    totalMs: number;
+    attempts: number;
+  };
 }
 
 // The words of one transcription's context: the owner's own and Helena's names, read once a
@@ -217,6 +226,7 @@ export async function transcribe(input: {
   audio: Uint8Array;
   language: string | null;
 }): Promise<Transcription> {
+  const started = performance.now();
   if (input.audio.byteLength > VOICE_LIMITS.maxBytes)
     throw new HttpError(413, 'The recording is too large', 'voice-too-long');
   const info = readWav(input.audio);
@@ -230,17 +240,15 @@ export async function transcribe(input: {
       `The recording is longer than ${VOICE_LIMITS.maxSeconds} seconds`,
       'voice-too-long',
     );
+  const audio = whisperWav(input.audio, info);
+  const decoded = performance.now();
   const route = await requireRoute(TRANSCRIPTION_CLASS);
   const [key, context] = await Promise.all([
     readModelServerKey(route.server),
     transcriptionContext(),
   ]);
   const form = new FormData();
-  form.append(
-    'file',
-    new Blob([whisperWav(input.audio, info)], { type: 'audio/wav' }),
-    'recording.wav',
-  );
+  form.append('file', new Blob([audio], { type: 'audio/wav' }), 'recording.wav');
   form.append('model', route.model);
   // A server that takes the whole OpenAI shape (whisper.cpp) gets the vocabulary as the
   // recording's context (Whisper's `prompt`), greedy decoding at temperature 0 (the steadiest
@@ -255,47 +263,90 @@ export async function transcribe(input: {
     form.append('response_format', 'json');
   }
   if (input.language) form.append('language', input.language);
+  const short = route.server.kind === 'whisper-cpp' && info.durationMs <= 8_000;
+  if (short) {
+    // Whisper encodes 50 frames/s; CPU flash attention pads to blocks of 256 frames.
+    form.append('audio_ctx', String(Math.ceil((info.durationMs + 500) / 5120) * 256));
+    form.append('best_of', '1');
+    // Without timestamps the model can repeat a sentence in a shortened context.
+    form.append('no_timestamps', 'false');
+    form.append('max_len', '1000');
+  }
+  const prepared = performance.now();
   return withTranscriptionAdmission(async () => {
-    const started = Date.now();
-    let response: Response;
-    try {
-      response = await fetch(
-        joinUrl(priorityProxyBaseUrl(route.server.baseUrl), '/audio/transcriptions'),
-        {
-          method: 'POST',
-          headers: {
-            accept: 'application/json',
-            ...(isLocalHalogenUrl(route.server.baseUrl)
-              ? { 'x-volition-halogen-priority': 'interactive' }
-              : {}),
-            ...authorization(key),
+    const admitted = performance.now();
+    const request = async () => {
+      let response: Response;
+      try {
+        response = await fetch(
+          joinUrl(priorityProxyBaseUrl(route.server.baseUrl), '/audio/transcriptions'),
+          {
+            method: 'POST',
+            headers: {
+              accept: 'application/json',
+              ...(isLocalHalogenUrl(route.server.baseUrl)
+                ? { 'x-volition-halogen-priority': 'interactive' }
+                : {}),
+              ...authorization(key),
+            },
+            body: form,
+            redirect: 'error',
+            signal: AbortSignal.timeout(TRANSCRIBE_TIMEOUT_MS),
           },
-          body: form,
-          redirect: 'error',
-          signal: AbortSignal.timeout(TRANSCRIBE_TIMEOUT_MS),
-        },
-      );
-    } catch {
-      throw new HttpError(502, 'The local transcription did not answer', 'voice-local-failed');
+        );
+      } catch {
+        throw new HttpError(502, 'The local transcription did not answer', 'voice-local-failed');
+      }
+      if (!response.ok)
+        throw new HttpError(
+          502,
+          `The local transcription failed (HTTP ${response.status})`,
+          'voice-local-failed',
+        );
+      const transcript = transcriptOf(await response.json().catch(() => null));
+      if (!transcript)
+        throw new HttpError(502, 'The local transcription answered no text', 'voice-local-failed');
+      const heard = transcript.segments.length
+        ? confidentText(transcript.segments)
+        : transcript.text;
+      return { transcript, judged: judgeTranscript(heard, { language: input.language }) };
+    };
+    let result = await request();
+    const inferred = performance.now();
+    const retry =
+      short &&
+      (result.judged.dropped === 'other-language' ||
+        result.transcript.segments.some(
+          (segment) =>
+            segment.avgLogprob !== null &&
+            segment.avgLogprob < -0.4 &&
+            (segment.noSpeechProb === null || segment.noSpeechProb <= 0.6),
+        ) ||
+        result.transcript.segments.some(
+          (segment, index, segments) =>
+            index > 0 && segment.text.trim() === segments[index - 1]!.text.trim(),
+        ));
+    if (retry) {
+      for (const field of ['audio_ctx', 'best_of', 'no_timestamps', 'max_len']) form.delete(field);
+      result = await request();
     }
-    if (!response.ok) {
-      throw new HttpError(
-        502,
-        `The local transcription failed (HTTP ${response.status})`,
-        'voice-local-failed',
-      );
-    }
-    const transcript = transcriptOf(await response.json().catch(() => null));
-    if (!transcript)
-      throw new HttpError(502, 'The local transcription answered no text', 'voice-local-failed');
-    const heard = transcript.segments.length ? confidentText(transcript.segments) : transcript.text;
-    const judged = judgeTranscript(heard, { language: input.language });
+    const finished = performance.now();
+    const { judged } = result;
     return {
       text: judged.dropped ? judged.text : correctVocabulary(judged.text, context.aliases),
       dropped: judged.dropped,
       model: route.modelId,
       durationMs: info.durationMs,
-      latencyMs: Date.now() - started,
+      latencyMs: finished - admitted,
+      timings: {
+        decodeMs: decoded - started,
+        setupMs: prepared - decoded,
+        admissionMs: admitted - prepared,
+        inferenceMs: inferred - admitted,
+        fallbackMs: finished - inferred,
+        totalMs: finished - started,
+        attempts: retry ? 2 : 1,
+      },
     };
   });
 }
@@ -392,6 +443,7 @@ const SPEECH_SEED = 7;
 export async function synthesize(input: {
   text: string;
   language?: string | null;
+  signal?: AbortSignal;
 }): Promise<SpeechAudio> {
   if (input.text.length > VOICE_LIMITS.maxSpeechChars)
     throw new HttpError(
@@ -437,7 +489,10 @@ export async function synthesize(input: {
       },
       body: JSON.stringify(body),
       redirect: 'error',
-      signal: AbortSignal.timeout(SPEECH_TIMEOUT_MS),
+      signal: AbortSignal.any([
+        AbortSignal.timeout(SPEECH_TIMEOUT_MS),
+        ...(input.signal ? [input.signal] : []),
+      ]),
     });
   } catch {
     throw new HttpError(502, 'The local voice did not answer', 'voice-local-failed');
