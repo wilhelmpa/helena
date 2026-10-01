@@ -26,7 +26,11 @@ import { and, desc, eq, gte, inArray, sql } from 'drizzle-orm';
 import { localModelId, parseLocalModelId } from '@helena/sdk';
 import { HttpError } from '#shared/lib';
 import { hostd } from '#modules/server/hostd';
-import { followLocalProfile, restoreActiveSchema } from '#modules/model-schemas/profile-follow';
+import {
+  followLocalProfile,
+  restoreActiveSchema,
+  type ProjectSchemaFollow,
+} from '#modules/model-schemas/profile-follow';
 import { readModelOptions, saveModelOptions, type LocalModelOptions } from './model-options';
 import { localAiWorkActive } from './guard';
 import { DEFAULT_KEY_FILE, evalById, refreshServer, startEval, taskClasses } from './service';
@@ -57,8 +61,7 @@ interface ModelJob {
   failedClasses: string[];
   done?: boolean;
   catalogStartedAt?: number;
-  // The active schema moved to the one of the new profile (and where back to), once done.
-  schemaFollow?: { from: string; to: string };
+  schemaFollow?: { from: string; to: string; projects?: ProjectSchemaFollow[] };
   schemaFollowed?: boolean;
   schemaRestored?: boolean;
   schemaError?: string;
@@ -302,12 +305,22 @@ async function followSchema(target: ModelTarget, reverse: boolean) {
   if (!job || (reverse ? job.schemaRestored : job.schemaFollowed)) return;
   try {
     if (reverse) {
-      if (job.schemaFollow) await restoreActiveSchema(job.schemaFollow.from, job.schemaFollow.to);
+      if (job.schemaFollow)
+        await restoreActiveSchema(
+          job.schemaFollow.from,
+          job.schemaFollow.to,
+          job.schemaFollow.projects,
+        );
     } else {
       const profile = target.profile ?? (target.server === 'halogen' ? 'local-halogen' : undefined);
       if (profile) {
         const result = await followLocalProfile(profile);
-        if (result.from !== result.to) job.schemaFollow = { from: result.from, to: result.to };
+        if (result.from !== result.to || result.projects.length)
+          job.schemaFollow = {
+            from: result.from,
+            to: result.to,
+            ...(result.projects.length && { projects: result.projects }),
+          };
       }
     }
   } catch (error) {

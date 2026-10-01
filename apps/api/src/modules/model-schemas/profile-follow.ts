@@ -25,6 +25,8 @@ import { LOCAL_PROFILE_TEMPLATES, PROFILE_SCHEMAS } from './templates';
 
 const PROFILE_MODELS = new Set<string>(LOCAL_PROFILES.map((profile) => profile.model));
 
+export type ProjectSchemaFollow = { projectId: number; from: string; to: string };
+
 export function isProfilePin(model: unknown): boolean {
   if (typeof model !== 'string') return false;
   const parsed = parseLocalModelId(model);
@@ -35,6 +37,7 @@ export async function profileFollowPatch(profile: LocalProfile): Promise<{
   patch: MatrixPatch;
   from: string;
   to: string;
+  projects: ProjectSchemaFollow[];
   empty: boolean;
 }> {
   const state = await readModelState();
@@ -80,6 +83,11 @@ export async function profileFollowPatch(profile: LocalProfile): Promise<{
     patch,
     from: state.active,
     to: patch.active ?? state.active,
+    projects: projects.map(({ projectId }) => ({
+      projectId,
+      from: state.projects[projectId]!,
+      to: wanted,
+    })),
     empty: !patch.active && !patch.projects && !patch.agents && !patch.schema,
   };
 }
@@ -90,27 +98,36 @@ export async function followLocalProfile(
   options: { dryRun?: boolean; actorId?: string | null } = {},
 ) {
   for (let attempt = 0; ; attempt += 1) {
-    const { patch, from, to, empty } = await profileFollowPatch(profile);
-    if (empty) return { changed: false, applied: false, from, to, preview: null };
+    const { patch, from, to, projects, empty } = await profileFollowPatch(profile);
+    if (empty) return { changed: false, applied: false, from, to, projects, preview: null };
     try {
       const preview = options.dryRun
         ? await previewMatrix(patch)
         : await applyMatrix(patch, options.actorId ?? null, 'profile-follow');
-      return { changed: true, applied: !options.dryRun, from, to, preview };
+      return { changed: true, applied: !options.dryRun, from, to, projects, preview };
     } catch (error) {
       if (attempt > 0 || !(error instanceof HttpError) || error.status !== 409) throw error;
     }
   }
 }
 
-// Takes the active schema back after a rolled-back switch, if nobody changed it meanwhile.
-export async function restoreActiveSchema(from: string, to: string): Promise<boolean> {
-  if (from === to) return false;
+// Restore only schema assignments that still match this switch's target.
+export async function restoreActiveSchema(
+  from: string,
+  to: string,
+  projects: ProjectSchemaFollow[] = [],
+): Promise<boolean> {
   for (let attempt = 0; ; attempt += 1) {
     const state = await readModelState();
-    if (state.active !== to || !state.schemas[from]) return false;
+    const patch: MatrixPatch = { expectedRevision: state.revision };
+    if (from !== to && state.active === to && state.schemas[from]) patch.active = from;
+    const restore = projects
+      .filter((entry) => state.projects[entry.projectId] === entry.to && state.schemas[entry.from])
+      .map((entry) => ({ projectId: entry.projectId, schemaId: entry.from }));
+    if (restore.length) patch.projects = restore;
+    if (!patch.active && !patch.projects) return false;
     try {
-      await applyMatrix({ expectedRevision: state.revision, active: from }, null, 'profile-follow');
+      await applyMatrix(patch, null, 'profile-follow');
       return true;
     } catch (error) {
       if (attempt > 0 || !(error instanceof HttpError) || error.status !== 409) throw error;

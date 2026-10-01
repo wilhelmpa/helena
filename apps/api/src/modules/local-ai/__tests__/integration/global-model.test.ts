@@ -175,7 +175,7 @@ async function fixture() {
     model: 'gpt-6-luna',
   });
   expect(agent.status).toBe(201);
-  return { client, agent: agent.data!.agent, teamId: project.teamId };
+  return { client, agent: agent.data!.agent, teamId: project.teamId, projectId: project.id };
 }
 
 describe('global local model API', () => {
@@ -577,6 +577,40 @@ async function pairedProfile() {
 const FLASH_PIN = 'helena-halogen/halogen-qwen3.8-flash-next';
 
 describe('the schema follows the local profile', () => {
+  it('restores project schemas on rollback while preserving changes made during the switch', async () => {
+    const { client, projectId } = await fixture();
+    const other = (await client.projects.post({ name: 'Other project', key: 'M115' })).data!;
+    await pairedProfile();
+    const current = await readModelState();
+    await applyMatrix({
+      expectedRevision: current.revision,
+      active: 'gemischt',
+      projects: [
+        { projectId, schemaId: 'nur-lokal' },
+        { projectId: other.id, schemaId: 'nur-lokal' },
+      ],
+    });
+    await beginGlobalModel('helena-local/Qwen3.8-27B-GGUF', 'local-27b-npu');
+    const pending = (await readMaintenance())!;
+    pending.operation!.phase = 'commit';
+    await save(pending);
+    pairedCatalogs();
+    await resumeGlobalModel();
+    expect((await readModelState()).projects[projectId]).toBe('nur-lokal-27b');
+    const changed = await readModelState();
+    await applyMatrix({
+      expectedRevision: changed.revision,
+      projects: [{ projectId: other.id, schemaId: 'nur-codex' }],
+    });
+    const back = (await readMaintenance())!;
+    back.operation!.phase = 'rollback-commit';
+    await save(back);
+    await resumeGlobalModel();
+    expect((await readModelState()).active).toBe('gemischt');
+    expect((await readModelState()).projects[projectId]).toBe('nur-lokal');
+    expect((await readModelState()).projects[other.id]).toBe('nur-codex');
+  });
+
   it('moves a local schema and the pins of the old model with the commit and back on rollback', async () => {
     const { agent } = await fixture();
     await pairedProfile();
