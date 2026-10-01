@@ -342,12 +342,19 @@ describe('global local model API', () => {
 
   it('bulk preview preserves settings; apply makes only selected agents follow the standard', async () => {
     const { client, agent, teamId } = await fixture();
+    const runtimePolicy = { ...agent.runtimePolicy, runtime: 'helena' as const };
+    const [configured] = await db.select().from(aiAgent).where(eq(aiAgent.id, agent.id));
+    const modelOverrides = { ...configured!.modelOverrides, runtime: 'helena' as const };
+    await db.update(aiAgent).set({ runtimePolicy, modelOverrides }).where(eq(aiAgent.id, agent.id));
     const preview = await bulkLocalDefault([agent.id], false);
     expect(preview.agents[0]?.model).toBe('gpt-6-luna');
     expect((await db.select().from(aiAgent).where(eq(aiAgent.id, agent.id)))[0]?.model).toBe(
       'gpt-6-luna',
     );
     await bulkLocalDefault([agent.id], true);
+    const [following] = await db.select().from(aiAgent).where(eq(aiAgent.id, agent.id));
+    expect(following?.runtimePolicy).toEqual(runtimePolicy);
+    expect(following?.modelOverrides).toEqual({ ...modelOverrides, model: LOCAL_DEFAULT });
     expect((await chooseModelNow(LOCAL_DEFAULT, null)).model).toBe('helena-halogen/Flash');
     const patched = await client
       .teams({ teamId })
