@@ -71,7 +71,8 @@
     "files_agent_code": "Agen dapat membaca kode runtime mereka",
     "svc_exposure": "Layanan {appName} diisolasi oleh systemd",
     "svc_tools_loopback": "Alat hanya terjangkau lewat loopback",
-    "net_voice_acl": "Server suara hanya dapat dijangkau {appName}"
+    "net_voice_acl": "Server suara hanya dapat dijangkau {appName}",
+    "net_volition_npu_acl": "Proses NPU hanya dapat diakses oleh root dan gateway-nya"
   },
   "finding": {
     "net_firewall": {
@@ -199,6 +200,9 @@
     "skipped": "Tidak diperiksa",
     "net_voice_acl": {
       "fail": "Setiap pengguna lokal dapat menjangkau server suara (13306, 13307): jalankan apply.sh firewall."
+    },
+    "net_volition_npu_acl": {
+      "fail": "Proses NPU (13310) tidak memiliki kontrol akses lokal: jalankan apply.sh firewall."
     }
   },
   "owner": {

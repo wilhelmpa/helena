@@ -71,7 +71,8 @@
     "files_agent_code": "智能体可以读取其运行时代码",
     "svc_exposure": "{appName} 服务由 systemd 隔离",
     "svc_tools_loopback": "工具只能通过回环地址访问",
-    "net_voice_acl": "语音服务器仅供 {appName} 访问"
+    "net_voice_acl": "语音服务器仅供 {appName} 访问",
+    "net_volition_npu_acl": "NPU 进程仅允许 root 和其网关访问"
   },
   "finding": {
     "net_firewall": {
@@ -199,6 +200,9 @@
     "skipped": "未检查",
     "net_voice_acl": {
       "fail": "任何本地用户都能访问语音服务器（13306、13307）：请运行 apply.sh firewall。"
+    },
+    "net_volition_npu_acl": {
+      "fail": "NPU 进程（13310）缺少本地访问控制：请运行 apply.sh firewall。"
     }
   },
   "owner": {

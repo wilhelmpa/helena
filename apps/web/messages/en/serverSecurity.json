@@ -71,7 +71,8 @@
     "files_agent_code": "Agents can read their runtime code",
     "svc_exposure": "{appName} services sandboxed by systemd",
     "svc_tools_loopback": "Tools reachable over loopback only",
-    "net_voice_acl": "Voice servers reachable only for {appName}"
+    "net_voice_acl": "Voice servers reachable only for {appName}",
+    "net_volition_npu_acl": "NPU worker reachable only by root and its gateway"
   },
   "finding": {
     "net_firewall": {
@@ -199,6 +200,9 @@
     "skipped": "Not checked",
     "net_voice_acl": {
       "fail": "Every local user reaches the voice servers (13306, 13307): run apply.sh firewall."
+    },
+    "net_volition_npu_acl": {
+      "fail": "The NPU worker (13310) lacks its loopback access control: run apply.sh firewall."
     }
   },
   "owner": {

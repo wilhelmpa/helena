@@ -71,7 +71,8 @@
     "files_agent_code": "Агенты могут читать свой код среды выполнения",
     "svc_exposure": "Службы {appName} изолированы systemd",
     "svc_tools_loopback": "Инструменты доступны только через loopback",
-    "net_voice_acl": "Голосовые серверы доступны только {appName}"
+    "net_voice_acl": "Голосовые серверы доступны только {appName}",
+    "net_volition_npu_acl": "Процесс NPU доступен только root и его шлюзу"
   },
   "finding": {
     "net_firewall": {
@@ -199,6 +200,9 @@
     "skipped": "Не проверено",
     "net_voice_acl": {
       "fail": "Любой локальный пользователь достигает голосовых серверов (13306, 13307): выполни apply.sh firewall."
+    },
+    "net_volition_npu_acl": {
+      "fail": "У процесса NPU (13310) отсутствует контроль локального доступа: выполните apply.sh firewall."
     }
   },
   "owner": {

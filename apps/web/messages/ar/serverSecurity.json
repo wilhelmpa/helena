@@ -71,7 +71,8 @@
     "files_agent_code": "يمكن للوكلاء قراءة شيفرة بيئة التشغيل الخاصة بهم",
     "svc_exposure": "خدمات {appName} معزولة بواسطة systemd",
     "svc_tools_loopback": "الأدوات متاحة عبر loopback فقط",
-    "net_voice_acl": "خوادم الصوت متاحة لـ {appName} فقط"
+    "net_voice_acl": "خوادم الصوت متاحة لـ {appName} فقط",
+    "net_volition_npu_acl": "عملية NPU متاحة فقط للمستخدم root والبوابة الخاصة بها"
   },
   "finding": {
     "net_firewall": {
@@ -199,6 +200,9 @@
     "skipped": "لم يُفحص",
     "net_voice_acl": {
       "fail": "يصل أي مستخدم محلي إلى خوادم الصوت (13306، 13307): شغّل apply.sh firewall."
+    },
+    "net_volition_npu_acl": {
+      "fail": "تفتقر عملية NPU (13310) إلى التحكم في الوصول المحلي: شغّل apply.sh firewall."
     }
   },
   "owner": {

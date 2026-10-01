@@ -71,7 +71,8 @@
     "files_agent_code": "Los agentes pueden leer su código de ejecución",
     "svc_exposure": "Servicios de {appName} aislados por systemd",
     "svc_tools_loopback": "Herramientas accesibles solo por loopback",
-    "net_voice_acl": "Servidores de voz accesibles solo para {appName}"
+    "net_voice_acl": "Servidores de voz accesibles solo para {appName}",
+    "net_volition_npu_acl": "Proceso NPU accesible solo para root y su pasarela"
   },
   "finding": {
     "net_firewall": {
@@ -199,6 +200,9 @@
     "skipped": "No comprobado",
     "net_voice_acl": {
       "fail": "Cualquier usuario local llega a los servidores de voz (13306, 13307): ejecuta apply.sh firewall."
+    },
+    "net_volition_npu_acl": {
+      "fail": "El proceso NPU (13310) no tiene control de acceso local: ejecuta apply.sh firewall."
     }
   },
   "owner": {

@@ -71,7 +71,8 @@
     "files_agent_code": "Agenten können ihren Laufzeit-Code lesen",
     "svc_exposure": "{appName}-Dienste von systemd abgeschottet",
     "svc_tools_loopback": "Werkzeuge nur über Loopback erreichbar",
-    "net_voice_acl": "Sprachserver nur für {appName} erreichbar"
+    "net_voice_acl": "Sprachserver nur für {appName} erreichbar",
+    "net_volition_npu_acl": "NPU-Worker nur für root und sein Gateway erreichbar"
   },
   "finding": {
     "net_firewall": {
@@ -199,6 +200,9 @@
     "skipped": "Nicht geprüft",
     "net_voice_acl": {
       "fail": "Jeder lokale Benutzer erreicht die Sprachserver (13306, 13307): apply.sh firewall ausführen."
+    },
+    "net_volition_npu_acl": {
+      "fail": "Der NPU-Worker (13310) hat keine lokale Zugriffssperre: apply.sh firewall ausführen."
     }
   },
   "owner": {
