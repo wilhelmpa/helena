@@ -19,6 +19,9 @@ Environment=HALOGEN_IMAGE=@IMAGE@
 Environment=HALOGEN_PORT=@PORT@
 Environment=HALOGEN_QUIET_PORT=@QUIET_PORT@
 Environment=HALOGEN_WEIGHTS_LOCK=1
+Environment=HALOGEN_CHECKPOINT=/models/w4b/qwen38-flash-next-w4b.hgn
+Environment=HALOGEN_CK_OVERLAY=/models/w4b/qwen38-flash-next-w4b.overlay.hgn
+Environment=HALOGEN_MTP_HEAD=
 EnvironmentFile=@CONF@
 LimitMEMLOCK=infinity
 # The container opens no connection of its own: the firewall table must be loaded (it drops
@@ -37,8 +40,9 @@ ExecStart=/usr/bin/podman run --rm --name halogen --replace --pull=never --log-d
   -v @GGUF_REPO@:/gguf:ro \
   -v @CACHE@:/cache \
   -e HALOGEN_TOKENIZER=/models/tokenizer \
-  -e HALOGEN_CHECKPOINT=/gguf/snapshots/@GGUF_REVISION@/@GGUF_FILE@ \
-  -e HALOGEN_MTP_HEAD=/models/@MTP_HEAD@ \
+  -e HALOGEN_CHECKPOINT \
+  -e HALOGEN_CK_OVERLAY \
+  -e HALOGEN_MTP_HEAD \
   -e HALOGEN_GGUF_CACHE=/cache \
   -e HALOGEN_WEIGHTS_LOCK \
   -e HALOGEN_KV_SLOTS -e HALOGEN_KV_POOL_POSITIONS -e HALOGEN_MAX_TOK \
