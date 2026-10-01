@@ -17,6 +17,7 @@ import type { RuntimePolicyClient, RuntimeStatus } from '../policy';
 import { presetArgv, PRESETS } from '../presets';
 import { runtimes } from '../runtimes';
 import { SpendReader } from '../spend';
+import { modelChain } from '@helena/agent-runtime';
 
 // The runtime `helena`: Helena's own loop (packages/agent-runtime), run as `cli.js
 // helena-agent` with its configuration inside the task's JSON on stdin, read back as
@@ -101,6 +102,49 @@ test('native configuration truncates SOUL with a model-sized limit and reports t
 });
 
 describe('the helena runtime', () => {
+  it('delivers only configured local server keys and refreshes them for each answer', async () => {
+    let supplied = 'synthetic-first';
+    const local = {
+      ...snapshot,
+      localAi: {
+        ...snapshot.localAi!,
+        servers: [{ ...snapshot.localAi!.servers[0]!, keyEnv: 'VOLITION_BATTLE_MODEL_KEY' }],
+      },
+    };
+    const client: RuntimePolicyClient = {
+      runtimePolicy: async () => local,
+      reportRuntimeStatus: async () => {},
+      mcpSecrets: async () => ({}),
+      webLogins: async () => [],
+      modelServerKeys: async () => ({
+        VOLITION_BATTLE_MODEL_KEY: supplied,
+        VOLITION_UNCONFIGURED_MODEL_KEY: 'synthetic-unconfigured',
+      }),
+    };
+    const runner = {
+      name: 'volition-battle',
+      url: 'http://localhost:3001',
+      apiKey: 'synthetic-test-key',
+      agent: 'helena',
+      outputFormat: 'helena-jsonl',
+      timeoutMs: 1000,
+      cwd: '/tmp',
+      env: {},
+    } as RunnerConfig;
+    const adapter = new HelenaRuntimeAdapter(runner, client);
+    const settings = await adapter.runSettings();
+    const config = settings.input!.config as ReturnType<typeof helenaAgentConfig>;
+    expect(settings.env.VOLITION_BATTLE_MODEL_KEY).toBe('synthetic-first');
+    expect(settings.env.VOLITION_UNCONFIGURED_MODEL_KEY).toBeUndefined();
+    expect(modelChain(config.model, config.fallbackModels, config.servers, null, settings.env).chain)
+      .toHaveLength(1);
+    supplied = '';
+    const revoked = await adapter.runSettings();
+    expect(revoked.env.VOLITION_BATTLE_MODEL_KEY).toBe('');
+    expect(modelChain(config.model, config.fallbackModels, config.servers, null, revoked.env).chain)
+      .toHaveLength(0);
+  });
+
   it('uses the host priority proxy and preserves the forwarded sandbox addresses', () => {
     const isolation = process.env.AGENT_ISOLATION;
     try {

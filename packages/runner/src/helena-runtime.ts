@@ -14,6 +14,7 @@ import { isolationEnabled } from './isolation';
 import type { WorkRef } from './logins';
 import type { RuntimeActionResult } from './learning';
 import type { RuntimePolicyClient, RuntimePolicySnapshot, RuntimeStatus } from './policy';
+import { localKeyVariables } from './local-ai';
 import {
   profileDigest,
   type McpServerSpec,
@@ -350,6 +351,11 @@ export class HelenaRuntimeAdapter implements RuntimeAdapter {
     const env: Record<string, string> = {
       ...(isolationEnabled() && this.config.isolation !== undefined && { HELENA_ISOLATED: '1' }),
     };
+    const variables = localKeyVariables(applied.snapshot.localAi);
+    if (variables.length > 0 && this.client.modelServerKeys) {
+      const keys = await this.client.modelServerKeys();
+      for (const name of variables) env[name] = keys[name] ?? '';
+    }
     if (applied.secrets.length > 0) {
       const values = await this.client.mcpSecrets(work);
       for (const id of applied.secrets) env[mcpSecretVariable(id)] = values[String(id)] ?? '';
