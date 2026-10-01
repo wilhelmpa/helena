@@ -8,6 +8,10 @@ import { LOCAL_AI_PLUGIN_ID, LOCAL_AI_PROVIDES, localAiPlugin } from '#modules/l
 import { forgetServerAnswers, settleEvals } from '#modules/local-ai/service';
 import { forgetVoiceVocabulary, resetVoiceQuotas } from '../../service';
 import { wav } from '../fixtures';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { startPriorityProxy } from '../../../../../../../deployment/volition-stack/native/halogen/priority-proxy';
 
 // hub/voice-2 end to end (docs/helena-decisions/voice-2.md): the owner's voice settings, the
 // voice on the GPU (whisper.cpp's server for the ear, qwentts.cpp's for the voice) behind fakes,
@@ -339,6 +343,42 @@ describe('the ear on the GPU (whisper.cpp)', () => {
     });
   });
 
+  it('keeps short context only when every segment has high confidence', async () => {
+    const { owner, asOwner } = await setup();
+    await asOwner.god['local-ai'].policy.patch({
+      classes: { transcription: { mode: 'prefer', model: 'helena-ear/whisper' } },
+    });
+    for (const segments of [
+      [{ text: 'Alpaka.', avg_logprob: -0.036, no_speech_prob: 0.01 }],
+      [{ text: 'Unsicher.', no_speech_prob: 0.01 }],
+      [{ text: 'Unsicher.', avg_logprob: -0.01 }],
+      [{ text: 'Rauschen.', avg_logprob: -0.01, no_speech_prob: 0.7 }],
+      [],
+    ]) {
+      received.length = 0;
+      whisperReplies = [{ text: 'Unsicher.', segments }, { text: 'Alpaca.' }];
+      expect(await (await upload(owner.cookie, wav(3))).json()).toMatchObject({
+        text: 'Alpaca.',
+        timings: { attempts: 2 },
+      });
+      const requests = received.filter((entry) => entry.form);
+      expect(requests).toHaveLength(2);
+      expect(requests[1]!.form!.audio_ctx).toBeUndefined();
+    }
+    received.length = 0;
+    whisperReplies = [
+      {
+        text: 'Sicher.',
+        segments: [{ text: 'Sicher.', avg_logprob: -0.02, no_speech_prob: 0.01 }],
+      },
+    ];
+    expect(await (await upload(owner.cookie, wav(3))).json()).toMatchObject({
+      text: 'Sicher.',
+      timings: { attempts: 1 },
+    });
+    expect(received.filter((entry) => entry.form)).toHaveLength(1);
+  });
+
   it('retries uncertain short speech with the full context and leaves long recordings alone', async () => {
     const { owner, asOwner } = await setup();
     await asOwner.account.preferences.patch({ locale: 'de' });
@@ -543,6 +583,102 @@ describe('the voice reply', () => {
       .json as { stream: boolean; tools: { function: { name: string } }[] };
     expect(request.stream).toBe(true);
     expect(request.tools.map((tool) => tool.function.name)).toEqual(['hand_to_agent']);
+  });
+
+  it('routes native spoken answers through realtime while agent work is queued', async () => {
+    const { asOwner, agent, asAgent } = await setup();
+    const dir = await mkdtemp(join(tmpdir(), 'volition-voice-priority-'));
+    const backend = Bun.serve({
+      port: 0,
+      fetch(request) {
+        const path = new URL(request.url).pathname;
+        if (path === '/v1/chat/completions') {
+          expect(proxy.scheduler.status().active.realtime).toBe(1);
+          expect(proxy.scheduler.status().queued.normal).toBe(1);
+          return sse([{ choices: [{ delta: { content: 'Eine Woche hat sieben Tage.' } }] }]);
+        }
+        if (path === '/health') return Response.json({ status: 'ok', slots: 4 });
+        if (path === '/v1/models') return Response.json({ data: [{ id: 'voice-test' }] });
+        return new Response('');
+      },
+    });
+    const proxy = await startPriorityProxy({
+      hostPorts: [0, 0],
+      backendPorts: [backend.port!, backend.port!],
+      socketDir: dir,
+      maintenancePath: join(dir, 'maintenance.json'),
+      healthCheck: false,
+    });
+    const original = globalThis.fetch;
+    const abort = new AbortController();
+    const occupied = await Promise.all(
+      Array.from({ length: 3 }, () => proxy.scheduler.acquire('normal')),
+    );
+    const queued = proxy.scheduler.acquire('normal', abort.signal);
+    let target = '';
+    globalThis.fetch = (async (input, init) => {
+      const url = String(input);
+      if (url.startsWith('http://127.0.0.1:8731/'))
+        return original(url.replace(':8731/', `:${backend.port}/`), init);
+      if (url.startsWith('http://127.0.0.1:8741/')) {
+        if (url.endsWith('/chat/completions')) {
+          target = url;
+          expect(new Headers(init?.headers).get('x-volition-halogen-priority')).toBe('voice-reply');
+        }
+        return original(url.replace(':8741/', `:${proxy.ports[0]}/`), init);
+      }
+      return original(input, init);
+    }) as typeof fetch;
+    const previous = process.env.HELENA_NATIVE_RUNTIME;
+    process.env.HELENA_NATIVE_RUNTIME = 'on';
+    try {
+      expect(
+        (
+          await asOwner.god['local-ai'].servers.post({
+            kind: 'halogen',
+            slug: 'voice-test',
+            baseUrl: 'http://127.0.0.1:8731/v1',
+            keySource: 'none',
+          })
+        ).status,
+      ).toBe(200);
+      expect(
+        (
+          await asOwner
+            .teams({ teamId: await teamOf(asOwner, 'VERVE') })
+            ['ai-agents']({ agentId: agent.id })
+            .patch({
+              model: 'helena-voice-test/voice-test',
+              runtimePolicy: { ...agent.runtimePolicy, runtime: 'helena' },
+            })
+        ).status,
+      ).toBe(200);
+      const sent = await chatOf(asOwner, agent.id).chat.post({
+        prompt: 'Wie viele Tage hat eine Woche?',
+        via: 'voice',
+      });
+      const thread = chatOf(asOwner, agent.id).threads({ threadId: sent.data!.threadId });
+      const items = await until(
+        async () => (await thread.messages.get()).data!.items,
+        (list) => list.some((item) => item.role === 'assistant' && item.durationMs != null),
+      );
+      expect(items.find((item) => item.role === 'assistant')).toMatchObject({
+        model: 'helena-voice-test/voice-test',
+        parts: [{ type: 'text', text: 'Eine Woche hat sieben Tage.' }],
+      });
+      expect(target).toBe('http://127.0.0.1:8741/v1/chat/completions');
+      expect((await asAgent['agent-chats'].claim.post()).data!.message).toBeNull();
+    } finally {
+      globalThis.fetch = original;
+      if (previous === undefined) delete process.env.HELENA_NATIVE_RUNTIME;
+      else process.env.HELENA_NATIVE_RUNTIME = previous;
+      abort.abort();
+      occupied.forEach((release) => release?.());
+      (await queued)?.();
+      await proxy.close();
+      backend.stop(true);
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 
   it('uses the native agent model through a cold first token while the legacy voice class is off', async () => {

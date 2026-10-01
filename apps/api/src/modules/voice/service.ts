@@ -225,6 +225,7 @@ function transcriptOf(body: unknown): { text: string; segments: TranscriptSegmen
 export async function transcribe(input: {
   audio: Uint8Array;
   language: string | null;
+  fullContext?: boolean;
 }): Promise<Transcription> {
   const started = performance.now();
   if (input.audio.byteLength > VOICE_LIMITS.maxBytes)
@@ -263,7 +264,8 @@ export async function transcribe(input: {
     form.append('response_format', 'json');
   }
   if (input.language) form.append('language', input.language);
-  const short = route.server.kind === 'whisper-cpp' && info.durationMs <= 8_000;
+  const short =
+    !input.fullContext && route.server.kind === 'whisper-cpp' && info.durationMs <= 8_000;
   if (short) {
     // Whisper encodes 50 frames/s; CPU flash attention pads to blocks of 256 frames.
     form.append('audio_ctx', String(Math.ceil((info.durationMs + 500) / 5120) * 256));
@@ -315,16 +317,15 @@ export async function transcribe(input: {
     const inferred = performance.now();
     const retry =
       short &&
-      (result.judged.dropped === 'other-language' ||
-        result.transcript.segments.some(
-          (segment) =>
-            segment.avgLogprob !== null &&
-            segment.avgLogprob < -0.4 &&
-            (segment.noSpeechProb === null || segment.noSpeechProb <= 0.6),
-        ) ||
+      (result.judged.dropped !== null ||
+        result.transcript.segments.length === 0 ||
         result.transcript.segments.some(
           (segment, index, segments) =>
-            index > 0 && segment.text.trim() === segments[index - 1]!.text.trim(),
+            segment.avgLogprob === null ||
+            segment.avgLogprob < -0.03 ||
+            segment.noSpeechProb === null ||
+            segment.noSpeechProb > 0.6 ||
+            (index > 0 && segment.text.trim() === segments[index - 1]!.text.trim()),
         ));
     if (retry) {
       for (const field of ['audio_ctx', 'best_of', 'no_timestamps', 'max_len']) form.delete(field);

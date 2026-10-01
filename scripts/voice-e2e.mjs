@@ -25,6 +25,7 @@
 // The WAV should hold a short sentence after ~1.5 s of silence and then long silence (Chrome
 // loops the file): e.g. `say -v Anna "Hallo Home, wie spät ist es?"` padded. Exit code 0 when
 // every step passed.
+import { summarizeVoiceTimings } from './voice-e2e-timing.mjs';
 import { spawn } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -355,21 +356,7 @@ if (['dictation', 'conversation', 'bargein', 'timing'].some((name) => STEPS.incl
         }
         await page.shot('timing');
         await page.clickButton('Gespräch beenden|End the conversation');
-        if (seen.length === 0) throw new Error('no turn was timed');
-        const median = (key) => {
-          const sorted = seen.map((turn) => turn[key]).sort((a, b) => a - b);
-          return sorted[Math.floor(sorted.length / 2)];
-        };
-        const summary = Object.fromEntries(
-          ['pauseMs', 'transcribeMs', 'answerMs', 'voiceMs', 'totalMs'].map((key) => [
-            key,
-            median(key),
-          ]),
-        );
-        if (maxTotal !== null && summary.totalMs > maxTotal)
-          throw new Error(
-            `median turn ${summary.totalMs} ms > ${maxTotal} ms: ${JSON.stringify(summary)}`,
-          );
+        const summary = summarizeVoiceTimings(seen, turns, maxTotal);
         return `${seen.length} turns, median ${JSON.stringify(summary)}`;
       });
     }
