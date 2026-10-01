@@ -805,5 +805,59 @@
         }
       }
     }
+  },
+  "profileSwitch": {
+    "title": "Profil local",
+    "description": "Quels modèles locaux tournent : Flash seul sur le GPU, ou le grand modèle 27B avec un petit modèle sur le NPU.",
+    "profile": "Profil",
+    "names": {
+      "local-halogen": "Local Halogen",
+      "local-27b-npu": "Local 27B + NPU"
+    },
+    "profiles": {
+      "local-halogen": "Flash sur le GPU, le NPU reste éteint.",
+      "local-27b-npu": "Qwen3.8-27B sur le GPU et un petit modèle sur le NPU pour les tâches simples."
+    },
+    "npu": {
+      "label": "Modèle NPU",
+      "off": "Avec « Local Halogen », le NPU est éteint.",
+      "none": "Pas de NPU",
+      "hint": "Le NPU ne prend en charge que de petites tâches de fond comme le tri, les routines et les assistants, pas les exécutions d’agents.",
+      "models": {
+        "gemmaE2b": "rapide, recommandé pour les assistants",
+        "gemmaE4b": "plus précis, mais plus lent",
+        "qwen2b": "très petit",
+        "qwen4b": "un peu plus grand, plus lent"
+      }
+    },
+    "switch": {
+      "label": "Basculer",
+      "unchanged": "Ce profil tourne déjà.",
+      "checking": "Vérification de ce que le basculement touche …",
+      "button": "Basculer …"
+    },
+    "impact": "Concerne {agents, plural, one {# agent} other {# agents}} sur le modèle local par défaut et {classes, plural, one {# classe de tâches} other {# classes de tâches}}.",
+    "started": "Basculement lancé.",
+    "pending": {
+      "title": "Un basculement n’est pas terminé",
+      "resume": "Continuer",
+      "rollback": "Annuler",
+      "running": "Le basculement est en cours ou attend sa prochaine étape.",
+      "failed": "Le dernier basculement s’est arrêté sur une erreur."
+    },
+    "confirm": {
+      "title": "Passer à {profile}",
+      "text": "Les modèles locaux sont arrêtés puis redémarrés ensemble. Cela prend quelques minutes, et les requêtes locales n’acceptent pas de nouvelles exécutions pendant ce temps. Si une étape échoue, on revient au modèle précédent.",
+      "more": "et {count} autres",
+      "npu": "Modèle NPU : {model}",
+      "cancel": "Annuler",
+      "apply": "Basculer maintenant"
+    },
+    "errors": {
+      "notDownloaded": "Le modèle n’est pas encore téléchargé.",
+      "noHalogen": "Halogen n’est pas configuré.",
+      "otherServer": "L’entrée du serveur appartient à un autre serveur.",
+      "general": "Ce basculement n’est pas possible pour le moment."
+    }
   }
 }

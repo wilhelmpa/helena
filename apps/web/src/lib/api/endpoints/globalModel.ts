@@ -1,11 +1,23 @@
 import { request } from '@/lib/api/core/client';
 import type { AiChatModel } from './agentChat';
+import type { LocalProfileId, NpuChatModel } from './localProfiles';
 
-export const LOCAL_DEFAULT = 'volition-local-default';
+export { LOCAL_DEFAULT, NPU_CHAT_MODELS } from './localProfiles';
+export type { LocalProfileId, NpuChatModel } from './localProfiles';
 export interface ModelTarget {
   server: 'halogen' | 'lemonade';
   slug: string;
   model: string;
+  // Set once the paired profile is on: its id and the NPU chat model.
+  npu?: NpuChatModel;
+  profile?: LocalProfileId;
+}
+// What a switch asks for: the model, the profile it belongs to and, for the paired profile,
+// the NPU chat model (the server takes Gemma E2B when none is given).
+export interface ModelSwitchRequest {
+  model: string;
+  profile?: LocalProfileId;
+  npuModel?: NpuChatModel;
 }
 export interface GlobalModelStatus {
   model: string | null;
@@ -38,6 +50,11 @@ export interface ModelPreview {
   requiresGroupStop: true;
   agents: { id: number; name: string }[];
   classes: string[];
+  // The kinds of work the NPU takes and the NPU chat models on offer; empty while the
+  // profile has no NPU.
+  npuClasses?: string[];
+  npuSelection?: NpuChatModel[];
+  memoryReserveGiB?: number;
 }
 export interface ModelPickerData {
   localDefault: { id: string; model: string | null };
@@ -56,9 +73,10 @@ export interface ModelPickerData {
 }
 const action = <T>(path: string, body: unknown) =>
   request<T>(`/god/local-ai/default/${path}`, { method: 'POST', body: JSON.stringify(body) });
-export const previewGlobalModel = (model: string) => action<ModelPreview>('preview', { model });
-export const applyGlobalModel = (model: string) =>
-  action<GlobalModelStatus['maintenance']>('apply', { model });
+export const previewGlobalModel = (request: ModelSwitchRequest) =>
+  action<ModelPreview>('preview', request);
+export const applyGlobalModel = (request: ModelSwitchRequest) =>
+  action<GlobalModelStatus['maintenance']>('apply', request);
 export const resumeGlobalModel = (rollback = false) =>
   action<GlobalModelStatus['maintenance']>('resume', { rollback });
 export const bulkLocalDefault = (ids: number[], apply = false) =>

@@ -805,5 +805,59 @@
         }
       }
     }
+  },
+  "profileSwitch": {
+    "title": "本地配置",
+    "description": "运行哪些本地模型：仅在 GPU 上运行 Flash，或在 GPU 上运行大型 27B 模型并在 NPU 上运行小模型。",
+    "profile": "配置",
+    "names": {
+      "local-halogen": "本地 Halogen",
+      "local-27b-npu": "本地 27B + NPU"
+    },
+    "profiles": {
+      "local-halogen": "GPU 运行 Flash，NPU 保持关闭。",
+      "local-27b-npu": "GPU 运行 Qwen3.8-27B，NPU 运行小模型处理简单任务。"
+    },
+    "npu": {
+      "label": "NPU 模型",
+      "off": "“本地 Halogen”下 NPU 关闭。",
+      "none": "不使用 NPU",
+      "hint": "NPU 只承担分类、例行任务和助手等小型后台工作，不运行智能体。",
+      "models": {
+        "gemmaE2b": "速度快，推荐用于助手",
+        "gemmaE4b": "更准确，但更慢",
+        "qwen2b": "非常小",
+        "qwen4b": "稍大，较慢"
+      }
+    },
+    "switch": {
+      "label": "切换",
+      "unchanged": "该配置已在运行。",
+      "checking": "正在检查切换会影响什么 …",
+      "button": "切换 …"
+    },
+    "impact": "将影响 {agents, plural, other {# 个智能体}}（使用本地默认模型）和 {classes, plural, other {# 个任务类别}}。",
+    "started": "切换已开始。",
+    "pending": {
+      "title": "有一次切换尚未完成",
+      "resume": "继续",
+      "rollback": "撤销",
+      "running": "切换正在进行，或在等待下一步。",
+      "failed": "上一次切换因错误而中止。"
+    },
+    "confirm": {
+      "title": "切换到 {profile}",
+      "text": "本地模型会一起停止并重新启动。这需要几分钟，期间本地请求不会接受新的运行。如果某一步失败，会回到之前的模型。",
+      "more": "另外还有 {count} 个",
+      "npu": "NPU 模型：{model}",
+      "cancel": "取消",
+      "apply": "立即切换"
+    },
+    "errors": {
+      "notDownloaded": "该模型尚未下载。",
+      "noHalogen": "尚未设置 Halogen。",
+      "otherServer": "该服务器条目属于另一台服务器。",
+      "general": "目前无法进行此切换。"
+    }
   }
 }

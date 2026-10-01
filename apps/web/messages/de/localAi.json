@@ -805,5 +805,59 @@
         }
       }
     }
+  },
+  "profileSwitch": {
+    "title": "Lokales Profil",
+    "description": "Welche lokalen Modelle laufen: Flash allein auf der GPU oder das große 27B-Modell mit einem kleinen Modell auf der NPU.",
+    "profile": "Profil",
+    "names": {
+      "local-halogen": "Lokal Halogen",
+      "local-27b-npu": "Lokal 27B + NPU"
+    },
+    "profiles": {
+      "local-halogen": "Flash auf der GPU, die NPU bleibt aus.",
+      "local-27b-npu": "Qwen3.8-27B auf der GPU, ein kleines Modell auf der NPU für einfache Aufgaben."
+    },
+    "npu": {
+      "label": "NPU-Modell",
+      "off": "Bei „Lokal Halogen“ ist die NPU aus.",
+      "none": "Keine NPU",
+      "hint": "Die NPU übernimmt nur kleine Hintergrundaufgaben wie Sortieren, Routinen und Helfer, keine Agentenläufe.",
+      "models": {
+        "gemmaE2b": "schnell, für Helfer empfohlen",
+        "gemmaE4b": "genauer, aber langsamer",
+        "qwen2b": "sehr klein",
+        "qwen4b": "etwas größer, langsamer"
+      }
+    },
+    "switch": {
+      "label": "Umstellen",
+      "unchanged": "Dieses Profil läuft bereits.",
+      "checking": "Prüfe, was die Umstellung betrifft …",
+      "button": "Umstellen …"
+    },
+    "impact": "Betrifft {agents, plural, one {# Agent} other {# Agenten}} mit dem lokalen Standardmodell und {classes, plural, one {# Aufgabenklasse} other {# Aufgabenklassen}}.",
+    "started": "Umstellung gestartet.",
+    "pending": {
+      "title": "Eine Umstellung ist nicht abgeschlossen",
+      "resume": "Fortsetzen",
+      "rollback": "Zurücknehmen",
+      "running": "Die Umstellung läuft oder wartet auf den nächsten Schritt.",
+      "failed": "Die letzte Umstellung ist mit einem Fehler stehen geblieben."
+    },
+    "confirm": {
+      "title": "Auf {profile} umstellen",
+      "text": "Die lokalen Modelle werden dabei gemeinsam gestoppt und neu gestartet. Das dauert einige Minuten, und lokale Anfragen nehmen in dieser Zeit keine neuen Läufe an. Schlägt ein Schritt fehl, geht es auf das vorherige Modell zurück.",
+      "more": "und {count} weitere",
+      "npu": "NPU-Modell: {model}",
+      "cancel": "Abbrechen",
+      "apply": "Jetzt umstellen"
+    },
+    "errors": {
+      "notDownloaded": "Das Modell ist noch nicht heruntergeladen.",
+      "noHalogen": "Halogen ist nicht eingerichtet.",
+      "otherServer": "Der Servereintrag gehört zu einem anderen Server.",
+      "general": "Diese Umstellung ist gerade nicht möglich."
+    }
   }
 }

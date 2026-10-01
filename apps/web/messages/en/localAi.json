@@ -805,5 +805,59 @@
         }
       }
     }
+  },
+  "profileSwitch": {
+    "title": "Local profile",
+    "description": "Which local models run: Flash alone on the GPU, or the large 27B model with a small model on the NPU.",
+    "profile": "Profile",
+    "names": {
+      "local-halogen": "Local Halogen",
+      "local-27b-npu": "Local 27B + NPU"
+    },
+    "profiles": {
+      "local-halogen": "Flash on the GPU, the NPU stays off.",
+      "local-27b-npu": "Qwen3.8-27B on the GPU, a small model on the NPU for simple tasks."
+    },
+    "npu": {
+      "label": "NPU model",
+      "off": "With “Local Halogen” the NPU is off.",
+      "none": "No NPU",
+      "hint": "The NPU only takes small background work such as sorting, routines and helpers, not agent runs.",
+      "models": {
+        "gemmaE2b": "fast, recommended for helpers",
+        "gemmaE4b": "more accurate, but slower",
+        "qwen2b": "very small",
+        "qwen4b": "a bit larger, slower"
+      }
+    },
+    "switch": {
+      "label": "Switch",
+      "unchanged": "This profile is already running.",
+      "checking": "Checking what the switch affects …",
+      "button": "Switch …"
+    },
+    "impact": "Affects {agents, plural, one {# agent} other {# agents}} on the local default model and {classes, plural, one {# task class} other {# task classes}}.",
+    "started": "Switch started.",
+    "pending": {
+      "title": "A switch is not finished",
+      "resume": "Continue",
+      "rollback": "Take back",
+      "running": "The switch is running or waiting for its next step.",
+      "failed": "The last switch stopped with an error."
+    },
+    "confirm": {
+      "title": "Switch to {profile}",
+      "text": "The local models are stopped and restarted together. This takes a few minutes, and local requests accept no new runs meanwhile. If a step fails, it goes back to the previous model.",
+      "more": "and {count} more",
+      "npu": "NPU model: {model}",
+      "cancel": "Cancel",
+      "apply": "Switch now"
+    },
+    "errors": {
+      "notDownloaded": "The model has not been downloaded yet.",
+      "noHalogen": "Halogen is not set up.",
+      "otherServer": "The server entry belongs to a different server.",
+      "general": "This switch is not possible right now."
+    }
   }
 }

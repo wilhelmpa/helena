@@ -1,6 +1,12 @@
 'use client';
 
 import { isLocalModel } from '@/features/local-ai/utils/modelIdentity';
+import {
+  groupLocalModels,
+  localModelName,
+  npuModelName,
+} from '@/features/local-ai/utils/localProfile';
+import { LOCAL_DEFAULT } from '@/lib/api/endpoints/localProfiles';
 
 import type { AiChatModel, UnavailableChatModel } from '@/lib/api/endpoints/agentChat';
 import type { AgentRuntimeKind } from '@/lib/api/endpoints/agents';
@@ -8,7 +14,9 @@ import { useTranslations } from 'next-intl';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
@@ -75,12 +83,18 @@ export default function RuntimePicker({
   const helenaModels = availableModels.filter(
     (entry) => entry.local || entry.id.startsWith('helena-'),
   );
-  const selected = runtimeModels.find((entry) => entry.id === model);
+  // "Lokal" offers the agent's explicit tie to the instance's local standard model (it then
+  // follows every switch of the local profile) and shows the NPU's models apart from the GPU's.
+  const followsDefault = choice === 'local' && model === LOCAL_DEFAULT;
+  const localGroups = choice === 'local' ? groupLocalModels(runtimeModels) : null;
+  const selected = followsDefault
+    ? { id: LOCAL_DEFAULT, name: t('localDefault'), thinkingLevels: [] as string[] }
+    : runtimeModels.find((entry) => entry.id === model);
   const withoutModel = runtime === 'command' || runtime === 'webhook';
   const options = runtimeOptions({ runtime, external, helena });
   const selectRuntime = (next: RuntimeChoice) => {
     if (next === 'local') {
-      onChange('hermes', localModels[0]?.id ?? null, null);
+      onChange('hermes', LOCAL_DEFAULT, null);
     } else if (next === 'helena') {
       onChange('helena', helenaModels[0]?.id ?? null, null);
     } else {
@@ -155,11 +169,39 @@ export default function RuntimePicker({
                     {entry.id} · {entry.detail ?? t('unavailable')}
                   </SelectItem>
                 ))}
-              {runtimeModels.map((entry) => (
-                <SelectItem key={entry.id} value={entry.id}>
-                  {entry.name}
-                </SelectItem>
-              ))}
+              {choice === 'local' && (
+                <SelectItem value={LOCAL_DEFAULT}>{t('localDefault')}</SelectItem>
+              )}
+              {localGroups ? (
+                <>
+                  {localGroups.gpu.length > 0 && (
+                    <SelectGroup>
+                      {localGroups.npu.length > 0 && <SelectLabel>{t('localGpu')}</SelectLabel>}
+                      {localGroups.gpu.map((entry) => (
+                        <SelectItem key={entry.id} value={entry.id}>
+                          {entry.name}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  )}
+                  {localGroups.npu.length > 0 && (
+                    <SelectGroup>
+                      <SelectLabel>{t('localNpu')}</SelectLabel>
+                      {localGroups.npu.map((entry) => (
+                        <SelectItem key={entry.id} value={entry.id}>
+                          {npuModelName(localModelName(entry.id))}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  )}
+                </>
+              ) : (
+                runtimeModels.map((entry) => (
+                  <SelectItem key={entry.id} value={entry.id}>
+                    {entry.name}
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
         </div>
