@@ -16,6 +16,7 @@ import {
   agentFieldTrigger,
   customField,
   helenaBudget,
+  getDisplayName,
 } from '@repo/db';
 import { and, asc, eq, inArray, isNull, ne, notInArray, or, sql } from 'drizzle-orm';
 import { normalizeContextLimits, normalizeRuntimeAccount, type RuntimeAccount } from '@helena/sdk';
@@ -642,7 +643,7 @@ export interface AiAgentRow {
   toolCount: number;
 }
 
-function mapAgent(row: {
+async function mapAgent(row: {
   id: number;
   teamId: number;
   projects: AgentProject[];
@@ -686,13 +687,13 @@ function mapAgent(row: {
   apiKeyStart: string | null;
   skillCount: number;
   toolCount: number;
-}): AiAgentRow {
+}): Promise<AiAgentRow> {
   return {
     id: row.id,
     teamId: row.teamId,
     projects: row.projects,
     userId: row.userId,
-    name: row.name,
+    name: row.agentRole === 'home' ? await getDisplayName() : row.name,
     username: row.username,
     kind: row.kind as AgentKind,
     agentRole: row.agentRole as 'agent' | 'home',
@@ -867,7 +868,7 @@ export async function listAgents(
       ),
     )
     .orderBy(user.name);
-  return rows.map(mapAgent);
+  return Promise.all(rows.map(mapAgent));
 }
 
 // Scoped to teamId so an id from another team resolves to null, and to visibleTo the

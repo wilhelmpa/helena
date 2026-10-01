@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
 import { mkdir, rm } from 'node:fs/promises';
-import { aiAgent, db, project } from '@repo/db';
+import { aiAgent, db, project, setDisplayName, user } from '@repo/db';
 import { eq } from 'drizzle-orm';
 import { apiKeyApi, authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
@@ -23,6 +23,34 @@ describe('live Home shape without a HOME project', () => {
     await resetDb();
     await rm(process.env.PROJECT_VAULT_ROOT!, { recursive: true, force: true });
     await mkdir(process.env.PROJECT_VAULT_ROOT!, { recursive: true });
+  });
+
+  it('uses the configured display name for a legacy Home account in agent and organization data', async () => {
+    const { asOwner, agent } = await liveHomeFixture();
+    await db.update(user).set({ name: 'Home' }).where(eq(user.id, agent.userId));
+    await asOwner.projects.post({ key: 'MKT', name: 'Marketing' });
+    const chat = await asOwner
+      .teams({ teamId: agent.teamId })
+      ['ai-agents']({ agentId: agent.id })
+      .chat.post({ prompt: 'Synthetic name check' });
+    expect(chat.status).toBe(200);
+    for (const name of ['Ava', 'Alma']) {
+      await setDisplayName(name);
+      const agents = await asOwner.teams({ teamId: agent.teamId })['ai-agents'].get();
+      expect(agents.status).toBe(200);
+      expect(agents.data?.find((item) => item.id === agent.id)?.name).toBe(name);
+      expect(agents.data?.find((item) => item.username === 'mkt-koordinator')?.name).toBe(
+        'Coordinator MKT',
+      );
+      const tree = await asOwner.teams({ teamId: agent.teamId }).organization.get();
+      expect(tree.status).toBe(200);
+      expect(tree.data?.agents.find((item) => item.id === agent.id)?.name).toBe(name);
+      const activity = await asOwner['agent-activity'].get({ query: { kind: 'chat' } });
+      expect(activity.status).toBe(200);
+      expect(
+        activity.data?.items.find((item) => item.threadId === chat.data!.threadId)?.agent?.name,
+      ).toBe(name);
+    }
   });
 
   it('lists projects and the Home agent tree without a technical project', async () => {

@@ -114,7 +114,10 @@ export default function ChatThreadView({
     onError: (error) => {
       if (error instanceof ApiError && error.status === 409) {
         toast.error(
-          t('composer.concurrencyLimit', { agent: agent.name, limit: agent.maxConcurrentChats }),
+          t('composer.concurrencyLimit', {
+            agent: agentDisplayName(agent, appName),
+            limit: agent.maxConcurrentChats,
+          }),
         );
       }
     },

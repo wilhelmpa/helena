@@ -2,6 +2,7 @@ import { requeueProjectProvisioning } from '#modules/projects/provisioning-queue
 import { goalProgress, pendingProposals } from '#modules/goals/service';
 import {
   aiAgent,
+  getDisplayName,
   db,
   organizationAgentAssignment,
   organizationDepartment,
@@ -197,7 +198,11 @@ function nonBlank(value: string, label: string): string {
 // The team's organization. With projectId, its agents are the ones working in that
 // project, the Home agent left out.
 export async function getOrganization(teamId: number, projectId?: number) {
-  const [progress, proposals] = await Promise.all([goalProgress(teamId), pendingProposals(teamId)]);
+  const [progress, proposals, displayName] = await Promise.all([
+    goalProgress(teamId),
+    pendingProposals(teamId),
+    getDisplayName(),
+  ]);
   const [departments, goals, agents, agentProjects, projects] = await Promise.all([
     db
       .select({
@@ -352,6 +357,7 @@ export async function getOrganization(teamId: number, projectId?: number) {
     })),
     agents: agents.map((row) => ({
       ...row,
+      name: isHomeAgent(row.agentRole) ? displayName : row.name,
       budgets: budgets.filter((budget) => budget.agentId === row.id),
       throttled: budgets.some(
         (budget) =>

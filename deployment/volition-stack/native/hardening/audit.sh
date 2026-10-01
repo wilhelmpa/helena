@@ -609,9 +609,10 @@ if [[ $is_root -eq 1 ]]; then
     [[ -d $dir ]] || continue
     # local-ai-preload only names the models to load at start (the preload unit's dynamic
     # user reads it); cloudflare/resolv.conf is the tunnel's public DNS servers. Neither
-    # holds anything secret.
+    # holds anything secret. Dated backups of the public updater config share its exception.
     while IFS= read -r f; do wide+=("$f"); done < <(find "$dir" -type f -perm /004 \
-      ! -name '*.json' ! -name 'README*' ! -name '*.pem.pub' ! -name 'local-ai-preload' \
+      ! -name '*.json' ! -path "$dir/update.json.bak-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]" \
+      ! -name 'README*' ! -name '*.pem.pub' ! -name 'local-ai-preload' \
       ! -name 'resolv.conf' 2>/dev/null)
   done
   key=/etc/volition/owner-terminal.key
