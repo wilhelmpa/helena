@@ -226,9 +226,12 @@ export function modelProvider(
   return config.models.find((entry) => entry.id === model)?.provider ?? config.provider;
 }
 
-// The model id the runtime is handed: a local model as its server names it.
-export function runtimeModel(model: string | null | undefined): string | null | undefined {
-  return localRoute(model)?.model ?? model;
+// Native model resolution needs the provider; legacy CLIs receive their server's model id.
+export function runtimeModel(
+  model: string | null | undefined,
+  runtime?: string,
+): string | null | undefined {
+  return runtime === 'helena' ? model : (localRoute(model)?.model ?? model);
 }
 
 // A preset is spawned directly, with no shell in between: the session id and the
@@ -249,7 +252,7 @@ function spawnArgs(
     task.prompt,
     {
       provider: modelProvider(config, task.model, task.thinkingLevel),
-      model: runtimeModel(task.model),
+      model: runtimeModel(task.model, config.agent),
       thinkingLevel: task.thinkingLevel,
       maxTurns: task.maxTurns,
       runBudgetSeconds: task.runBudgetSeconds,
