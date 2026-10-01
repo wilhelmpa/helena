@@ -89,3 +89,18 @@ test('permits warnings and examples about one-off inputs while refusing one-off 
     );
   }
 });
+
+test('permits explicit reusable learning requests whose pitfalls warn against one-off results', () => {
+  expect(
+    oneOffSkillSource(
+      '[Battle-169c] Lerne mit skill_manage einen wiederverwendbaren Skill namens volition-pipe-table-check für die Prüfung von Pipe-Tabellen. Steps: Kopfzeile prüfen, Spalten vergleichen, Datenzeilen zählen. Pitfalls: Do not turn this into a one-off marker response; prüfe immer die vom Nutzer gelieferte Tabelle.',
+    ),
+  ).toBe(false);
+  expect(oneOffSkillSource('Create a reusable procedure to read and validate CSV files.')).toBe(
+    false,
+  );
+  expect(oneOffSkillSource('Do not create a reusable skill. Read current counters.')).toBe(true);
+  expect(
+    oneOffSkillSource('Lerne keinen wiederverwendbaren Skill; lies den aktuellen Status.'),
+  ).toBe(true);
+});

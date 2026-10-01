@@ -150,6 +150,18 @@ export function applyTask(
   };
 }
 
+export function configForTask(
+  raw: unknown,
+  task: Task,
+  kind: CliOptions['kind'],
+): AgentRuntimeConfig {
+  const selected =
+    raw && typeof raw === 'object' && !Array.isArray(raw) && task.model
+      ? { ...raw, model: task.model }
+      : raw;
+  return applyTask(parseConfig(selected), task, kind);
+}
+
 export async function main(
   argv: string[],
   io: { sink?: EventSink; stdin?: string; env?: Record<string, string | undefined> } = {},
@@ -178,12 +190,12 @@ export async function main(
     const raw = options.config
       ? JSON.parse(await readFile(options.config, 'utf8'))
       : (JSON.parse(stdin) as { config?: unknown }).config;
-    const config = parseConfig(raw);
     const env = io.env ?? process.env;
     const kind = options.kind ?? (env.ITSAPLAN_TRIGGER === 'chat' ? 'chat' : null);
+    const config = configForTask(raw, task, kind);
     if (!task.prompt) throw new Error('no task on stdin');
     const result = await runAgent({
-      config: applyTask(config, task, kind),
+      config,
       prompt: task.prompt,
       runContext: task.systemPrompt,
       sessionId: task.sessionId,

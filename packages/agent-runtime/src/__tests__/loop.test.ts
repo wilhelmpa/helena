@@ -385,6 +385,20 @@ describe('agent loop', () => {
     const { result } = await run(script, {
       sessions,
       models: { 'helena-halogen/flash': model },
+      helena: {
+        ...selectionClient(async () => ({ names: null })),
+        memory: async () => ({
+          files: [
+            {
+              file: 'MEMORY.md',
+              content: 'volition-battle169c-finch hat die Farbe Zinnober.',
+              sha256: 'synthetic',
+            },
+          ],
+          notes: [],
+          approval: false,
+        }),
+      },
       config: {
         model: 'helena-halogen/flash',
         reasoning: 'high',
@@ -416,6 +430,9 @@ describe('agent loop', () => {
       chat_template_kwargs: { enable_thinking: false },
     });
     expect(compression!.providerOptions).not.toHaveProperty('helena-halogen');
+    expect(JSON.stringify(compression!.prompt)).toContain(
+      'volition-battle169c-finch hat die Farbe Zinnober.',
+    );
   });
 
   test('keeps the original session when the memory flush fails', async () => {
@@ -808,4 +825,57 @@ test('two searches keep the first discovered tool available', async () => {
     { extraTools, config: { tools: { profile: 'assistent' } } },
   );
   expect(sink.of('tool-result')[2]!.output).toBe('found tool worked');
+});
+
+test('preserves returned collection counts and valid JSON when a tool response exceeds the context limit', async () => {
+  const receipts = Array.from({ length: 120 }, (_, id) => ({ id, text: 'synthetic '.repeat(80) }));
+  const { sessions, primary } = await run(
+    [
+      { calls: [{ name: 'find_tools', input: { query: 'list_receipts' } }] },
+      { calls: [{ name: 'list_receipts', input: {} }] },
+      ...Array.from({ length: 5 }, (_, index) => ({
+        calls: [{ name: 'write_file', input: { path: `probe${index}.txt`, content: 'synthetic' } }],
+      })),
+      { text: '120 receipts returned.' },
+    ],
+    {
+      config: { tools: { profile: 'voll' } },
+      extraTools: [
+        {
+          name: 'list_receipts',
+          description: 'List synthetic receipts',
+          readOnly: true,
+          inputSchema: { type: 'object', properties: {} },
+          async execute() {
+            return { text: JSON.stringify({ receipts }) };
+          },
+        },
+      ],
+    },
+  );
+  const session = [...sessions.sessions.values()][0]!;
+  const message = session.items.find(
+    (entry) =>
+      entry.message.role === 'tool' &&
+      entry.message.content.some(
+        (part) => part.type === 'tool-result' && part.toolName === 'list_receipts',
+      ),
+  )!.message;
+  if (message.role !== 'tool') throw new Error('Missing tool response');
+  const part = message.content[0]!;
+  if (part.type !== 'tool-result') throw new Error('Missing tool result');
+  const output = part.output;
+  if (output.type !== 'text') throw new Error('Missing text response');
+  const bounded = JSON.parse(output.value);
+  expect(bounded.truncated).toBe(true);
+  expect(bounded.returnedCounts).toEqual({ receipts: 120 });
+  expect(output.value.length).toBeLessThanOrEqual(32_000);
+  const old = primary.doStreamCalls
+    .at(-1)!
+    .prompt.flatMap((message) => (message.role === 'tool' ? message.content : []))
+    .find((part) => part.type === 'tool-result' && part.toolName === 'list_receipts')!;
+  if (old.type !== 'tool-result' || old.output.type !== 'text')
+    throw new Error('Missing old result');
+  expect(JSON.parse(old.output.value).returnedCounts).toEqual({ receipts: 120 });
+  expect(old.output.value.length).toBeLessThanOrEqual(2000);
 });

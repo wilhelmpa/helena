@@ -6,7 +6,7 @@ import { centralEscalation, uncertaintyEscalation, type Escalation } from './esc
 import { resultEvent, runLoop, type LoopResult } from './loop';
 import type { SpendEvent } from './events';
 import { modelChain, resolveModel, type ModelFactory, type ResolvedModel } from './models';
-import { buildSystemPrompt } from './prompt';
+import { buildSystemPrompt, memorySection } from './prompt';
 import { workspaceState } from './workspace';
 import {
   FileSessionStore,
@@ -394,6 +394,7 @@ export async function runAgent(input: AgentRunInput): Promise<LoopResult> {
       config,
       prompt: input.prompt,
       system,
+      summaryContext: memorySection(memory, '', 6000),
       sessionId: input.sessionId ?? null,
       labels: input.labels,
       models: chain,

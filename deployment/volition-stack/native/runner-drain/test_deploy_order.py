@@ -144,6 +144,35 @@ class DeployOrderTest(unittest.TestCase):
         self.assertEqual(result.returncode, 23)
         self.assertNotIn('helper ', result.stdout)
 
+    def test_bundled_agent_runtime_change_uses_same_guard(self):
+        _, result = self.run_prefix('packages/agent-runtime/src/tools/builtin.ts', refuse=23)
+        self.assertEqual(result.returncode, 23)
+        self.assertTrue(self.log.exists())
+        self.assertEqual(self.git('rev-parse', 'HEAD'), self.before)
+
+    def test_agent_runtime_change_rebuilds_the_installed_runner_bundle(self):
+        self.write('packages/agent-runtime/src/tools/builtin.ts')
+        target = self.git('rev-parse', 'HEAD')
+        start = TEXT.index('runner_bundle=$live/packages/runner/dist/cli.js')
+        stop = TEXT.index('\nif changed deployment/volition-stack/integration;', start)
+        script = self.root / 'bundle-choice.sh'
+        script.write_text('\n'.join([
+            'set -euo pipefail',
+            'live=' + shlex.quote(str(self.root)),
+            'before=' + self.before + '; after=' + target,
+            'rollback_to=; rollback_dir=' + shlex.quote(str(self.root / 'rollback')),
+            'owner=synthetic',
+            'changed() { ! git -C "$live" diff --quiet "$before" "$after" -- "$@"; }',
+            'runuser() { mktemp --suffix=.js; }',
+            'as_owner() { echo bundle-built; }',
+            'install() { echo bundle-installed; }',
+            TEXT[start:stop],
+        ]))
+        result = subprocess.run(['bash', str(script)], text=True, capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('bundle-built', result.stdout)
+        self.assertIn('bundle-installed', result.stdout)
+
     def test_bundled_sdk_change_uses_same_guard(self):
         _, result = self.run_prefix('packages/sdk/src/index.ts', refuse=23)
         self.assertEqual(result.returncode, 23)
