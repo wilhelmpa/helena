@@ -822,3 +822,30 @@ for (const mode of ['on', 'off', 'uncertain', 'in-flight-off'] as const) {
     }
   });
 }
+
+it('updates a migrated policy containing disabled private classes without granting cloud access', async () => {
+  const { api, teamId, jev } = await setup();
+  const current = await firstStagePolicy(teamId);
+  await setSetting(`decisions.jev-first-stage.team.${teamId}`, {
+    ...current,
+    useCases: {
+      ...current.useCases,
+      'routines.precheck': { enabled: false, cloudAllowed: false },
+      'helena.routine.gate': { enabled: false, cloudAllowed: false },
+    },
+  });
+  const result = await api.teams({ teamId }).decisions['first-stage'].patch({ timeoutMs: 1000 });
+  expect(result.status).toBe(200);
+  expect(result.data?.credentialId).toBe(jev);
+  expect(result.data?.useCases['routines.precheck']).toEqual({
+    enabled: false,
+    cloudAllowed: false,
+  });
+  expect(
+    (
+      await api.teams({ teamId }).decisions['first-stage'].patch({
+        useCases: { 'routines.precheck': { enabled: true, cloudAllowed: true } },
+      })
+    ).status,
+  ).toBe(400);
+});
