@@ -91,6 +91,9 @@ export function installExternalFixtures() {
 export const PAPER_ACCOUNT = '00000000-0000-4000-8000-000000000214';
 const paperOrders = new Map<string, Record<string, unknown>>();
 export function seedCancelablePaperOrder() {
+  // Keep a preceding submit's client identity so real intent reconciliation can
+  // observe its cancellation; seed only for a standalone cancel diagnostic.
+  if (paperOrders.has(PAPER_ACCOUNT)) return;
   paperOrders.set(PAPER_ACCOUNT, {
     id: PAPER_ACCOUNT,
     client_order_id: 'ABSCHLUSSTEST cancel fixture',
