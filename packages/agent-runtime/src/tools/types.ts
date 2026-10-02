@@ -1,6 +1,8 @@
 // A tool of the loop: what the model sees (name, description, JSON Schema of its input) and
 // what Helena does when it is called. Tools run one after another; each has its own deadline.
 
+import { AjvJsonSchemaValidator } from '@modelcontextprotocol/sdk/validation/ajv-provider.js';
+
 export interface JsonSchemaObject {
   type: 'object';
   properties: Record<string, unknown>;
@@ -56,6 +58,26 @@ export interface AgentTool {
   readOnly?: boolean;
   question?(input: Record<string, unknown>): PolicyQuestion | null;
   execute(input: Record<string, unknown>, ctx: ToolContext): Promise<ToolOutput>;
+}
+
+const inputValidator = new AjvJsonSchemaValidator();
+const validators = new WeakMap<AgentTool, ReturnType<typeof inputValidator.getValidator>>();
+
+export async function executeTool(
+  tool: AgentTool,
+  input: Record<string, unknown>,
+  ctx: ToolContext,
+): Promise<ToolOutput> {
+  let validate = validators.get(tool);
+  if (!validate) {
+    validate = inputValidator.getValidator(
+      tool.inputSchema as Parameters<typeof inputValidator.getValidator>[0],
+    );
+    validators.set(tool, validate);
+  }
+  const result = validate(input);
+  if (!result.valid) return error(`Invalid ${tool.name} arguments: ${result.errorMessage}`);
+  return tool.execute(input, ctx);
 }
 
 export function text(value: unknown): string {

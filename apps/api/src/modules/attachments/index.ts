@@ -338,6 +338,7 @@ export const attachmentRoutes = new Elysia({
     },
     {
       attachment: 'delete',
+      params: publicIdParams,
       response: { 204: t.Void(), ...accessErrors },
       detail: {
         summary: 'Delete an attachment',

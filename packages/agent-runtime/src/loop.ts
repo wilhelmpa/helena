@@ -15,7 +15,7 @@ import { providerOptionsKey, type ResolvedModel } from './models';
 import { LocalModelBusy, LocalQueueRetry, type QueueAttempt } from './local-queue';
 import { messageText, type SessionItem, type SessionStore } from './session';
 import { looksSecret, redactSecrets } from '@helena/facts';
-import type { AgentTool, PolicyQuestion, ToolOutput } from './tools/types';
+import { executeTool, type AgentTool, type PolicyQuestion, type ToolOutput } from './tools/types';
 import { boundedToolResult } from './tool-result';
 import { isAgentDiagnosis } from './prompt';
 import { closestToolNames } from './tools/builtin';
@@ -1216,7 +1216,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
             if (!decision.allowed) return { text: decision.message, isError: true };
           }
           controller.signal.throwIfAborted();
-          return entry.execute(args, {
+          return executeTool(entry, args, {
             workdir: config.workdir,
             signal: controller.signal,
             env: input.env,

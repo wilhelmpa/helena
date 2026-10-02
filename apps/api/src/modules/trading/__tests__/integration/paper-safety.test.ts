@@ -134,6 +134,21 @@ describe('paper safety in the API and database', () => {
       assertStrategyApproval(f.context, ACCOUNT, { ...VERSION, symbol: 'SPY' }),
     ).rejects.toThrow('human');
   });
+  it('keeps Home paper strategy approvals pending for a human decision', async () => {
+    const f = await setup();
+    await db.update(aiAgent).set({ agentRole: 'home' }).where(eq(aiAgent.id, f.input.agent.id));
+    const { approval } = await createStrategyApproval(f.input, ACCOUNT);
+    expect(approval.status).toBe('pending');
+    expect(approval.decidedByUserId).toBeNull();
+    await expect(
+      assertStrategyApproval(f.context, ACCOUNT, { ...VERSION, symbol: 'SPY' }),
+    ).rejects.toThrow('human');
+    expect(
+      (await f.asOwner.approvals({ approvalId: approval.id }).decision.post({ approved: true }))
+        .status,
+    ).toBe(200);
+    await assertStrategyApproval(f.context, ACCOUNT, { ...VERSION, symbol: 'SPY' });
+  });
   it('a human delegate with general approval permissions cannot approve a strategy', async () => {
     const f = await setup();
     const role = await createRole(f.asOwner, 'TRD', {
