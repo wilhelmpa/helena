@@ -22,6 +22,7 @@ const replaced = [
   'Node',
   'Element',
   'MutationObserver',
+  'ResizeObserver',
   'getComputedStyle',
   'requestAnimationFrame',
   'cancelAnimationFrame',
@@ -95,6 +96,8 @@ beforeEach(async () => {
 
 afterEach(async () => {
   await act(async () => root.unmount());
+  // Radix restores focus on the next timer; keep its DOM globals until then.
+  await new Promise<void>((resolve) => setTimeout(resolve, 0));
   dom.window.close();
   for (const [name, descriptor] of saved) {
     if (descriptor) Object.defineProperty(globalThis, name, descriptor);
