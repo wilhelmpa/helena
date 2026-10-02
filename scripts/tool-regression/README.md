@@ -20,9 +20,10 @@ Connectors use real credential binding, agent authorization and `callConfiguredT
 Synthetic provider replies block unknown hosts before network access. Paper trading
 uses the real database locks, intents, risk limits and human strategy approval;
 only HTTP responses and the model precheck are mocked. Operator launcher and runtime
-requests use synthetic adapters. `run_as_root` and `apply_model_schema_changes`
-currently have invalid-input coverage only: their positive operator fixtures are
-explicitly reported as pending. Six person-only registrations must be absent from
+requests use synthetic adapters. `run_as_root` uses an actual claimed Home chat as provenance and a synthetic Hostd
+transport; an unrelated project agent is denied without another mocked execution.
+Model schema changes are applied to
+the private database with the current revision and never switch real model processes. Six person-only registrations must be absent from
 an actual agent MCP `tools/list` response.
 
 Project-scoped routes reject an unrelated user and, where they accept a project or

@@ -14,6 +14,7 @@ import { provisionBlueprint } from '../fixtures/provision';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { buildMcpServer } from '../../server';
+import { rootFixture } from '../fixtures/root';
 
 const tools = routeTools(app);
 const validator = new AjvJsonSchemaValidator();
@@ -37,7 +38,7 @@ test('every API registration has a named regression fixture', () => {
   expect(tools.map((tool) => tool.name).sort()).toEqual(catalog.api);
   expect(Object.keys(expectedStatus).sort()).toEqual(
     tools
-      .filter((tool) => tool.access !== 'person-only' && !operatorTools.has(tool.name))
+      .filter((tool) => tool.access !== 'person-only')
       .map((tool) => tool.name)
       .sort(),
   );
@@ -75,7 +76,7 @@ for (const tool of [...tools].sort(
   )
     continue;
   test(`${tool.name}: runtime input, validation and foreign access`, async () => {
-    if (tool.method !== 'GET' && !operatorTools.has(tool.name) && tool.access !== 'person-only') {
+    if (tool.method !== 'GET' && tool.access !== 'person-only') {
       stack = await seedToolStack();
       resolver = new ToolFixtureResolver(stack, tools);
     }
@@ -117,7 +118,10 @@ for (const tool of [...tools].sort(
       return;
     }
     if (operatorTools.has(tool.name)) {
-      row.valid = 'pending: injected operator adapter needed';
+      const { response, foreign } = await rootFixture(stack, tool, valid);
+      row.valid = response.structuredContent;
+      row.foreign = foreign.structuredContent;
+      expect(validateOutput(response.structuredContent).valid).toBe(true);
       return;
     }
     if (

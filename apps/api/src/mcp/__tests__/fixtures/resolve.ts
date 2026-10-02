@@ -3,10 +3,11 @@ import type { McpRouteTool } from '../../generate';
 import { app } from '#tests/helpers/app';
 import { sample } from '../../../../../../scripts/tool-regression/sample';
 import type { seedToolStack } from './stack';
+import { readModelState } from '#modules/model-schemas/service';
 
-// These handlers control the operator's real checkout or model processes. Their
-// positive fixtures need an injected operator adapter; they never run on this stack.
-export const operatorTools = new Set(['apply_model_schema_changes', 'run_as_root']);
+// Root execution needs a fully injected host/provenance fixture. It never runs
+// on the operator's real host from this generic private-stack suite.
+export const operatorTools = new Set(['run_as_root']);
 
 export class ToolFixtureResolver {
   readonly fields: Record<string, unknown>;
@@ -86,6 +87,8 @@ export class ToolFixtureResolver {
       }
     }
     const args = sample(tool.inputSchema, fields) as Record<string, unknown>;
+    if (tool.name === 'apply_model_schema_changes')
+      args.expectedRevision = (await readModelState()).revision;
     if (tool.name === 'write_note')
       Object.assign(args, {
         content: '# ABSCHLUSSTEST',
