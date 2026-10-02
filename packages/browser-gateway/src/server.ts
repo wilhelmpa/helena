@@ -1,4 +1,5 @@
 import type { Holder } from './lock.ts';
+import { AjvJsonSchemaValidator } from '@modelcontextprotocol/sdk/validation/ajv-provider.js';
 import { ProjectBrowserLocks } from './lock.ts';
 import {
   BROWSER_TOOLS,
@@ -100,6 +101,10 @@ export interface DispatcherOptions {
 
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 const MAX_UPLOAD_FILES = 10;
+const inputValidator = new AjvJsonSchemaValidator();
+const toolValidators = new Map(
+  BROWSER_TOOLS.map((tool) => [tool.name, inputValidator.getValidator(tool.inputSchema)]),
+);
 
 function str(args: Record<string, unknown> | undefined, key: string): string | undefined {
   const value = args?.[key];
@@ -239,6 +244,9 @@ export class GatewayDispatcher {
     const tool = toolByName(incoming.tool);
     if (!tool) return { ok: false, error: `Unknown tool: ${incoming.tool}` };
     const request = { ...incoming, args: normalizeArgs(incoming.args) };
+    const validation = toolValidators.get(tool.name)!(request.args);
+    if (!validation.valid)
+      return { ok: false, error: `Invalid ${tool.name} arguments: ${validation.errorMessage}` };
 
     const target = this.#targetSlug(request.args);
     if ('error' in target) return { ok: false, error: target.error };
