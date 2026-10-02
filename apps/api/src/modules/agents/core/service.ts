@@ -855,10 +855,12 @@ function sharesProjectWith(userId: string) {
   return sql`exists (select 1 from ${projectMember} pm join ${projectMember} mine on mine.project_id = pm.project_id and mine.user_id = ${userId} where pm.user_id = ${aiAgent.userId})`;
 }
 
-export function agentVisibility(scope: AgentScope | undefined) {
-  if (scope === undefined) return undefined;
+export function agentVisibility(scope: AgentScope | undefined, includeDeleted = false) {
+  const active = includeDeleted ? undefined : isNull(aiAgent.deletedAt);
+  if (scope === undefined) return active;
   const userId = typeof scope === 'string' ? scope : scope.userId;
   return and(
+    active,
     typeof scope !== 'string' && scope.allProjects
       ? undefined
       : or(eq(aiAgent.template, true), sharesProjectWith(userId)),
@@ -933,9 +935,14 @@ export async function getAgentById(
   id: number,
   teamId: number,
   visibleToUser?: AgentScope,
+  includeDeleted = false,
 ): Promise<AiAgentRow | null> {
   const rows = await agentQuery().where(
-    and(eq(aiAgent.id, id), eq(aiAgent.teamId, teamId), agentVisibility(visibleToUser)),
+    and(
+      eq(aiAgent.id, id),
+      eq(aiAgent.teamId, teamId),
+      agentVisibility(visibleToUser, includeDeleted),
+    ),
   );
   return rows[0] ? mapAgent(rows[0]) : null;
 }
@@ -1022,6 +1029,7 @@ export async function listMentionTriggerAgents(
       and(
         inProject(projectId),
         eq(aiAgent.triggerOnMention, true),
+        isNull(aiAgent.deletedAt),
         isNull(aiAgent.pausedAt),
         inArray(aiAgent.userId, userIds),
       ),
@@ -1126,6 +1134,7 @@ export async function getAssignTriggerAgent(
       and(
         eq(aiAgent.userId, userId),
         eq(aiAgent.triggerOnAssign, true),
+        isNull(aiAgent.deletedAt),
         isNull(aiAgent.pausedAt),
         inProject(projectId),
       ),
@@ -1144,7 +1153,14 @@ export async function getSubtaskResumeAgent(
   const [agent] = await db
     .select({ id: aiAgent.id, ...triggerScopeColumns })
     .from(aiAgent)
-    .where(and(eq(aiAgent.userId, userId), isNull(aiAgent.pausedAt), inProject(projectId)))
+    .where(
+      and(
+        eq(aiAgent.userId, userId),
+        isNull(aiAgent.deletedAt),
+        isNull(aiAgent.pausedAt),
+        inProject(projectId),
+      ),
+    )
     .limit(1);
   return agent && isTriggerableByAny(agent, await triggerActors(actorUserId))
     ? { id: agent.id }
@@ -1172,6 +1188,7 @@ export async function getFieldTriggerAgent(
       and(
         eq(aiAgent.userId, userId),
         eq(agentFieldTrigger.fieldId, fieldId),
+        isNull(aiAgent.deletedAt),
         isNull(aiAgent.pausedAt),
         inProject(projectId),
       ),
@@ -2024,7 +2041,7 @@ export async function agentWorksInProject(agentId: number, projectId: number): P
   const rows = await db
     .select({ id: aiAgent.id })
     .from(aiAgent)
-    .where(and(eq(aiAgent.id, agentId), inProject(projectId)))
+    .where(and(eq(aiAgent.id, agentId), isNull(aiAgent.deletedAt), inProject(projectId)))
     .limit(1);
   return rows.length > 0;
 }

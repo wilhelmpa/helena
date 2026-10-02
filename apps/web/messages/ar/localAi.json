@@ -256,10 +256,10 @@
       "hint": "يتم التعرف على التسجيلات القصيرة بشكل أسرع ولكن بدقة أقل قليلاً. إيقاف = دقة كاملة."
     },
     "wake": {
-      "title": "Listen for “Ava”",
-      "hint": "The microphone stays open while a chat page is open. Before “Ava”, only on-device recognition processes your voice; nothing is saved.",
-      "availability": "On-device recognition",
-      "availabilityHint": "Works only if the browser already has a German offline speech pack. {appName} does not download one."
+      "title": "الاستماع لكلمة «Ava»",
+      "hint": "الميكروفون بيفضل شغّال طول ما صفحة الدردشة مفتوحة. قبل كلمة «Ava»، صوتك بيتعالج على جهازك بس؛ مفيش حاجة بتتحفظ.",
+      "availability": "التعرّف على الجهاز",
+      "availabilityHint": "بيشتغل بس لو المتصفح فيه بالفعل حزمة ألمانية للتعرّف على الكلام من غير إنترنت. {appName} مش بينزّل الحزمة."
     },
     "title": "الصوت في الدردشة",
     "loading": "جارٍ التحميل …",
@@ -805,7 +805,8 @@
           "update-role": "Role updated",
           "delete-role": "Role removed",
           "delete": "Deleted",
-          "undo": "Undone"
+          "undo": "Undone",
+          "profile-follow": "تم اتباع الملف المحلي"
         }
       }
     }

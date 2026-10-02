@@ -13,7 +13,7 @@ import {
   team,
   user,
 } from '@repo/db';
-import { and, asc, eq, sql } from 'drizzle-orm';
+import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 import { HttpError, iso, rethrowDuplicate } from '#shared/lib';
 import { isHomeAgent, notHomeAgent } from '#modules/agents/core/home-agent';
 import { agentTokenUsage, projectTokenUsage } from '#modules/agents/governance';
@@ -273,6 +273,7 @@ export async function getOrganization(teamId: number, projectId?: number) {
       .where(
         and(
           eq(aiAgent.teamId, teamId),
+          isNull(aiAgent.deletedAt),
           projectId == null
             ? undefined
             : and(

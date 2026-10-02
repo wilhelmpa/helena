@@ -2361,5 +2361,17 @@
     "/god/model-schemas/follow-profile",
     "admin",
     "Owner-only repair of a state the local model switch left behind; the switch itself does this."
+  ],
+  [
+    "GET",
+    "/teams/:teamId/ai-agent-trash",
+    "UI-only",
+    "Agent settings show recoverable deletions for manual restoration."
+  ],
+  [
+    "POST",
+    "/teams/:teamId/ai-agent-trash/:agentId/restore",
+    "UI-only",
+    "The agent settings dialog restores a selected agent from the trash."
   ]
 ]

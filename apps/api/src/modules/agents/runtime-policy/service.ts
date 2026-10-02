@@ -113,6 +113,7 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
         eq(aiAgent.teamId, agent.teamId),
         ne(aiAgent.id, agent.id),
         eq(aiAgent.template, false),
+        isNull(aiAgent.deletedAt),
         isNull(aiAgent.pausedAt),
       ),
     );

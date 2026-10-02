@@ -125,7 +125,14 @@ async function projectDecisionAgents(projectId: number, teamId: number) {
         eq(organizationAgentAssignment.teamId, teamId),
       ),
     )
-    .where(and(eq(aiAgent.teamId, teamId), isNull(aiAgent.pausedAt), eq(aiAgent.template, false)))
+    .where(
+      and(
+        eq(aiAgent.teamId, teamId),
+        isNull(aiAgent.deletedAt),
+        isNull(aiAgent.pausedAt),
+        eq(aiAgent.template, false),
+      ),
+    )
     .orderBy(asc(aiAgent.id))
     .limit(14);
   return rows.map((row) => ({

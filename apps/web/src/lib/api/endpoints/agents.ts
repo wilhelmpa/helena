@@ -504,3 +504,9 @@ export const materializeAgentExport = (projectKey: string) =>
     `/projects/${encodeURIComponent(projectKey)}/agent-export/materialize`,
     { method: 'POST' },
   );
+
+export type AgentTrashEntry = { id: number; name: string; deletedAt: string };
+export const listAiAgentTrash = (teamId: number) =>
+  request<AgentTrashEntry[]>(`/teams/${teamId}/ai-agent-trash`);
+export const restoreAiAgent = (teamId: number, agentId: number) =>
+  request<void>(`/teams/${teamId}/ai-agent-trash/${agentId}/restore`, { method: 'POST' });

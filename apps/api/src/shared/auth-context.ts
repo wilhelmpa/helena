@@ -1,7 +1,7 @@
 import { Elysia } from 'elysia';
-import { db } from '@repo/db';
+import { aiAgent, db } from '@repo/db';
 import { user as users } from '@repo/db/schema';
-import { eq } from 'drizzle-orm';
+import { and, eq, isNotNull } from 'drizzle-orm';
 import { auth, getSessionFromHeaders } from '@repo/auth';
 import { HttpError } from './lib';
 import { getMcpOAuthToken } from './mcp-request';
@@ -41,6 +41,7 @@ export const authContext = new Elysia({ name: 'auth-context' }).resolve(
     const session = await getSessionFromHeaders(request.headers);
     if (session) {
       if (session.user.active === false) throw new HttpError(401, 'This account is deactivated');
+      await requireActiveAgent(session.user.id);
       await checkAgentSocket(request.headers, session.user.id);
       return { user: session.user };
     }
@@ -53,6 +54,7 @@ export const authContext = new Elysia({ name: 'auth-context' }).resolve(
         const user = await db.query.user.findFirst({ where: eq(users.id, oauthSession.userId) });
         if (user) {
           if (user.active === false) throw new HttpError(401, 'This account is deactivated');
+          await requireActiveAgent(user.id);
           await checkAgentSocket(request.headers, user.id);
           return { user: user as SessionUser };
         }
@@ -63,3 +65,12 @@ export const authContext = new Elysia({ name: 'auth-context' }).resolve(
     throw new HttpError(401, 'Authentication required');
   },
 );
+
+async function requireActiveAgent(userId: string) {
+  const [trashed] = await db
+    .select({ id: aiAgent.id })
+    .from(aiAgent)
+    .where(and(eq(aiAgent.userId, userId), isNotNull(aiAgent.deletedAt)))
+    .limit(1);
+  if (trashed) throw new HttpError(401, 'The agent is in the trash.');
+}

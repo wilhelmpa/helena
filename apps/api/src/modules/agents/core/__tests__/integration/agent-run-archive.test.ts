@@ -85,7 +85,7 @@ describe('agent run archive', () => {
     expect(res.status).toBe(404);
   });
 
-  it('keeps the runs of a deleted agent in the tombstone table', async () => {
+  it('keeps the runs of a permanently deleted agent in the tombstone table', async () => {
     const { asOwner, columnId, teamId } = await setup();
     const { agent, runId } = await queuedRun(asOwner, columnId, teamId);
     await db
@@ -94,6 +94,16 @@ describe('agent run archive', () => {
       .where(eq(agentRun.id, runId));
 
     expect((await agents(asOwner, teamId)({ agentId: agent.id }).delete()).status).toBe(204);
+
+    expect(await db.select().from(agentRun).where(eq(agentRun.id, runId))).toHaveLength(1);
+    expect(
+      (
+        await agents(
+          asOwner,
+          teamId,
+        )({ agentId: agent.id }).delete(undefined, { query: { permanent: true } })
+      ).status,
+    ).toBe(204);
 
     expect(await db.select().from(agentRun).where(eq(agentRun.id, runId))).toHaveLength(0);
     const [kept] = await db

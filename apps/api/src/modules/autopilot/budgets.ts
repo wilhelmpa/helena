@@ -401,7 +401,7 @@ export async function pauseForBudget(
   const rows = await database
     .update(aiAgent)
     .set({ pausedAt: new Date(), pauseReason: reason })
-    .where(and(eq(aiAgent.id, agentId), isNull(aiAgent.pausedAt)))
+    .where(and(eq(aiAgent.id, agentId), isNull(aiAgent.deletedAt), isNull(aiAgent.pausedAt)))
     .returning({ id: aiAgent.id });
   return rows.length > 0;
 }

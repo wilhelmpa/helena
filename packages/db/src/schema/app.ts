@@ -667,6 +667,7 @@ export const aiAgent = pgTable(
     // Set while the agent takes no new work: its queued runs and chat answers wait, a
     // mention or a delegation starts nothing, and an agent-team stage is refused.
     // pause_reason says why, whether a member paused it or a token ceiling did.
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
     pausedAt: timestamp('paused_at', { withTimezone: true }),
     pauseReason: text('pause_reason'),
     // Deprecated: the agent's budgets live in helena_budget since the Autopilot

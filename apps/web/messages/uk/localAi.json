@@ -256,10 +256,10 @@
       "hint": "Короткі записи розпізнаються швидше, але трохи менш точно. Вимк. = повна точність."
     },
     "wake": {
-      "title": "Listen for “Ava”",
-      "hint": "The microphone stays open while a chat page is open. Before “Ava”, only on-device recognition processes your voice; nothing is saved.",
-      "availability": "On-device recognition",
-      "availabilityHint": "Works only if the browser already has a German offline speech pack. {appName} does not download one."
+      "title": "Слухати слово «Ava»",
+      "hint": "Мікрофон залишається увімкненим, поки відкрита сторінка чату. До слова «Ava» ваш голос обробляється лише на пристрої; нічого не зберігається.",
+      "availability": "Розпізнавання на пристрої",
+      "availabilityHint": "Працює лише тоді, коли в браузері вже є німецький мовний пакет для автономного розпізнавання. {appName} його не завантажує."
     },
     "title": "Голос у чаті",
     "loading": "Завантаження …",
@@ -805,7 +805,8 @@
           "update-role": "Role updated",
           "delete-role": "Role removed",
           "delete": "Deleted",
-          "undo": "Undone"
+          "undo": "Undone",
+          "profile-follow": "Застосовано локальний профіль"
         }
       }
     }

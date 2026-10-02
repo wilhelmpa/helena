@@ -145,6 +145,7 @@ async function targetAgent(fromAgentId: number, projectId: number, runtime: 'cla
         eq(projectMember.projectId, projectId),
         ne(aiAgent.id, fromAgentId),
         eq(aiAgent.template, false),
+        isNull(aiAgent.deletedAt),
         isNull(aiAgent.pausedAt),
       ),
     )

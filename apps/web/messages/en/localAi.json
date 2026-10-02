@@ -805,7 +805,8 @@
           "update-role": "Role updated",
           "delete-role": "Role removed",
           "delete": "Deleted",
-          "undo": "Undone"
+          "undo": "Undone",
+          "profile-follow": "Followed local profile"
         }
       }
     }

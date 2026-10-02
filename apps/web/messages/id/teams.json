@@ -375,7 +375,7 @@
     "newAgent": "Agen AI baru",
     "create": "Buat agen AI",
     "save": "Simpan agen AI",
-    "delete": "Hapus agen AI",
+    "delete": "Pindahkan agen ke tempat sampah",
     "edit": "Ubah agen AI",
     "empty": "Belum ada agen AI",
     "emptyHint": "Agen dijalankan oleh runner-nya melalui API.",
@@ -528,7 +528,7 @@
     "moreActions": "Tindakan lainnya",
     "runsSubtitle": "@{username} · eksekusi yang dipicu",
     "regenerateMessage": "Kunci saat ini untuk <v>{name}</v> akan langsung berhenti berfungsi. Perbarui semua hal yang menggunakannya dengan kunci baru.",
-    "deleteMessage": "<v>{name}</v> dan kunci API-nya akan dihapus. Agen ini juga akan dihapus dari issue mana pun tempat agen tersebut ditetapkan atau didelegasikan. Tindakan ini tidak dapat dibatalkan.",
+    "deleteMessage": "<v>{name}</v> akan dipindahkan ke tempat sampah dan tidak dapat bekerja di sana. Anda dapat memulihkan agen beserta pengaturan dan keanggotaan proyeknya.",
     "triggerMention": "Sebutan",
     "triggerDelegation": "Delegasi",
     "noMatch": "Tidak ada yang cocok dengan “{query}”.",
@@ -891,7 +891,13 @@
       "confidenceOff": "mati",
       "confidenceHint": "Sebelum mulai, model keputusan menilai apakah model kecil cukup. Kosong: jangan tanya."
     },
-    "limitBlocked": "Ada teks yang terlalu panjang: persingkat atau minta dikonsolidasikan, lalu agen dapat disimpan."
+    "limitBlocked": "Ada teks yang terlalu panjang: persingkat atau minta dikonsolidasikan, lalu agen dapat disimpan.",
+    "trash": "Tempat sampah agen",
+    "restore": "Pulihkan",
+    "restored": "Agen dipulihkan",
+    "trashEmpty": "Tidak ada agen di tempat sampah.",
+    "trashLoading": "Memuat tempat sampah agen…",
+    "trashFailed": "Tempat sampah agen tidak dapat dimuat."
   },
   "members": {
     "roleSaved": "{name} sekarang menjadi {role}",
