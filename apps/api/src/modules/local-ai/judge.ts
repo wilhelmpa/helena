@@ -81,11 +81,11 @@ export async function writeJudge(
 // What Administrator → Lokale KI shows: the settings, whether a key is stored, the agents a
 // judge run can run on.
 export async function judgeView() {
-  const { hermesAgents } = await import('#modules/updates/digest');
+  const { digestAgents } = await import('#modules/updates/digest');
   const [settings, stored, agents] = await Promise.all([
     readJudge(),
     readSecret<{ key?: string }>(JUDGE_SECRET_KEY),
-    hermesAgents(),
+    digestAgents(),
   ]);
   return { ...settings, hasKey: Boolean(stored?.key), agents };
 }
