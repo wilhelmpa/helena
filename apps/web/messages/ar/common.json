@@ -86,6 +86,7 @@
     "conflict": "مستخدم بالفعل من قِبل {command}"
   },
   "agentChat": {
+    "toolFailedExit": "فشل بالرمز {code}",
     "readAloud": "قراءة الرد بصوت عالٍ",
     "stopReading": "إيقاف القراءة",
     "toolInput": "المدخلات",

@@ -56,8 +56,9 @@ export function contentSecurityPolicy(nonce?: string, origin: string | null = nu
     // The service worker (public/sw.js) that shows push notifications. Named on its own:
     // workers fall back to script-src, whose nonce no worker script can carry.
     "worker-src 'self'",
+    // Blob frames show locally fetched receipt PDFs; object embeds stay disabled.
     // Plugins' panel pages come from the api (/plugins/<id>/ui/…), sandboxed.
-    [...new Set(["frame-src 'self'", ...frameOrigins, apiOrigin])].filter(Boolean).join(' '),
+    [...new Set(["frame-src 'self' blob:", ...frameOrigins, apiOrigin])].filter(Boolean).join(' '),
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

@@ -65,8 +65,68 @@ server {
         proxy_set_header Authorization "";
         proxy_set_header X-Helena-Entry "";
         proxy_redirect off;
+        proxy_hide_header Cache-Control;
         add_header Cache-Control "no-cache" always;
+        proxy_hide_header Service-Worker-Allowed;
         add_header Service-Worker-Allowed "/" always;
+    }
+
+    location = /manifest.webmanifest {
+        auth_request off;
+        proxy_pass http://127.0.0.1:3001/manifest.webmanifest;
+        proxy_set_header Host $host;
+        proxy_set_header Cookie "";
+        proxy_set_header Authorization "";
+        proxy_set_header X-Helena-Entry "";
+        proxy_redirect off;
+        proxy_hide_header Cache-Control;
+        add_header Cache-Control "no-cache" always;
+    }
+
+    location ~ ^/voice/(vad\.worklet\.bundle\.min\.js|silero_vad_v5\.onnx|ort-wasm-simd-threaded\.(mjs|wasm))$ {
+        auth_request off;
+        proxy_pass http://127.0.0.1:3001;
+        proxy_set_header Host $host;
+        proxy_set_header Cookie "";
+        proxy_set_header Authorization "";
+        proxy_set_header X-Helena-Entry "";
+        proxy_redirect off;
+        proxy_hide_header Cache-Control;
+        add_header Cache-Control "no-cache" always;
+    }
+
+    location ~ ^/code/stable-[0-9a-f]+/static/out/vs/code/browser/workbench/workbench\.js$ {
+        auth_request off;
+        rewrite ^/code/(.*)$ /$1 break;
+        proxy_pass http://127.0.0.1:8443;
+        proxy_set_header Host $host;
+        proxy_set_header Cookie "";
+        proxy_set_header Authorization "";
+        proxy_set_header X-Helena-Entry "";
+        proxy_set_header Accept-Encoding "";
+        proxy_set_header If-None-Match "";
+        proxy_set_header If-Modified-Since "";
+        proxy_redirect off;
+        proxy_hide_header Cache-Control;
+        add_header Cache-Control "no-cache" always;
+        sub_filter_types application/javascript text/javascript;
+        sub_filter 'async vsda(){' 'async vsda(){if(!this.productService.serverLicense?.length)throw new Error("VSDA unavailable in Code OSS");';
+        sub_filter_once on;
+    }
+
+    location ~ ^/code/(stable-[0-9a-f]+/static/|_static/) {
+        auth_request off;
+        rewrite ^/code/(.*)$ /$1 break;
+        proxy_pass http://127.0.0.1:8443;
+        proxy_set_header Host $host;
+        proxy_set_header Cookie "";
+        proxy_set_header Authorization "";
+        proxy_set_header X-Helena-Entry "";
+        proxy_redirect off;
+        proxy_hide_header Cache-Control;
+        add_header Cache-Control "no-cache" always;
+        proxy_hide_header Service-Worker-Allowed;
+        add_header Service-Worker-Allowed "/code/" always;
     }
 
     location = /browser {

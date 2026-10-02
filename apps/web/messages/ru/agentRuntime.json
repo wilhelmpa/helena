@@ -11,6 +11,7 @@
     "skills": "Skills"
   },
   "runs": {
+    "stepFailedExit": "Ошибка с кодом {code}",
     "empty": "Запусков пока нет.",
     "loadMore": "Загрузить ещё",
     "running": "Выполняется",

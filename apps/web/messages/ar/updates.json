@@ -93,7 +93,7 @@
     "automaticAgent": "تلقائي ({name})",
     "automaticModel": "تلقائي ({model})",
     "agentModel": "نموذج الوكيل",
-    "noAgent": "لا يوجد وكيل Hermes",
+    "noAgent": "لا يوجد وكيل متاح لتلخيص التحديثات",
     "claudeChannel": "قناة Claude Code",
     "channels": {
       "latest": "الأحدث",

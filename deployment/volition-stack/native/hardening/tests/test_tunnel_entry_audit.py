@@ -60,11 +60,11 @@ class TunnelEntryAuditTests(unittest.TestCase):
             TEMPLATE.replace('location = /sw.js', 'location = /other.js'),
             TEMPLATE.replace('proxy_pass http://127.0.0.1:3001/sw.js;',
                              'proxy_pass http://127.0.0.1:3000/backend/;'),
-            TEMPLATE.replace('proxy_set_header Cookie "";', 'proxy_set_header Cookie $http_cookie;'),
+            TEMPLATE.replace('proxy_set_header Cookie "";', 'proxy_set_header Cookie $http_cookie;', 1),
             TEMPLATE.replace('proxy_set_header Authorization "";',
-                             'proxy_set_header Authorization $http_authorization;'),
+                             'proxy_set_header Authorization $http_authorization;', 1),
             TEMPLATE.replace('proxy_set_header X-Helena-Entry "";',
-                             'proxy_set_header X-Helena-Entry internal;'),
+                             'proxy_set_header X-Helena-Entry internal;', 1),
             TEMPLATE.replace('location = /sw.js {',
                              'location = /sw.js { rewrite ^ /backend/ break;'),
         )
@@ -73,6 +73,31 @@ class TunnelEntryAuditTests(unittest.TestCase):
                 report = self.audit(config)
                 self.assertIn('web.tunnel_entry|fail|', report)
                 self.assertIn('1 location(s) without the tunnel headers', report)
+
+    def test_each_public_asset_exemption_is_exact_and_credential_free(self):
+        blocks = []
+        for selector in ('= /sw.js', '= /manifest.webmanifest', '~ ^/voice/',
+                         '~ ^/code/stable-', '~ ^/code/(stable-'):
+            start = TEMPLATE.index('    location ' + selector)
+            end = TEMPLATE.index('\n    }', start) + len('\n    }')
+            blocks.append(TEMPLATE[start:end])
+        for block in blocks:
+            variants = [
+                block.replace('auth_request off;', ''),
+                block.replace('proxy_set_header Cookie "";', 'proxy_set_header Cookie $http_cookie;'),
+                block.replace('proxy_set_header Authorization "";',
+                              'proxy_set_header Authorization $http_authorization;'),
+                block.replace('proxy_set_header X-Helena-Entry "";',
+                              'proxy_set_header X-Helena-Entry internal;'),
+                block.replace('127.0.0.1:3001', '127.0.0.1:3000').replace('127.0.0.1:8443', '127.0.0.1:8444'),
+                block.replace('    }', '        rewrite ^ /backend/ break;\n    }'),
+                block.replace('location ', 'location /private-assets/ # ', 1),
+            ]
+            for changed in variants:
+                with self.subTest(location=block.splitlines()[0], changed=changed):
+                    report = self.audit(TEMPLATE.replace(block, changed))
+                    self.assertIn('web.tunnel_entry|fail|', report)
+                    self.assertIn('1 location(s) without the tunnel headers', report)
 
     def test_error_page_mapping_keeps_the_deny_under_the_header_check(self):
         for separator in (' ', '\n    '):

@@ -24,9 +24,7 @@ import { useSetUpdateSettings } from '../services/updateCenter.service';
 const AUTO = 'auto';
 const REASONING = ['none', 'minimal', 'low', 'medium', 'high'];
 
-// When the check runs on its own, and how new versions are summarized: on which Hermes
-// agent, model and reasoning ("Automatisch": the Home agent, the cheapest model the account
-// serves, reasoning low).
+// Automatic summaries select a text-only capable agent and a model the account serves.
 export default function UpdateSettingsSection({ center }: { center: UpdateCenter }) {
   const t = useTranslations('updates.settings');
   const save = useSetUpdateSettings();

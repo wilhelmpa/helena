@@ -17,16 +17,16 @@ const render = (tool: DynamicToolUIPart) =>
 const base = { type: 'dynamic-tool', toolName: 'terminal', toolCallId: 't', input: {} } as const;
 
 describe('a command that ended with an exit code (135)', () => {
-  it('reads "Beendet mit Code 1" and is not a failure', () => {
+  it('shows the failed command and its exit code', () => {
     const html = render({
       ...base,
       state: 'output-available',
       output: 'no match',
       resultProviderMetadata: outcomeMetadata('nonzero_with_output', 1),
     } as DynamicToolUIPart);
-    assert.match(html, /Beendet mit Code 1/);
-    assert.doesNotMatch(html, /Fehlgeschlagen/);
-    assert.doesNotMatch(html, /text-status-danger/);
+    assert.match(html, /Fehlgeschlagen mit Code 1/);
+    assert.match(html, /Fehlgeschlagen/);
+    assert.match(html, /text-status-danger/);
     assert.doesNotMatch(html, /text-status-success/);
   });
 

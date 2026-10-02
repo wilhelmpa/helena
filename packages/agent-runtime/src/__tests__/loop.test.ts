@@ -415,7 +415,7 @@ describe('agent loop', () => {
       { text: 'ok' },
     ]);
     const output = sink.of('tool-result')[0]!;
-    expect(output.isError).not.toBe(true);
+    expect(output.isError).toBe(true);
     expect(output.outcome).toBe('nonzero_with_output');
     expect(output.exitCode).toBe(3);
     expect(output.output).toContain('Exit code 3');

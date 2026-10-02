@@ -93,7 +93,7 @@
     "automaticAgent": "自动（{name}）",
     "automaticModel": "自动（{model}）",
     "agentModel": "智能体的模型",
-    "noAgent": "没有 Hermes 智能体",
+    "noAgent": "没有可用于生成摘要的代理",
     "claudeChannel": "Claude Code 渠道",
     "channels": {
       "latest": "最新",

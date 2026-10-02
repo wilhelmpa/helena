@@ -41,6 +41,18 @@ class StrictLanRender(unittest.TestCase):
         self.assertNotIn('return 301 /browser/;', self.site)
         self.assertNotIn('X-Volition-Local-Access $helena_owner_capability', self.site)
 
+    def test_worker_assets_are_public_but_tool_sessions_keep_their_gate(self):
+        for asset in ('/sw.js', '/manifest.webmanifest'):
+            block = self.template.split(f'location = {asset} {{', 1)[1].split('    }', 1)[0]
+            self.assertIn('auth_request off;', block)
+            self.assertIn('proxy_set_header Cookie "";', block)
+        self.assertIn('vad\\.worklet\\.bundle\\.min\\.js', self.template)
+        self.assertIn('ort-wasm-simd-threaded', self.template)
+        self.assertIn('location ~ ^/code/', self.template)
+        for entry in ('/code/', '/browser/'):
+            block = self.template.split(f'location {entry} {{', 1)[1].split('    }', 1)[0]
+            self.assertIn('auth_request /_plan_auth;', block)
+
     def test_public_callbacks_have_one_fixed_upstream_and_strict_tls(self):
         self.assertIn('location ^~ /cdn-cgi/', self.site)
         self.assertIn('error_page 403 = @helena_public_edge;', self.site)
@@ -258,8 +270,8 @@ http {{
                 sock.bind(('127.0.0.1', 0))
                 return sock.getsockname()[1]
 
-        api_port, web_port, tool_port, edge_port, nginx_port = (
-            free_port(), free_port(), free_port(), free_port(), free_port())
+        api_port, web_port, tool_port, code_port, edge_port, nginx_port = (
+            free_port(), free_port(), free_port(), free_port(), free_port(), free_port())
 
         class Upstream(http.server.BaseHTTPRequestHandler):
             def do_GET(self):
@@ -280,6 +292,18 @@ http {{
                         self.send_header('X-Owner-Terminal-Token', 'synthetic-owner-token')
                     self.end_headers()
                     return
+                if self.path.endswith('/workbench.js'):
+                    if self.headers.get('If-None-Match') == '"original-workbench"':
+                        self.send_response(304)
+                        self.end_headers()
+                        return
+                    data = b'class SignService { async vsda(){return fetch("/vsda_bg.wasm");} }'
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'application/javascript')
+                    self.send_header('Content-Length', str(len(data)))
+                    self.end_headers()
+                    self.wfile.write(data)
+                    return
                 data = json.dumps({key: self.headers.get(key, '') for key in (
                     'X-Helena-Entry', 'X-Helena-Edge-Entry', 'Cf-Access-Jwt-Assertion',
                     'X-Volition-Local-Access', 'X-Real-IP', 'X-Forwarded-For',
@@ -290,6 +314,8 @@ http {{
                 )}).encode()
                 self.send_response(200)
                 self.send_header('Content-Type', 'application/json')
+                if self.path.startswith('/sw.js') or self.path.endswith('/serviceWorker.js'):
+                    self.send_header('Service-Worker-Allowed', '/upstream-scope/')
                 self.send_header('Content-Length', str(len(data)))
                 self.end_headers()
                 self.wfile.write(data)
@@ -315,9 +341,10 @@ http {{
         api = http.server.ThreadingHTTPServer(('127.0.0.1', api_port), Upstream)
         web = http.server.ThreadingHTTPServer(('127.0.0.1', web_port), Upstream)
         tool = http.server.ThreadingHTTPServer(('127.0.0.1', tool_port), Upstream)
+        code = http.server.ThreadingHTTPServer(('127.0.0.1', code_port), Upstream)
         edge = http.server.ThreadingHTTPServer(('127.0.0.1', edge_port), PublicEdge)
         threads = [threading.Thread(target=server.serve_forever, daemon=True)
-                   for server in (api, web, tool, edge)]
+                   for server in (api, web, tool, code, edge)]
         for thread in threads:
             thread.start()
         process = None
@@ -346,6 +373,7 @@ http {{
                 site = site.replace('listen [::]:443 ssl;', '')
                 site = site.replace('127.0.0.1:3000', f'127.0.0.1:{api_port}')
                 site = site.replace('127.0.0.1:3001', f'127.0.0.1:{web_port}')
+                site = site.replace('127.0.0.1:8443', f'127.0.0.1:{code_port}')
                 site = site.replace('127.0.0.1:6082', f'127.0.0.1:{tool_port}')
                 site = site.replace('http://unix:/run/volition-owner-terminal/term.sock:',
                                     f'http://127.0.0.1:{tool_port}')
@@ -367,8 +395,9 @@ http {{
     include {root}/strict.conf;
 }}
 ''')
-                subprocess.run(['/usr/sbin/nginx', '-t', '-c', str(root / 'nginx.conf'),
-                                '-p', str(root)], check=True, capture_output=True)
+                checked = subprocess.run(['/usr/sbin/nginx', '-t', '-c', str(root / 'nginx.conf'),
+                                         '-p', str(root)], capture_output=True)
+                self.assertEqual(checked.returncode, 0, checked.stderr.decode())
                 process = subprocess.Popen(['/usr/sbin/nginx', '-c', str(root / 'nginx.conf'),
                                             '-p', str(root)], stdout=subprocess.DEVNULL,
                                            stderr=subprocess.DEVNULL)
@@ -383,6 +412,10 @@ http {{
                                 'Host': 'helena.volition.one', 'Cookie': cookie, **(extra or {})})
                             response = connection.getresponse()
                             body = response.read()
+                            if path.startswith('/sw.js') or path.endswith('/serviceWorker.js'):
+                                scopes = [value for key, value in response.getheaders()
+                                          if key.lower() == 'service-worker-allowed']
+                                self.assertEqual(scopes, ['/code/' if path.startswith('/code/') else '/'])
                             connection.close()
                             return response.status, body, response.getheader('Location')
                         except ConnectionRefusedError:
@@ -390,6 +423,22 @@ http {{
                                 raise
                             time.sleep(.05)
 
+                for path in ('/sw.js?api=%2Fbackend', '/manifest.webmanifest',
+                             '/voice/vad.worklet.bundle.min.js', '/voice/ort-wasm-simd-threaded.wasm',
+                             '/code/_static/out/browser/serviceWorker.js',
+                             '/code/stable-123abc/static/out/vs/editor/common/services/editorWebWorkerMain.js'):
+                    status, body, _ = get(path, 'session=private')
+                    self.assertEqual(status, 200, path)
+                    self.assertEqual(json.loads(body)['Cookie'], '')
+                status, body, _ = get('/code/stable-123abc/static/out/vs/code/browser/workbench/workbench.js', '')
+                self.assertEqual(status, 200)
+                self.assertIn(b'if(!this.productService.serverLicense?.length)', body)
+                self.assertIn(b'VSDA unavailable in Code OSS', body)
+                status, body, _ = get('/code/stable-123abc/static/out/vs/code/browser/workbench/workbench.js', '',
+                                      {'If-None-Match': '"original-workbench"',
+                                       'If-Modified-Since': 'Thu, 01 Oct 2026 00:00:00 GMT'})
+                self.assertEqual(status, 200)
+                self.assertIn(b'VSDA unavailable in Code OSS', body)
                 for path, cookie in (('/', ''), ('/', 'CF_Authorization=expired'),
                                      ('/backend/anything', ''),
                                      ('/cdn-cgi/access/login?next=one', '')):
@@ -452,7 +501,7 @@ http {{
             if process is not None:
                 process.terminate()
                 process.wait(timeout=3)
-            for server in (api, web, tool, edge):
+            for server in (api, web, tool, code, edge):
                 server.shutdown()
                 server.server_close()
 

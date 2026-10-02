@@ -1,9 +1,5 @@
 import type { DynamicToolUIPart, ProviderMetadata } from 'ai';
 
-// How a tool call ended, as Ava's runtime reports it (`outcome` and `exitCode` of the
-// result): a shell command that exits non-zero but printed output is not a failure of
-// the tool — the agent reads the output — so it is shown neutrally, with its exit code;
-// only `error` is red.
 export type ToolOutcome = 'ok' | 'nonzero_with_output' | 'error';
 
 const KEY = 'ava';
@@ -22,8 +18,10 @@ export function outcomeMetadata(
   outcome: ToolOutcome | null | undefined,
   exitCode: number | null | undefined,
 ): ProviderMetadata | undefined {
-  if (!outcome || !OUTCOMES.includes(outcome)) return undefined;
-  return { [KEY]: { outcome, exitCode: exitCode ?? null } };
+  let resolved = outcome;
+  if (!resolved && typeof exitCode === 'number') resolved = exitCode === 0 ? 'ok' : 'error';
+  if (!resolved || !OUTCOMES.includes(resolved)) return undefined;
+  return { [KEY]: { outcome: resolved, exitCode: exitCode ?? null } };
 }
 
 export function toolOutcome(tool: DynamicToolUIPart): ToolOutcomeInfo | null {
@@ -38,7 +36,15 @@ export function toolOutcome(tool: DynamicToolUIPart): ToolOutcomeInfo | null {
   };
 }
 
-// A command that ended with a non-zero code but produced output: shown as "ended with
-// code N", not as a failure.
-export const isNeutralExit = (tool: DynamicToolUIPart) =>
-  toolOutcome(tool)?.outcome === 'nonzero_with_output';
+export function toolResultFailed(result: {
+  isError?: boolean;
+  outcome?: ToolOutcome;
+  exitCode?: number | null;
+}): boolean {
+  return (
+    result.isError === true ||
+    result.outcome === 'error' ||
+    result.outcome === 'nonzero_with_output' ||
+    (typeof result.exitCode === 'number' && result.exitCode !== 0)
+  );
+}

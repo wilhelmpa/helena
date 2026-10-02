@@ -13,7 +13,7 @@ import {
   type ToolCallStartEvent,
 } from '@ag-ui/core';
 import type { AgUiEvent } from '@/lib/api/endpoints/agentChat';
-import { outcomeMetadata } from '@/components/agent-message/toolOutcome';
+import { toolResultFailed, outcomeMetadata } from '@/components/agent-message/toolOutcome';
 import { parseToolText, type PlanChatMetadata, type PlanUIMessage } from './chatMessages';
 
 export type PlanChunk = InferUIMessageChunk<PlanUIMessage>;
@@ -100,13 +100,11 @@ export class AgUiChunkMapper {
         if (!this.tools.has(id)) return [];
         // AG-UI has no error flag on a result; Helena's runner puts MCP's `isError` into
         // the event's metadata (older runners sent it on the event itself).
-        // A command that ended non-zero with output is not a failed tool (`outcome`): it
-        // is shown as "ended with code N", the agent reads its output.
         const outcome = result.metadata?.outcome;
-        const failed =
-          outcome === 'nonzero_with_output'
-            ? false
-            : outcome === 'error' || result.metadata?.isError === true || result.isError === true;
+        const failed = toolResultFailed({
+          ...result.metadata,
+          isError: result.metadata?.isError === true || result.isError === true,
+        });
         const providerMetadata = outcomeMetadata(outcome, result.metadata?.exitCode);
         // AG-UI 1.0 lets a result be content parts; the chat shows their text.
         const content =

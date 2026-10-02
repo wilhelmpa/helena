@@ -3,7 +3,7 @@ import { HttpError } from '#shared/lib';
 import { assertCron } from '#modules/engine/schedules';
 
 // The update center's settings (Administrator → Updates): when the check runs on its own,
-// and how what changed is summarized. The summary runs on a Hermes agent with a small model;
+// and how what changed is summarized. The summary runs on a text-only capable agent with a small model;
 // null agent and model are "Automatisch" (updates/digest.ts picks them).
 
 const SETTINGS_KEY = 'helenaUpdates';

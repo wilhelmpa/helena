@@ -63,6 +63,7 @@ const FRAMEWORK_ONLY = [
 
 /** @type {import("eslint").Linter.Config[]} */
 export default [
+  { ignores: ['public/voice/**'] },
   ...nextJsConfig,
   // The app is also used over plain http on the LAN, where both APIs are undefined and
   // a direct call throws. The helpers fall back to what every context provides.

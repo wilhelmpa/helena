@@ -28,6 +28,7 @@ export interface ModelServer {
 export type ToolProfile = 'assistent' | 'recherche' | 'coder-lite' | 'voll';
 
 export interface ToolSettings {
+  textOnly?: boolean;
   profile?: ToolProfile;
   // Additional MCP tools offered directly alongside the profile's core tools.
   core?: string[];

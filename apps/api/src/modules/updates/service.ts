@@ -37,7 +37,7 @@ import {
   DigestRefused,
   digestModelAvailable,
   digestPrompt,
-  hermesAgents,
+  digestAgents,
   digestRunState,
   isModelRefusal,
   parseDigest,
@@ -381,7 +381,7 @@ export async function queueDigests(): Promise<number> {
   let queued = 0;
   for (const target of targets) {
     try {
-      if (!agent) throw new DigestRefused('No Hermes agent can write the summary');
+      if (!agent) throw new DigestRefused('digest_runtime_unavailable');
       await db
         .update(helenaUpdate)
         .set({ summaryRunId: null, summaryRunFor: target.key, summaryError: null })
@@ -1034,7 +1034,7 @@ export async function listUpdateItems(
 // Who writes the summaries and on which model, as the settings resolve today ("Automatisch"
 // included), and what the pickers offer.
 async function digestView(settings: Awaited<ReturnType<typeof getUpdateSettings>>) {
-  const [agent, agents] = await Promise.all([pickDigestAgent(settings), hermesAgents()]);
+  const [agent, agents] = await Promise.all([pickDigestAgent(settings), digestAgents()]);
   const catalog = agent ? (await readChatCatalog(agent.id)).models : [];
   const choice = agent
     ? await pickDigestModel(agent.id, settings)

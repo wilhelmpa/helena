@@ -93,7 +93,7 @@
     "automaticAgent": "Otomatis ({name})",
     "automaticModel": "Otomatis ({model})",
     "agentModel": "Model agen",
-    "noAgent": "Tidak ada agen Hermes",
+    "noAgent": "Tidak ada agen yang tersedia untuk ringkasan",
     "claudeChannel": "Kanal Claude Code",
     "channels": {
       "latest": "Terbaru",

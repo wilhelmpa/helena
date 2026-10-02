@@ -105,7 +105,7 @@ describe('AgUiChunkMapper', () => {
     ]);
   });
 
-  it('keeps a command that exited non-zero with output as a result, with its exit code', async () => {
+  it('keeps a command that exited non-zero with output as an error, with its exit code', async () => {
     const message = await messageOf([
       { type: 'TOOL_CALL_START', toolCallId: 'a', toolCallName: 'terminal' },
       {
@@ -124,7 +124,7 @@ describe('AgUiChunkMapper', () => {
       { type: 'RUN_FINISHED' },
     ]);
     const [first, second] = message.parts;
-    assert.equal(first.type === 'dynamic-tool' && first.state, 'output-available');
+    assert.equal(first.type === 'dynamic-tool' && first.state, 'output-error');
     assert.deepEqual(first.type === 'dynamic-tool' && toolOutcome(first), {
       outcome: 'nonzero_with_output',
       exitCode: 1,

@@ -11,6 +11,7 @@
     "skills": "Skills"
   },
   "runs": {
+    "stepFailedExit": "فشل بالرمز {code}",
     "empty": "لا توجد تشغيلات بعد.",
     "loadMore": "تحميل المزيد",
     "running": "قيد التشغيل",

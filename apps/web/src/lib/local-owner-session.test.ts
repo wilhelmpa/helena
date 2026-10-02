@@ -49,6 +49,7 @@ describe('local session bootstrap', () => {
       'http://kingston-server.local/project/VOL?view=board',
     );
     assert.match(response!.headers.getSetCookie()[0]!, /HttpOnly/);
+    assert.match(response!.headers.getSetCookie()[0]!, /(?:^|;\s*)Path=\/(?:;|$)/);
     assert.equal(response?.headers.get('cache-control'), 'no-store');
     assert.equal(calls, 1);
   });

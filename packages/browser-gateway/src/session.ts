@@ -552,8 +552,10 @@ export class PatchrightGatewaySession implements GatewaySession {
 
   async back(): Promise<string> {
     this.#assertNoDialog();
+    // A restored back/forward-cache page emits no new DOMContentLoaded event.
+    // Wait for navigation to commit, then settle the restored document below.
     const response = await this.#page.goBack({
-      waitUntil: 'domcontentloaded',
+      waitUntil: 'commit',
       timeout: LOAD_TIMEOUT_MS,
     });
     if (response === null && this.#page.url() === 'about:blank')

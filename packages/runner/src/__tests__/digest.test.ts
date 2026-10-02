@@ -98,3 +98,39 @@ describe('digest runs', () => {
     expect(argv[argv.indexOf('--max-turns') + 1]).toBe('3');
   });
 });
+
+it('supports native digests and strips agent tools, context and runtime escalation', () => {
+  expect(digestRuntimeError({ agent: 'helena' })).toBeNull();
+  const settings = digestSettings(
+    {
+      toolsets: ['terminal'],
+      env: { MODEL_KEY: 'test-key', ITSAPLAN_MCP_SECRET_1: 'secret' },
+      input: {
+        config: {
+          model: 'test/small',
+          workdir: '/tmp',
+          servers: [],
+          instructions: 'private',
+          tools: { profile: 'voll' },
+          skills: [{ name: 'private' }],
+          mcpServers: [{ name: 'private' }],
+          memory: { enabled: true },
+          runtimeFallback: 'runtime:claude',
+          escalation: { mode: 'always' },
+        },
+      },
+    },
+    { agent: 'helena' },
+  );
+  expect(settings.env).toEqual({ MODEL_KEY: 'test-key' });
+  const config = settings.input?.config as Record<string, unknown>;
+  expect(config.tools).toEqual({ textOnly: true });
+  expect(config.instructions).toBeUndefined();
+  expect(config.skills).toEqual([]);
+  expect(config.mcpServers).toEqual([]);
+  expect(config.memory).toEqual({ enabled: false });
+  expect(config.runtimeFallback).toBeUndefined();
+  expect(config.escalation).toEqual({ mode: 'never' });
+  expect(settings.args).toBeUndefined();
+  expect(settings.toolsets).toEqual([]);
+});

@@ -3305,6 +3305,11 @@
       "count": 19
     }
   },
+  "src/features/receipts/components/ReceiptDocument.tsx": {
+    "better-tailwindcss/no-restricted-classes": {
+      "count": 3
+    }
+  },
   "src/features/receipts/components/ReceiptOriginalMailView.tsx": {
     "better-tailwindcss/no-restricted-classes": {
       "count": 4
@@ -3317,7 +3322,7 @@
   },
   "src/features/receipts/components/ReceiptPreview.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 13
+      "count": 10
     }
   },
   "src/features/receipts/components/ReceiptRows.tsx": {

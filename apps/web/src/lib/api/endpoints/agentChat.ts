@@ -237,8 +237,7 @@ export interface AiChatToolPart {
   args?: string;
   result?: string;
   isError?: boolean;
-  // How the call ended where the runtime reports it: a command that exits non-zero but
-  // printed output is `nonzero_with_output`, not a failure.
+  // Nonzero commands retain their output and exit code while reporting a tool failure.
   outcome?: 'ok' | 'nonzero_with_output' | 'error';
   exitCode?: number | null;
 }

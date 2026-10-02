@@ -42,7 +42,7 @@ describe('contentSecurityPolicy', () => {
     process.env.TERMINAL_URL = 'https://helena.example.com/terminal';
     const home = contentSecurityPolicy('n', 'https://home.example.com');
     assert.match(home, /connect-src 'self' https:\/\/home\.example\.com;/);
-    assert.match(home, /frame-src 'self' https:\/\/home\.example\.com;/);
+    assert.match(home, /frame-src 'self' blob: https:\/\/home\.example\.com;/);
     const pub = contentSecurityPolicy('n', 'https://helena.example.com');
     assert.match(
       pub,
@@ -60,7 +60,7 @@ describe('contentSecurityPolicy', () => {
     process.env.CODE_URL = 'https://code.example.com/';
     assert.match(
       contentSecurityPolicy(),
-      /frame-src 'self' https:\/\/terminal\.example\.com https:\/\/code\.example\.com;/,
+      /frame-src 'self' blob: https:\/\/terminal\.example\.com https:\/\/code\.example\.com;/,
     );
   });
 
@@ -81,7 +81,10 @@ describe('contentSecurityPolicy', () => {
     assert.doesNotMatch(policy, /'unsafe-eval'/);
   });
 
-  it('allows same-origin frames only when no workspace is configured', () => {
-    assert.match(contentSecurityPolicy(), /frame-src 'self';/);
+  it('allows only same-origin and local blob frames when no workspace is configured', () => {
+    const policy = contentSecurityPolicy('n');
+    assert.match(policy, /frame-src 'self' blob:;/);
+    assert.match(policy, /object-src 'none';/);
+    assert.doesNotMatch(policy.match(/script-src[^;]+/)?.[0] ?? '', /blob:/);
   });
 });

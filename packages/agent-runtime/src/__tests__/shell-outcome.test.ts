@@ -6,7 +6,7 @@ import { runShell, shellTool } from '../tools/shell';
 import { workspaceState } from '../workspace';
 import { FailureWatch } from '../escalation';
 
-test('105b: optional AGENTS read keeps preceding Git output and produces no tool error', async () => {
+test('105b: optional AGENTS read keeps preceding Git output and reports its exit as a tool error', async () => {
   const cwd = await mkdtemp(join(tmpdir(), 'volition-shell-'));
   const signal = new AbortController().signal;
   const ctx = { workdir: cwd, signal, env: { PATH: process.env.PATH } };
@@ -24,7 +24,7 @@ test('105b: optional AGENTS read keeps preceding Git output and produces no tool
       { command: 'ls && git status -sb | head -5 && head -50 AGENTS.md 2>/dev/null' },
       ctx,
     );
-    expect(result).toMatchObject({ isError: false, outcome: 'nonzero_with_output', exitCode: 1 });
+    expect(result).toMatchObject({ isError: true, outcome: 'nonzero_with_output', exitCode: 1 });
     expect(result.text).toContain('existing.txt');
     expect(result.text).toContain('AGENTS.md read may have failed');
     const optional = await tool.execute(

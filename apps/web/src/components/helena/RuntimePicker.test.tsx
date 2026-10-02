@@ -22,7 +22,6 @@ const replaced = [
   'Node',
   'Element',
   'MutationObserver',
-  'ResizeObserver',
   'getComputedStyle',
   'requestAnimationFrame',
   'cancelAnimationFrame',
@@ -96,8 +95,11 @@ beforeEach(async () => {
 
 afterEach(async () => {
   await act(async () => root.unmount());
-  // Radix restores focus on the next timer; keep its DOM globals until then.
-  await new Promise<void>((resolve) => setTimeout(resolve, 0));
+  // Radix restores focus in a timer after unmount. Keep this DOM's event
+  // constructors installed until it has dispatched its unmount event.
+  await act(async () => {
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+  });
   dom.window.close();
   for (const [name, descriptor] of saved) {
     if (descriptor) Object.defineProperty(globalThis, name, descriptor);
@@ -113,7 +115,7 @@ const models = [
 ];
 
 async function render(props: {
-  runtime: 'hermes' | 'claude' | 'helena';
+  runtime: 'hermes' | 'claude';
   model: string | null;
   onChange?: (runtime: string, model: string | null, reasoning: string | null) => void;
 }) {
@@ -174,11 +176,4 @@ it('offers no local choices under another runtime', async () => {
   assert.ok(entries.includes('Agenten-Standard'));
   assert.ok(!entries.some((text) => /Standard \(folgt/.test(text)));
   assert.ok(!entries.includes('NPU (kleine Modelle)'));
-});
-
-it('shows the translated local default for Helena without an unavailable warning', async () => {
-  await render({ runtime: 'helena', model: 'volition-local-default' });
-  const entries = await openOptions('Modell');
-  assert.ok(entries.some((text) => text === 'Standard (folgt dem lokalen Hauptmodell)'));
-  assert.ok(!entries.some((text) => /Derzeit nicht verfügbar/.test(text)));
 });

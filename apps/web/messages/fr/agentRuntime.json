@@ -11,6 +11,7 @@
     "skills": "Skills"
   },
   "runs": {
+    "stepFailedExit": "Échec avec le code {code}",
     "empty": "Aucune exécution pour l'instant.",
     "loadMore": "Charger plus",
     "running": "En cours",
