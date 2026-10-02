@@ -22,6 +22,7 @@ export interface VoiceSpeaker {
   readonly engine: 'browser' | 'local';
   enqueue(text: string): void;
   preload(texts: string[]): void;
+  warm?(text: string): void;
   pause(): void;
   resume(): void;
   // Stops and forgets everything queued.
@@ -255,6 +256,7 @@ export function createLocalSpeaker(
   const outputId = Symbol('local-voice');
   let loading = 0;
   let destroyed = false;
+  let nextWarm: string | null = null;
 
   const audioContext = () => {
     if (!context) {
@@ -311,11 +313,10 @@ export function createLocalSpeaker(
       if (loading >= PREFETCH + 1) break;
       load(piece);
     }
-    // Warm only the default preface. Other variants load when used, so idle generation
-    // cannot keep the model server busy while the person asks the first question.
     if (queue.length === 0 && loading === 0) {
-      const piece = preloaded.values().next().value;
+      const piece = nextWarm ? preloaded.get(nextWarm) : preloaded.values().next().value;
       if (piece && !piece.loading) load(piece);
+      nextWarm = null;
     }
   };
 
@@ -358,12 +359,15 @@ export function createLocalSpeaker(
         if (current.turn === turn) pump();
       };
       if (!current.audible) {
+        const samples = buffer.getChannelData(0);
+        const onset = samples.findIndex((sample) => Math.abs(sample) > 0.003);
+        if (onset < 0) continue;
         current.audible = true;
         window.setTimeout(
           () => {
             if (current.turn === turn) events.onAudible?.(piece.text);
           },
-          Math.max(0, (at - ctx.currentTime) * 1000),
+          Math.max(0, (at + onset / buffer.sampleRate - ctx.currentTime) * 1000),
         );
       }
     }
@@ -383,6 +387,7 @@ export function createLocalSpeaker(
     const piece = queue[0];
     if (!piece) {
       setBusy(false);
+      prefetch();
       return;
     }
     setBusy(true);
@@ -399,17 +404,21 @@ export function createLocalSpeaker(
     engine: 'local',
     enqueue(text) {
       if (!text.trim()) return;
-      queue.push(
-        preloaded.get(text) ?? {
-          text,
-          abort: new AbortController(),
-          buffers: [],
-          done: false,
-          failed: null,
-          loading: false,
-          changed: null,
-        },
-      );
+      const cached = preloaded.get(text);
+      const piece =
+        cached && !cached.failed
+          ? cached
+          : {
+              text,
+              abort: new AbortController(),
+              buffers: [],
+              done: false,
+              failed: null,
+              loading: false,
+              changed: null,
+            };
+      if (cached?.failed) preloaded.set(text, piece);
+      queue.push(piece);
       prefetch();
       next();
     },
@@ -427,6 +436,11 @@ export function createLocalSpeaker(
         };
         preloaded.set(text, piece);
       }
+      prefetch();
+    },
+    warm(text) {
+      if (!preloaded.has(text) || destroyed) return;
+      nextWarm = text;
       prefetch();
     },
     pause() {
@@ -626,6 +640,9 @@ export function createResilientSpeaker(
     },
     preload(texts) {
       if (wantsLocal) localVoice().preload(texts);
+    },
+    warm(text) {
+      if (wantsLocal) localVoice().warm?.(text);
     },
     pause() {
       paused = true;

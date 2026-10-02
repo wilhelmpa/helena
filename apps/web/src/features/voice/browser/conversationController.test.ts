@@ -33,6 +33,7 @@ function harness(
   const timings: TurnTimings[] = [];
   const engines: string[] = [];
   const preloaded: string[][] = [];
+  const warmed: string[] = [];
   let clears = 0;
   let ear: EarEvents | null = null;
   let speaker: VoiceSpeaker | null = null;
@@ -72,6 +73,9 @@ function harness(
         },
         preload(texts) {
           preloaded.push(texts);
+        },
+        warm(text) {
+          warmed.push(text);
         },
         pause() {
           paused = true;
@@ -122,6 +126,7 @@ function harness(
     timings,
     engines,
     preloaded,
+    warmed,
     get clears() {
       return clears;
     },
@@ -406,5 +411,16 @@ it('does not mistake the previous reply for the first text of a new voice turn',
   await new Promise((resolve) => setTimeout(resolve, 12));
   assert.equal(h.spoken.at(-1), 'Einen Augenblick, ich prüfe das.');
   assert.equal(h.timings.length, 1);
+  h.controller.stop();
+});
+
+it('selects only the next bridge for warmup after the first audible answer', async () => {
+  const h = harness();
+  await h.ready();
+  h.utter('Erste Frage');
+  await new Promise((resolve) => setTimeout(resolve, 12));
+  assert.deepEqual(h.warmed, []);
+  h.controller.update([{ id: 'warm-answer', role: 'assistant', text: 'Erste Antwort.' }], false, 0);
+  assert.deepEqual(h.warmed, ['Einen Augenblick, ich prüfe das.']);
   h.controller.stop();
 });

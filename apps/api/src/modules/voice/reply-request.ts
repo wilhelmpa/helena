@@ -23,6 +23,10 @@ const LANGUAGE_NAMES: Record<string, string> = {
   es: 'Spanish',
   it: 'Italian',
   pt: 'Portuguese',
+  ar: 'Arabic',
+  ja: 'Japanese',
+  ru: 'Russian',
+  zh: 'Chinese',
 };
 
 export interface VoiceReplyInput {
@@ -117,7 +121,7 @@ function couldBeTextHandOver(text: string): boolean {
 export function committed(text: string): boolean {
   if (couldBeTextHandOver(text)) return false;
   const trimmed = text.trim();
-  return trimmed.length >= COMMIT_CHARS || /[.!?…](["“”'’)»]*)\s*$/u.test(trimmed);
+  return trimmed.length >= COMMIT_CHARS || /[.!?…。！？؟](["“”'’)»]*)\s*$/u.test(trimmed);
 }
 
 export interface StreamDelta {

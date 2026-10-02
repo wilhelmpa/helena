@@ -124,3 +124,51 @@ test('voice prefix and hand-over schema stay identical between turns', () => {
   });
   expect(long.prompt.length).toBeLessThan(3000);
 });
+
+it('preserves the accepted decision prefix and hand-over tool for cache reuse', () => {
+  const request = voiceReplyRequest({
+    agentName: 'Volition',
+    personName: null,
+    now: '10:00',
+    language: 'de',
+    turns: [],
+    question: 'Wie viele Monate hat ein Jahr?',
+  });
+  expect(request.system).toContain(
+    'Answer only from the conversation or stable general knowledge:',
+  );
+  expect(request.system).toContain('Merely mentioning the topic does not supply missing details:');
+  expect(request.tools?.map((tool) => tool.name)).toEqual([HAND_OVER_TOOL]);
+  expect(request.system).toContain('Never guess');
+});
+
+it('answers in every supported page language', () => {
+  const languages = {
+    de: 'German',
+    en: 'English',
+    ar: 'Arabic',
+    es: 'Spanish',
+    fr: 'French',
+    it: 'Italian',
+    ja: 'Japanese',
+    pt: 'Portuguese',
+    ru: 'Russian',
+    zh: 'Chinese',
+  };
+  for (const [language, name] of Object.entries(languages)) {
+    const request = voiceReplyRequest({
+      agentName: 'Volition',
+      personName: null,
+      now: '10:00',
+      language,
+      turns: [],
+      question: 'Hello',
+    });
+    expect(request.system).toContain(`Answer in ${name}`);
+  }
+});
+
+it('commits the first sentence in Japanese, Chinese and Arabic', () => {
+  for (const sentence of ['一年は十二か月です。', '一年有十二个月。', 'هل تسمعني؟'])
+    expect(committed(sentence)).toBe(true);
+});
