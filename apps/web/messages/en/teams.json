@@ -375,7 +375,7 @@
     "newAgent": "New AI agent",
     "create": "Create AI agent",
     "save": "Save AI agent",
-    "delete": "Delete AI agent",
+    "delete": "Move agent to trash",
     "edit": "Edit AI agent",
     "empty": "No AI agents yet",
     "emptyHint": "An agent is driven through the API by its runner.",
@@ -528,7 +528,7 @@
     "moreActions": "More actions",
     "runsSubtitle": "@{username} · triggered runs",
     "regenerateMessage": "The current key for <v>{name}</v> stops working right away. Update everything that uses it with the new key.",
-    "deleteMessage": "<v>{name}</v> and its API key will be removed, and it will be cleared from any issues it was assigned or delegated to. This cannot be undone.",
+    "deleteMessage": "<v>{name}</v> will be moved to the trash and cannot work there. You can restore the agent with its settings and project memberships.",
     "triggerMention": "Mention",
     "triggerDelegation": "Delegation",
     "noMatch": "No match for “{query}”.",
@@ -891,7 +891,13 @@
       "confidenceOff": "off",
       "confidenceHint": "Before the start the decision model judges whether a small model is enough. Leave empty: do not ask."
     },
-    "limitBlocked": "A text is too long: shorten it or have it consolidated, then the agent can be saved."
+    "limitBlocked": "A text is too long: shorten it or have it consolidated, then the agent can be saved.",
+    "trash": "Agent trash",
+    "restore": "Restore",
+    "restored": "Agent restored",
+    "trashEmpty": "No agents in the trash.",
+    "trashLoading": "Loading agent trash…",
+    "trashFailed": "Agent trash could not be loaded."
   },
   "members": {
     "roleSaved": "{name} is now {role}",

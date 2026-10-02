@@ -375,7 +375,7 @@
     "newAgent": "新建 AI 代理",
     "create": "创建 AI 代理",
     "save": "保存 AI 代理",
-    "delete": "删除 AI 代理",
+    "delete": "将智能体移入回收站",
     "edit": "编辑 AI 代理",
     "empty": "暂无 AI 代理",
     "emptyHint": "代理由其运行器通过 API 驱动。",
@@ -528,7 +528,7 @@
     "moreActions": "更多操作",
     "runsSubtitle": "@{username} · 由触发器启动的运行",
     "regenerateMessage": "<v>{name}</v> 的当前密钥会立即失效。请用新密钥更新所有使用它的地方。",
-    "deleteMessage": "<v>{name}</v> 及其 API 密钥将被删除，并从所有指派或委派给它的工作项中移除。此操作无法撤销。",
+    "deleteMessage": "<v>{name}</v> 将被移入回收站，期间无法工作。您可以恢复智能体及其设置和项目成员关系。",
     "triggerMention": "提及",
     "triggerDelegation": "委派",
     "noMatch": "没有与“{query}”匹配的结果。",
@@ -891,7 +891,13 @@
       "confidenceOff": "关闭",
       "confidenceHint": "开始前由决策模型判断小模型是否足够。留空：不询问。"
     },
-    "limitBlocked": "有一段文本太长：请缩短，或让系统整合，之后才能保存该代理。"
+    "limitBlocked": "有一段文本太长：请缩短，或让系统整合，之后才能保存该代理。",
+    "trash": "智能体回收站",
+    "restore": "恢复",
+    "restored": "智能体已恢复",
+    "trashEmpty": "回收站中没有智能体。",
+    "trashLoading": "正在加载智能体回收站…",
+    "trashFailed": "无法加载智能体回收站。"
   },
   "members": {
     "roleSaved": "{name} 现在是{role}",

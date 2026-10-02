@@ -256,10 +256,10 @@
       "hint": "短录音识别更快，但准确度略低。关闭 = 完整准确度。"
     },
     "wake": {
-      "title": "Listen for “Ava”",
-      "hint": "The microphone stays open while a chat page is open. Before “Ava”, only on-device recognition processes your voice; nothing is saved.",
-      "availability": "On-device recognition",
-      "availabilityHint": "Works only if the browser already has a German offline speech pack. {appName} does not download one."
+      "title": "监听唤醒词“Ava”",
+      "hint": "聊天页面打开时，麦克风保持开启。在听到“Ava”之前，仅在设备上识别您的语音；不会保存任何内容。",
+      "availability": "设备端识别",
+      "availabilityHint": "仅当浏览器已安装德语离线语音包时可用。{appName} 不会下载语音包。"
     },
     "title": "聊天中的语音",
     "loading": "加载中 …",
@@ -805,7 +805,8 @@
           "update-role": "Role updated",
           "delete-role": "Role removed",
           "delete": "Deleted",
-          "undo": "Undone"
+          "undo": "Undone",
+          "profile-follow": "已跟随本地配置"
         }
       }
     }

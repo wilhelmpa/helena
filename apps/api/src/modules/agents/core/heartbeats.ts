@@ -85,7 +85,12 @@ export async function fireDueAgentHeartbeats(now = new Date()): Promise<number> 
     .select({ id: aiAgent.id, model: aiAgent.model, dueAt: aiAgent.heartbeatNextAt })
     .from(aiAgent)
     .where(
-      and(lte(aiAgent.heartbeatNextAt, now), isNull(aiAgent.pausedAt), eq(aiAgent.template, false)),
+      and(
+        lte(aiAgent.heartbeatNextAt, now),
+        isNull(aiAgent.deletedAt),
+        isNull(aiAgent.pausedAt),
+        eq(aiAgent.template, false),
+      ),
     )
     .limit(100);
   let checked = 0;
@@ -105,6 +110,7 @@ export async function fireDueAgentHeartbeats(now = new Date()): Promise<number> 
         !current ||
         !current.heartbeatNextAt ||
         current.heartbeatNextAt > now ||
+        current.deletedAt ||
         current.pausedAt ||
         current.template
       )

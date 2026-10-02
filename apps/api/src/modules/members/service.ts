@@ -286,7 +286,7 @@ export async function listAssigneeCandidates(projectId: number): Promise<Assigne
         projectMember,
         and(eq(projectMember.userId, aiAgent.userId), eq(projectMember.projectId, projectId)),
       )
-      .where(notHomeAgent()),
+      .where(and(notHomeAgent(), isNull(aiAgent.deletedAt))),
   ]);
   const members: AssigneeCandidate[] = memberRows.map((r) => {
     const context = toMemberContext(r.role as MemberRole, r.permissions);

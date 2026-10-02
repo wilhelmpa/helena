@@ -1,3 +1,4 @@
+import { listAgentTrash, setAgentTrashed } from './trash';
 import { Elysia, t } from 'elysia';
 import { noContent } from '#shared/http';
 import { guards } from '#shared/guards';
@@ -14,7 +15,6 @@ import {
   listAgents,
   createAgent,
   updateAgent,
-  deleteAgent,
   regenerateKey,
   queueAgentRuntime,
   getAgentById,
@@ -133,6 +133,35 @@ async function archiveRun(
 export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['AI Agents'] } })
   .use(authContext)
   .use(guards)
+  .get(
+    '/teams/:teamId/ai-agent-trash',
+    ({ membership }) => listAgentTrash(membership.teamId, agentScopeOf(membership)),
+    {
+      params: teamParams,
+      teamPermission: ['ai_agents', 'delete'],
+      response: {
+        200: t.Array(t.Object({ id: t.Number(), name: t.String(), deletedAt: t.String() })),
+        ...accessErrors,
+      },
+      detail: { summary: 'List agents in the trash' },
+    },
+  )
+  .post(
+    '/teams/:teamId/ai-agent-trash/:agentId/restore',
+    async ({ params, membership }) => {
+      if (
+        !(await setAgentTrashed(params.agentId, membership.teamId, false, agentScopeOf(membership)))
+      )
+        throw new HttpError(404, 'Agent not found in trash');
+      return noContent();
+    },
+    {
+      params: agentParams,
+      teamPermission: ['ai_agents', 'delete'],
+      response: { 204: t.Void(), ...commonErrors },
+      detail: { summary: 'Restore an agent from the trash' },
+    },
+  )
   .get(
     '/teams/:teamId/ai-agents',
     async ({ membership, query }) => {
@@ -547,7 +576,12 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
     '/teams/:teamId/ai-agents/:agentId',
     async ({ params, membership }) => {
       await requireVisibleAgent(params.agentId, membership);
-      const ok = await deleteAgent(params.agentId, membership.teamId);
+      const ok = await setAgentTrashed(
+        params.agentId,
+        membership.teamId,
+        true,
+        agentScopeOf(membership),
+      );
       if (!ok) throw new HttpError(404, 'Agent not found');
       return noContent();
     },
@@ -557,7 +591,8 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
       response: { 204: t.Void(), ...commonErrors },
       detail: {
         summary: 'Delete an AI agent',
-        description: 'Delete an AI agent and its bot user. Irreversible.',
+        description:
+          'Move an AI agent to the trash. Its identity, settings and project memberships can be restored.',
         ...mcpTool('delete_ai_agent', undefined, 'delete', 'external'),
       },
     },

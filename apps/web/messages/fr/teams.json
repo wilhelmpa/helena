@@ -375,7 +375,7 @@
     "newAgent": "Nouvel agent IA",
     "create": "Créer l'agent IA",
     "save": "Enregistrer l'agent IA",
-    "delete": "Supprimer l'agent IA",
+    "delete": "Mettre l’agent à la corbeille",
     "edit": "Modifier l'agent IA",
     "empty": "Aucun agent IA pour l'instant",
     "emptyHint": "Un agent est piloté par son runner via l'API.",
@@ -528,7 +528,7 @@
     "moreActions": "Plus d'actions",
     "runsSubtitle": "@{username} · exécutions déclenchées",
     "regenerateMessage": "La clé actuelle de <v>{name}</v> cesse immédiatement de fonctionner. Mettez à jour avec la nouvelle clé tout ce qui l'utilise.",
-    "deleteMessage": "<v>{name}</v> et sa clé d'API seront supprimés, et l'agent sera retiré de tous les tickets qui lui étaient assignés ou délégués. Cette action est irréversible.",
+    "deleteMessage": "<v>{name}</v> sera mis à la corbeille et ne pourra plus travailler. Vous pourrez le restaurer avec ses paramètres et son appartenance aux projets.",
     "triggerMention": "Mention",
     "triggerDelegation": "Délégation",
     "noMatch": "Aucun résultat pour « {query} ».",
@@ -891,7 +891,13 @@
       "confidenceOff": "désactivé",
       "confidenceHint": "Avant le début, le modèle de décision estime si un petit modèle suffit. Vide : ne pas demander."
     },
-    "limitBlocked": "Un texte est trop long : raccourcissez-le ou faites-le consolider, puis l’agent pourra être enregistré."
+    "limitBlocked": "Un texte est trop long : raccourcissez-le ou faites-le consolider, puis l’agent pourra être enregistré.",
+    "trash": "Corbeille des agents",
+    "restore": "Restaurer",
+    "restored": "Agent restauré",
+    "trashEmpty": "Aucun agent dans la corbeille.",
+    "trashLoading": "Chargement de la corbeille des agents…",
+    "trashFailed": "Impossible de charger la corbeille des agents."
   },
   "members": {
     "roleSaved": "{name} est maintenant {role}",

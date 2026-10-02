@@ -1037,7 +1037,7 @@
 /* ── The orb dock (bottom right) ─────────────────────────────────────────── */
 .ds-dock {
   position: fixed;
-  right: 24px;
+  inset-inline-end: 24px;
   bottom: 24px;
   bottom: max(24px, calc(env(safe-area-inset-bottom) + 12px));
   z-index: 45;
@@ -1086,11 +1086,14 @@
   .ds-dock {
     position: absolute;
     top: calc(env(safe-area-inset-top, 0px) + 2px);
-    right: calc(var(--page-pad-x) - 8px + env(safe-area-inset-right, 0px));
+    inset-inline-end: calc(var(--page-pad-x) - 8px + env(safe-area-inset-right, 0px));
     bottom: auto;
     width: 52px;
     height: 52px;
     --orb-size: 52px;
+  }
+  [dir='rtl'] .ds-dock {
+    inset-inline-end: calc(var(--page-pad-x) - 8px + env(safe-area-inset-left, 0px));
   }
   .ds-app:has(.ds-dock) .ds-page-header::after {
     order: 2;

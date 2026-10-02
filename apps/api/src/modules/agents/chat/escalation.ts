@@ -38,6 +38,7 @@ export async function queueChatEscalation(
           eq(aiAgent.teamId, sender.teamId),
           ne(aiAgent.id, agentId),
           eq(aiAgent.template, false),
+          isNull(aiAgent.deletedAt),
           isNull(aiAgent.pausedAt),
         ),
       )

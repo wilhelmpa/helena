@@ -26,6 +26,8 @@ import {
 } from '@/lib/api/endpoints/agentChat';
 import {
   listAiAgents,
+  listAiAgentTrash,
+  restoreAiAgent,
   getAiAgent,
   listAgentRuns,
   setAgentRunArchived,
@@ -272,6 +274,7 @@ function useAgentInvalidator(teamId: number | null) {
   return () => {
     if (teamId != null) {
       void qc.invalidateQueries({ queryKey: qk.teamAiAgents(teamId) });
+      void qc.invalidateQueries({ queryKey: ['agent-trash', teamId] });
       void qc.invalidateQueries({ queryKey: qk.organization(teamId) });
     }
     void qc.invalidateQueries({ queryKey: ['workItems'] });
@@ -358,5 +361,21 @@ export function useDeleteAiAgent(teamId: number | null) {
   return useMutation({
     mutationFn: (id: number) => deleteAiAgent(teamId!, id),
     onSuccess: invalidate,
+  });
+}
+
+export function useAiAgentTrashQuery(teamId: number) {
+  return useQuery({ queryKey: ['agent-trash', teamId], queryFn: () => listAiAgentTrash(teamId) });
+}
+
+export function useRestoreAiAgent(teamId: number) {
+  const invalidate = useAgentInvalidator(teamId);
+  const t = useTranslations('teams.agents');
+  return useMutation({
+    mutationFn: (id: number) => restoreAiAgent(teamId, id),
+    onSuccess: () => {
+      invalidate();
+      toast.success(t('restored'));
+    },
   });
 }

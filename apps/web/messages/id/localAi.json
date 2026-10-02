@@ -256,10 +256,10 @@
       "hint": "Rekaman pendek dikenali lebih cepat, tetapi sedikit kurang akurat. Mati = akurasi penuh."
     },
     "wake": {
-      "title": "Listen for “Ava”",
-      "hint": "The microphone stays open while a chat page is open. Before “Ava”, only on-device recognition processes your voice; nothing is saved.",
-      "availability": "On-device recognition",
-      "availabilityHint": "Works only if the browser already has a German offline speech pack. {appName} does not download one."
+      "title": "Dengarkan kata “Ava”",
+      "hint": "Mikrofon tetap aktif selama halaman percakapan terbuka. Sebelum kata “Ava”, suara Anda hanya diproses di perangkat; tidak ada yang disimpan.",
+      "availability": "Pengenalan di perangkat",
+      "availabilityHint": "Hanya berfungsi jika browser sudah memiliki paket pengenalan suara bahasa Jerman luring. {appName} tidak mengunduh paket tersebut."
     },
     "title": "Suara di chat",
     "loading": "Memuat …",
@@ -805,7 +805,8 @@
           "update-role": "Role updated",
           "delete-role": "Role removed",
           "delete": "Deleted",
-          "undo": "Undone"
+          "undo": "Undone",
+          "profile-follow": "Mengikuti profil lokal"
         }
       }
     }

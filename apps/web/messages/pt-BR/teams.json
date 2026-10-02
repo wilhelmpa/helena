@@ -375,7 +375,7 @@
     "newAgent": "Novo agente de IA",
     "create": "Criar agente de IA",
     "save": "Salvar agente de IA",
-    "delete": "Excluir agente de IA",
+    "delete": "Mover agente para a lixeira",
     "edit": "Editar agente de IA",
     "empty": "Nenhum agente de IA ainda",
     "emptyHint": "Um agente é conduzido pelo seu runner através da API.",
@@ -528,7 +528,7 @@
     "moreActions": "Mais ações",
     "runsSubtitle": "@{username} · execuções disparadas",
     "regenerateMessage": "A chave atual de <v>{name}</v> para de funcionar na hora. Atualize tudo que a usa com a nova chave.",
-    "deleteMessage": "<v>{name}</v> e sua chave de API serão removidos, e ele será limpo de quaisquer issues às quais foi atribuído ou delegado. Isso não pode ser desfeito.",
+    "deleteMessage": "<v>{name}</v> será movido para a lixeira e não poderá trabalhar enquanto estiver lá. Você pode restaurar o agente com suas configurações e associações aos projetos.",
     "triggerMention": "Menção",
     "triggerDelegation": "Delegação",
     "noMatch": "Sem correspondência para “{query}”.",
@@ -891,7 +891,13 @@
       "confidenceOff": "desligado",
       "confidenceHint": "Antes do início, o modelo de decisão avalia se um modelo pequeno basta. Vazio: não perguntar."
     },
-    "limitBlocked": "Um texto está longo demais: encurte-o ou peça para consolidá-lo; depois o agente poderá ser salvo."
+    "limitBlocked": "Um texto está longo demais: encurte-o ou peça para consolidá-lo; depois o agente poderá ser salvo.",
+    "trash": "Lixeira de agentes",
+    "restore": "Restaurar",
+    "restored": "Agente restaurado",
+    "trashEmpty": "Nenhum agente na lixeira.",
+    "trashLoading": "Carregando a lixeira de agentes…",
+    "trashFailed": "Não foi possível carregar a lixeira de agentes."
   },
   "members": {
     "roleSaved": "{name} agora é {role}",

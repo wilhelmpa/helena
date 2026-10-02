@@ -805,7 +805,8 @@
           "update-role": "Rolle bearbeitet",
           "delete-role": "Rolle entfernt",
           "delete": "Gelöscht",
-          "undo": "Rückgängig gemacht"
+          "undo": "Rückgängig gemacht",
+          "profile-follow": "Lokalem Profil gefolgt"
         }
       }
     }

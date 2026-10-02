@@ -9,11 +9,12 @@ import {
 import { openAgent } from '@/features/settings/settingsModalCatalog';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
+import AgentTrashDialog from './AgentTrashDialog';
 import { useAgentSection } from '../../context/agentSection';
 import TeamAiAgentTable from './TeamAiAgentTable';
 import { useTranslations } from 'next-intl';
-import { Bot } from 'lucide-react';
-import { EmptyState, Stack, Text } from '@/design-system';
+import { Bot, Trash2 } from 'lucide-react';
+import { Button, EmptyState, Stack, Text } from '@/design-system';
 import { filterPool, type PoolShow } from '../../utils/agentPool';
 
 // The agents of a team: bot users that issues can be delegated to in any project the
@@ -32,7 +33,8 @@ export default function TeamAiAgents({
 }) {
   const t = useTranslations('teams.agents');
   const tPool = useTranslations('organization.pool');
-  const { teamId } = useAgentSection();
+  const { teamId, permissions } = useAgentSection();
+  const [trashOpen, setTrashOpen] = useState(false);
   const agentsQuery = useAiAgentsQuery(teamId);
   const agents = agentsQuery.data ?? [];
   const deleteAgent = useDeleteAiAgent(teamId);
@@ -81,6 +83,12 @@ export default function TeamAiAgents({
 
   return (
     <>
+      {permissions.delete && (
+        <Button icon={<Trash2 />} onClick={() => setTrashOpen(true)}>
+          {t('trash')}
+        </Button>
+      )}
+      {trashOpen && <AgentTrashDialog teamId={teamId} onClose={() => setTrashOpen(false)} />}
       {agentsQuery.isPending ? (
         <ListSkeleton rows={3} rowClassName="h-12" />
       ) : agents.length === 0 ? (

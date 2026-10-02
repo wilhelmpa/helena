@@ -55,10 +55,15 @@ export async function enforceAgentLimits(
   issueId: number | null,
 ): Promise<string | null> {
   const [agent] = await db
-    .select({ pausedAt: aiAgent.pausedAt, pauseReason: aiAgent.pauseReason })
+    .select({
+      deletedAt: aiAgent.deletedAt,
+      pausedAt: aiAgent.pausedAt,
+      pauseReason: aiAgent.pauseReason,
+    })
     .from(aiAgent)
     .where(eq(aiAgent.id, agentId));
   if (!agent) return null;
+  if (agent.deletedAt) return 'The agent is in the trash.';
   if (agent.pausedAt) return agent.pauseReason ?? 'The agent is paused.';
   return enforceBudgets(agentId, projectId, issueId);
 }

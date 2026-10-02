@@ -375,7 +375,7 @@
     "newAgent": "Neuer Agent",
     "create": "Agent erstellen",
     "save": "Agent speichern",
-    "delete": "Agent löschen",
+    "delete": "Agent in den Papierkorb",
     "edit": "Agent bearbeiten",
     "empty": "Noch keine Agenten",
     "emptyHint": "Ein Agent wird von seinem Runner über die API gesteuert.",
@@ -527,7 +527,7 @@
     "moreActions": "Weitere Aktionen",
     "runsSubtitle": "@{username} · ausgelöste Läufe",
     "regenerateMessage": "Der aktuelle Schlüssel für <v>{name}</v> funktioniert ab sofort nicht mehr. Aktualisiere alles, was ihn nutzt, mit dem neuen Schlüssel.",
-    "deleteMessage": "<v>{name}</v> und sein API-Schlüssel werden entfernt, und er wird aus allen Aufgaben entfernt, die ihm zugewiesen oder an ihn delegiert waren. Das kann nicht rückgängig gemacht werden.",
+    "deleteMessage": "<v>{name}</v> wird in den Papierkorb verschoben und kann dort nicht arbeiten. Du kannst den Agenten mit seinen Einstellungen und Projektzuordnungen wiederherstellen.",
     "triggerMention": "Erwähnung",
     "triggerDelegation": "Delegierung",
     "noMatch": "Kein Treffer für „{query}“.",
@@ -891,7 +891,13 @@
       "confidenceOff": "aus",
       "confidenceHint": "Der Entscheider schätzt vor dem Start, ob ein kleines Modell reicht. Leer lassen: nicht fragen."
     },
-    "limitBlocked": "Ein Text ist zu lang: bitte kürzen oder konsolidieren lassen, dann lässt sich der Agent speichern."
+    "limitBlocked": "Ein Text ist zu lang: bitte kürzen oder konsolidieren lassen, dann lässt sich der Agent speichern.",
+    "trash": "Agentenpapierkorb",
+    "restore": "Wiederherstellen",
+    "restored": "Agent wiederhergestellt",
+    "trashEmpty": "Keine Agenten im Papierkorb.",
+    "trashLoading": "Agentenpapierkorb wird geladen…",
+    "trashFailed": "Der Agentenpapierkorb konnte nicht geladen werden."
   },
   "members": {
     "roleSaved": "{name} ist jetzt {role}",

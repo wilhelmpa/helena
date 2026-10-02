@@ -375,7 +375,7 @@
     "newAgent": "Nuevo agente de IA",
     "create": "Crear un agente de IA",
     "save": "Guardar el agente de IA",
-    "delete": "Eliminar el agente de IA",
+    "delete": "Mover agente a la papelera",
     "edit": "Editar el agente de IA",
     "empty": "Todavía no hay agentes de IA",
     "emptyHint": "Un agente lo maneja su ejecutor a través de la API.",
@@ -528,7 +528,7 @@
     "moreActions": "Más acciones",
     "runsSubtitle": "@{username} · ejecuciones disparadas",
     "regenerateMessage": "La clave actual de <v>{name}</v> deja de funcionar de inmediato. Actualiza todo lo que la usa con la clave nueva.",
-    "deleteMessage": "<v>{name}</v> y su clave de API se quitarán, y se limpiará de los tickets a los que estaba asignado o delegado. No se puede deshacer.",
+    "deleteMessage": "<v>{name}</v> se moverá a la papelera y no podrá trabajar mientras esté allí. Puedes restaurar el agente con sus ajustes y su pertenencia a los proyectos.",
     "triggerMention": "Mención",
     "triggerDelegation": "Delegación",
     "noMatch": "Nada coincide con «{query}».",
@@ -891,7 +891,13 @@
       "confidenceOff": "desactivado",
       "confidenceHint": "Antes de empezar, el modelo de decisión estima si basta un modelo pequeño. Vacío: no preguntar."
     },
-    "limitBlocked": "Un texto es demasiado largo: acórtalo o pide que se consolide; después se podrá guardar el agente."
+    "limitBlocked": "Un texto es demasiado largo: acórtalo o pide que se consolide; después se podrá guardar el agente.",
+    "trash": "Papelera de agentes",
+    "restore": "Restaurar",
+    "restored": "Agente restaurado",
+    "trashEmpty": "No hay agentes en la papelera.",
+    "trashLoading": "Cargando la papelera de agentes…",
+    "trashFailed": "No se ha podido cargar la papelera de agentes."
   },
   "members": {
     "roleSaved": "{name} es ahora {role}",

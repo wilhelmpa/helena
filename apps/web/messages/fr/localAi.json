@@ -256,10 +256,10 @@
       "hint": "Les enregistrements courts sont reconnus plus vite, mais un peu moins précisément. Désactivé = précision maximale."
     },
     "wake": {
-      "title": "Listen for “Ava”",
-      "hint": "The microphone stays open while a chat page is open. Before “Ava”, only on-device recognition processes your voice; nothing is saved.",
-      "availability": "On-device recognition",
-      "availabilityHint": "Works only if the browser already has a German offline speech pack. {appName} does not download one."
+      "title": "Écouter le mot « Ava »",
+      "hint": "Le microphone reste ouvert tant qu’une page de discussion est ouverte. Avant « Ava », votre voix est traitée uniquement sur l’appareil ; rien n’est enregistré.",
+      "availability": "Reconnaissance sur l’appareil",
+      "availabilityHint": "Fonctionne uniquement si le navigateur dispose déjà d’un pack vocal allemand hors ligne. {appName} ne le télécharge pas."
     },
     "title": "La voix dans le chat",
     "loading": "Chargement …",
@@ -805,7 +805,8 @@
           "update-role": "Role updated",
           "delete-role": "Role removed",
           "delete": "Deleted",
-          "undo": "Undone"
+          "undo": "Undone",
+          "profile-follow": "Profil local suivi"
         }
       }
     }
