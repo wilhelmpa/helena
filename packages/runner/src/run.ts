@@ -136,6 +136,7 @@ export async function perform(
     runtime?: RuntimeAdapter | null;
   } = {},
 ): Promise<Performed | null> {
+  if (stop.signal.aborted) return null;
   // Read as the command writes, not off the outcome: only the tail of the output is
   // kept, and the line carrying the counts can fall outside it. A command that reports
   // the totals of the run has them on the outcome, and those are what the run cost.
