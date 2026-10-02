@@ -16,6 +16,6 @@ test('normal memory read finds durable facts across chats', async () => {
     {} as never,
   );
   expect(query).toBe('Orion bicycle');
-  expect(JSON.stringify(result)).toContain('copper-colored');
-  expect(JSON.stringify(result)).toContain('24');
+  expect(result.text).toContain('copper-colored');
+  expect(result.text).toContain('24');
 });

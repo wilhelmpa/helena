@@ -294,7 +294,16 @@ export function memoryTool(
         const query = text(input.query);
         const facts = query.trim() && api.searchFacts ? await api.searchFacts(query) : [];
         const excerpts = memorySection(state, query, 6000);
-        return { text: excerpts || (facts.length ? '' : '(no matching memory)'), facts };
+        const factText = facts
+          .map(
+            (fact) => `Fact ${fact.id}${fact.project ? ` (${fact.project})` : ''}: ${fact.content}`,
+          )
+          .join('\n');
+        return {
+          text:
+            [excerpts, factText].filter(Boolean).join('\n').slice(0, 6000) ||
+            '(no matching memory)',
+        };
       }
       const content = text(input.content).trim();
       if (!content) return error('No content.');

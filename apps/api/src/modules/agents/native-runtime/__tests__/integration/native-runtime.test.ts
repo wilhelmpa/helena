@@ -396,8 +396,8 @@ it('normal recall in a new client finds stored facts and preserves project isola
     { action: 'read', query: 'Orion bicycle' },
     {} as never,
   );
-  expect(JSON.stringify(recalled)).toContain('copper-colored');
-  expect(JSON.stringify(recalled)).toContain(String(saved.data!.fact!.id));
+  expect(recalled.text).toContain('copper-colored');
+  expect(recalled.text).toContain(String(saved.data!.fact!.id));
   const foreign = new HelenaClient('http://localhost', otherKey, undefined, transport);
   expect(
     JSON.stringify(
