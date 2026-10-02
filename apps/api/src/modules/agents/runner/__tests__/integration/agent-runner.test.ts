@@ -1454,6 +1454,13 @@ describe('run reflection', () => {
       usage: { inputTokens: 1000, outputTokens: 200 },
     });
 
+    const ledger = await asOwner
+      .teams({ teamId })
+      ['agent-usage'].get({ query: { by: 'agent,kind' } });
+    expect(
+      ledger.data!.rows.find((row) => row.agentId === agent.id && row.kind === 'run'),
+    ).toMatchObject({ inputTokens: 1000, outputTokens: 200, unledgeredRuns: 0 });
+
     const res = await asRunner['agent-runs']({ runId: run.id }).reflection.post({
       status: 'success',
       usage: { inputTokens: 300, outputTokens: 40 },

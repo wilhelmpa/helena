@@ -151,7 +151,21 @@ async function ensureSeeded(): Promise<void> {
 async function table(): Promise<{ rows: Map<string, PriceRow>; usdToEur: number }> {
   if (cache && Date.now() - cache.at < CACHE_MS) return cache;
   await ensureSeeded();
-  const all = await db.select().from(helenaModelPrice);
+  let all = await db.select().from(helenaModelPrice);
+  const known = new Set(all.map((row) => row.model));
+  const settings = await getModelPriceSettings();
+  const missing = [...snapshotPrices()].filter(([model]) => !known.has(model));
+  for (let start = 0; start < missing.length; start += 200) {
+    await db
+      .insert(helenaModelPrice)
+      .values(
+        missing
+          .slice(start, start + 200)
+          .map(([model, entry]) => rowValues(model, entry, settings.usdToEur)),
+      )
+      .onConflictDoNothing();
+  }
+  if (missing.length) all = await db.select().from(helenaModelPrice);
   const { usdToEur } = await getModelPriceSettings();
   cache = { rows: new Map(all.map((row) => [row.model, row])), usdToEur, at: Date.now() };
   return cache;
@@ -208,7 +222,13 @@ export async function price(
   if (!modelId?.trim()) return null;
   // Helena's local AI runs on the owner's machine: no price per token
   // (docs/helena-decisions/local-ai-platform.md).
-  if (isLocalProvider(provider) || parseLocalModelId(modelId)) return localPrice(modelId, provider);
+  if (
+    provider === 'local' ||
+    modelId === 'volition-local-default' ||
+    isLocalProvider(provider) ||
+    parseLocalModelId(modelId)
+  )
+    return localPrice(modelId, provider);
   const { rows, usdToEur } = await table();
   const wanted = normalizeProvider(provider);
   let fallback: ModelPrice | null = null;

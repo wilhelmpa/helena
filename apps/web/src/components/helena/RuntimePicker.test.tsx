@@ -110,7 +110,7 @@ const models = [
 ];
 
 async function render(props: {
-  runtime: 'hermes' | 'claude';
+  runtime: 'hermes' | 'claude' | 'helena';
   model: string | null;
   onChange?: (runtime: string, model: string | null, reasoning: string | null) => void;
 }) {
@@ -171,4 +171,11 @@ it('offers no local choices under another runtime', async () => {
   assert.ok(entries.includes('Agenten-Standard'));
   assert.ok(!entries.some((text) => /Standard \(folgt/.test(text)));
   assert.ok(!entries.includes('NPU (kleine Modelle)'));
+});
+
+it('shows the translated local default for Helena without an unavailable warning', async () => {
+  await render({ runtime: 'helena', model: 'volition-local-default' });
+  const entries = await openOptions('Modell');
+  assert.ok(entries.some((text) => text === 'Standard (folgt dem lokalen Hauptmodell)'));
+  assert.ok(!entries.some((text) => /Derzeit nicht verfügbar/.test(text)));
 });

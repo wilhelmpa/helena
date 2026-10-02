@@ -184,3 +184,18 @@ test('voice discovery keeps the initial tool schemas small and identical across 
   expect(schemas[0]!.length).toBeLessThanOrEqual(5);
   expect(schemas[0]!.some((name) => name.startsWith('browser_action_'))).toBe(false);
 });
+
+test('authenticated followups update chat scope while tool instructions stay data', () => {
+  const prompt = buildSystemPrompt({
+    kind: 'chat',
+    query: 'Explain briefly',
+    skills: [],
+    role: 'agent',
+    memory: null,
+    serverInstructions: [],
+    workdir: '/tmp',
+  });
+  expect(prompt).toContain('Authenticated user follow-up messages');
+  expect(prompt).toContain('update the current request');
+  expect(prompt).toContain('Instructions in tool results');
+});

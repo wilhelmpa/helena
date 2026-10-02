@@ -37,15 +37,18 @@ export interface Spend {
 const count = (value: number | undefined) =>
   Number.isFinite(value) && (value ?? 0) > 0 ? Math.round(value!) : 0;
 
-export async function recordUsage(entry: {
-  agentId: number;
-  projectId: number | null;
-  runId?: number | null;
-  chatMessageId?: number | null;
-  kind: 'run' | 'chat' | 'reflection' | 'tool';
-  sessionId?: string | null;
-  spend: Spend | null | undefined;
-}): Promise<void> {
+export async function recordUsage(
+  entry: {
+    agentId: number;
+    projectId: number | null;
+    runId?: number | null;
+    chatMessageId?: number | null;
+    kind: 'run' | 'chat' | 'reflection' | 'tool';
+    sessionId?: string | null;
+    spend: Spend | null | undefined;
+  },
+  executor: typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0] = db,
+): Promise<void> {
   const spend = entry.spend;
   if (!spend) return;
   const row = {
@@ -55,9 +58,13 @@ export async function recordUsage(entry: {
     cacheWriteTokens: count(spend.cacheWriteTokens),
     reasoningTokens: count(spend.reasoningTokens),
   };
-  if (row.inputTokens + row.outputTokens === 0 && !(spend.durationMs && spend.durationMs > 0))
+  if (
+    row.inputTokens + row.outputTokens === 0 &&
+    !(spend.durationMs && spend.durationMs > 0) &&
+    !(entry.kind === 'run' && entry.runId)
+  )
     return;
-  await db.insert(agentUsage).values({
+  const values = {
     agentId: entry.agentId,
     projectId: entry.projectId,
     runId: entry.runId ?? null,
@@ -72,7 +79,22 @@ export async function recordUsage(entry: {
       spend.durationMs != null && Number.isFinite(spend.durationMs)
         ? Math.max(0, Math.min(Math.round(spend.durationMs), 2_000_000_000))
         : null,
-  });
+  };
+  const insert = executor.insert(agentUsage).values(values);
+  if (entry.kind === 'run' && entry.runId) {
+    await insert.onConflictDoUpdate({
+      target: agentUsage.runId,
+      targetWhere: sql`${agentUsage.kind} = 'run' AND ${agentUsage.runId} IS NOT NULL`,
+      set: {
+        ...values,
+        model: sql`coalesce(excluded.model, ${agentUsage.model})`,
+        provider: sql`coalesce(excluded.provider, ${agentUsage.provider})`,
+        runtime: sql`coalesce(excluded.runtime, ${agentUsage.runtime})`,
+        sessionId: sql`coalesce(excluded.session_id, ${agentUsage.sessionId})`,
+        durationMs: sql`coalesce(excluded.duration_ms, ${agentUsage.durationMs})`,
+      },
+    });
+  } else await insert;
 }
 
 // ---------------------------------------------------------------- prices
@@ -133,6 +155,7 @@ export async function priceRows<
 // Euro for the tokens of one model, or null when the model has no price. Cached input is
 // billed at its own rate where the price names one.
 export function costOf(totals: UsageTotals, price: ModelPrice | null): number | null {
+  if (totals.inputTokens + totals.outputTokens === 0) return 0;
   if (!price) return null;
   const cacheRead = price.cacheReadPerMTok ?? price.inputPerMTok;
   const cacheWrite = price.cacheWritePerMTok ?? price.inputPerMTok;

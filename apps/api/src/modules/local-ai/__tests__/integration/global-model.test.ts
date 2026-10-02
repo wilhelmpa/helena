@@ -707,3 +707,29 @@ it('keeps native local routine runs pending while their model is switched off', 
     else process.env.HELENA_NATIVE_RUNTIME = previous;
   }
 });
+
+it('offers the local alias and accepts a saved alias without a per-chat override', async () => {
+  const { client, agent, teamId } = await fixture();
+  await db
+    .update(aiAgent)
+    .set({ model: LOCAL_DEFAULT, runtimePolicy: { ...agent.runtimePolicy, runtime: 'helena' } })
+    .where(eq(aiAgent.id, agent.id));
+  const catalog = await readChatCatalog(agent.id);
+  expect(catalog.models.find((model) => model.id === LOCAL_DEFAULT)).toMatchObject({ local: true });
+  expect(
+    (
+      await client
+        .teams({ teamId })
+        ['ai-agents']({ agentId: agent.id })
+        .chat.post({ prompt: 'Status?' })
+    ).status,
+  ).toBe(200);
+  await setSetting(DEFAULT_KEY, 'helena-local/Qwen27B');
+  await db
+    .update(helenaModelServer)
+    .set({ enabled: true })
+    .where(eq(helenaModelServer.slug, 'local'));
+  expect(
+    (await readChatCatalog(agent.id)).models.find((model) => model.id === LOCAL_DEFAULT),
+  ).toMatchObject({ local: true, provider: 'helena-local' });
+});

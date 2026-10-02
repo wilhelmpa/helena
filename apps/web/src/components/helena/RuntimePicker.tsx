@@ -85,10 +85,18 @@ export default function RuntimePicker({
   );
   // "Lokal" offers the agent's explicit tie to the instance's local standard model (it then
   // follows every switch of the local profile) and shows the NPU's models apart from the GPU's.
-  const followsDefault = choice === 'local' && model === LOCAL_DEFAULT;
-  const localGroups = choice === 'local' ? groupLocalModels(runtimeModels) : null;
+  const followsDefault = (choice === 'local' || choice === 'helena') && model === LOCAL_DEFAULT;
+  const localGroups =
+    choice === 'local'
+      ? groupLocalModels(runtimeModels.filter((entry) => entry.id !== LOCAL_DEFAULT))
+      : null;
   const selected = followsDefault
-    ? { id: LOCAL_DEFAULT, name: t('localDefault'), thinkingLevels: [] as string[] }
+    ? {
+        id: LOCAL_DEFAULT,
+        name: t('localDefault'),
+        thinkingLevels:
+          runtimeModels.find((entry) => entry.id === LOCAL_DEFAULT)?.thinkingLevels ?? [],
+      }
     : runtimeModels.find((entry) => entry.id === model);
   const withoutModel = runtime === 'command' || runtime === 'webhook';
   const options = runtimeOptions({ runtime, external, helena });
@@ -169,7 +177,7 @@ export default function RuntimePicker({
                     {entry.id} · {entry.detail ?? t('unavailable')}
                   </SelectItem>
                 ))}
-              {choice === 'local' && (
+              {(choice === 'local' || choice === 'helena') && (
                 <SelectItem value={LOCAL_DEFAULT}>{t('localDefault')}</SelectItem>
               )}
               {localGroups ? (
@@ -196,11 +204,13 @@ export default function RuntimePicker({
                   )}
                 </>
               ) : (
-                runtimeModels.map((entry) => (
-                  <SelectItem key={entry.id} value={entry.id}>
-                    {entry.name}
-                  </SelectItem>
-                ))
+                runtimeModels
+                  .filter((entry) => entry.id !== LOCAL_DEFAULT)
+                  .map((entry) => (
+                    <SelectItem key={entry.id} value={entry.id}>
+                      {entry.name}
+                    </SelectItem>
+                  ))
               )}
             </SelectContent>
           </Select>

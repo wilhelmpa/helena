@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
-import { apiKeyApi, authedApi } from '#tests/helpers/app';
+import { app, apiKeyApi, authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
@@ -29,6 +29,8 @@ async function setup() {
     teamId: mkt.data!.teamId,
     agentId: researcher.data!.agent.id,
     asAgent: apiKeyApi(researcher.data!.apiKey!),
+    agentKey: researcher.data!.apiKey!,
+    otherKey: operator.data!.apiKey!,
     asOther: apiKeyApi(operator.data!.apiKey!),
   };
 }
@@ -370,4 +372,36 @@ describe("Helena's own runtime", () => {
       expect(runs.data!.items[0]).toMatchObject({ trigger: 'escalation', issueId: issue.id });
     });
   });
+});
+
+it('normal recall in a new client finds stored facts and preserves project isolation', async () => {
+  await resetDb();
+  const { asAgent, agentKey, otherKey } = await setup();
+  const saved = await asAgent['agent-facts'].post({
+    action: 'add',
+    content: 'The Orion bicycle is copper-colored.',
+    entities: ['Orion bicycle'],
+  });
+  expect(saved.status).toBe(200);
+  const { HelenaClient } =
+    await import('../../../../../../../../packages/agent-runtime/src/helena-client');
+  const { memoryTool } =
+    await import('../../../../../../../../packages/agent-runtime/src/tools/builtin');
+  const transport = ((url: string | URL | Request, init?: RequestInit) =>
+    app.handle(
+      url instanceof Request ? new Request(url, init) : new Request(url.toString(), init),
+    )) as typeof fetch;
+  const client = new HelenaClient('http://localhost', agentKey, undefined, transport);
+  const recalled = await memoryTool(client).execute(
+    { action: 'read', query: 'Orion bicycle' },
+    {} as never,
+  );
+  expect(JSON.stringify(recalled)).toContain('copper-colored');
+  expect(JSON.stringify(recalled)).toContain(String(saved.data!.fact!.id));
+  const foreign = new HelenaClient('http://localhost', otherKey, undefined, transport);
+  expect(
+    JSON.stringify(
+      await memoryTool(foreign).execute({ action: 'read', query: 'Orion bicycle' }, {} as never),
+    ),
+  ).not.toContain('copper-colored');
 });

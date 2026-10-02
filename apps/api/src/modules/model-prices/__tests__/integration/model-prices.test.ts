@@ -100,3 +100,22 @@ describe('model prices', () => {
     expect((await member.god['model-prices'].import.post({ from: 'snapshot' })).status).toBe(403);
   });
 });
+
+it('prices the local alias at zero and fills shipped Jev prices in an already imported table', async () => {
+  await resetDb();
+  clearModelPriceCache();
+  const { db, helenaModelPrice, setSetting } = await import('@repo/db');
+  const { eq } = await import('drizzle-orm');
+  await price('gpt-6-luna');
+  await db.delete(helenaModelPrice).where(eq(helenaModelPrice.model, 'jev-1.13.0'));
+  await setSetting('helena.model_prices', { usdToEur: 0.86, importedFrom: 'snapshot' });
+  clearModelPriceCache();
+  expect(await price('volition-local-default')).toMatchObject({
+    inputPerMTok: 0,
+    outputPerMTok: 0,
+  });
+  expect(await price('jev-1.13.0', 'typesafe')).toMatchObject({
+    inputPerMTok: 0.042 * 0.86,
+    outputPerMTok: 0,
+  });
+});

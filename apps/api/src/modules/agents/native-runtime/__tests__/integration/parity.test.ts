@@ -489,3 +489,63 @@ test('native and imported private chats remain hidden from another team manager'
     .get({ query: {} });
   expect(own.status).toBe(200);
 });
+
+test('native runtime version is available without a runner request', async () => {
+  const { api, teamId, agentId } = await setup();
+  const result = await api.teams({ teamId })['ai-agents']({ agentId }).runtime.version.get();
+  expect(result.status).toBe(200);
+  expect(result.data).toMatchObject({ runtime: 'helena', version: '0.1.0' });
+});
+
+test('agent name lookup resolves PRIV coordinator instead of alphabetically first assistant', async () => {
+  const { api, teamId } = await setup();
+  await api.projects.post({ key: 'PRIV', name: 'Private' });
+  const assistant = (
+    await createAgent(api, 'PRIV', {
+      name: 'Assistent PRIV',
+      username: 'assistant-priv',
+      kind: 'external',
+    })
+  ).data!.agent;
+  const coordinator = (await api.teams({ teamId })['ai-agents'].get()).data!.find(
+    (agent) => agent.username === 'priv-koordinator',
+  )!;
+  expect(coordinator).toBeDefined();
+  const { organizationAgentAssignment } = await import('@repo/db');
+  await db
+    .insert(organizationAgentAssignment)
+    .values({ teamId, agentId: assistant.id, role: 'specialist' })
+    .onConflictDoUpdate({
+      target: [organizationAgentAssignment.teamId, organizationAgentAssignment.agentId],
+      set: { role: 'specialist' },
+    });
+  const result = await api
+    .teams({ teamId })
+    ['ai-agents'].get({ query: { query: 'PRIV Koordinator' } } as never);
+  expect(result.status).toBe(200);
+  expect(result.data!.map((agent) => agent.id)).toEqual([coordinator.id]);
+});
+
+test('historical run backfill is dry by default and repeatable', async () => {
+  const { agentId, projectId } = await setup();
+  const { agentRun, agentUsage } = await import('@repo/db');
+  const { backfillRunUsage } = await import('../../../usage/backfill');
+  const [run] = await db
+    .insert(agentRun)
+    .values({
+      agentId,
+      projectId,
+      prompt: 'Historical fixture',
+      status: 'failed',
+      finishedAt: new Date(),
+      inputTokens: 43320,
+      outputTokens: 2858,
+      model: 'helena-halogen/Flash',
+    })
+    .returning();
+  await db.delete(agentUsage).where(eq(agentUsage.runId, run!.id));
+  expect(await backfillRunUsage([run!.id])).toHaveLength(1);
+  expect(await backfillRunUsage([run!.id])).toHaveLength(1);
+  expect(await backfillRunUsage([run!.id], true)).toHaveLength(1);
+  expect(await backfillRunUsage([run!.id], true)).toHaveLength(0);
+});

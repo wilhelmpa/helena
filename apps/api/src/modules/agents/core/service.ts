@@ -886,6 +886,47 @@ export async function listAgents(
   return Promise.all(rows.map(mapAgent));
 }
 
+export async function matchAgentQuery(agents: AiAgentRow[], query: string): Promise<AiAgentRow[]> {
+  const words = (value: string): string[] =>
+    value.toLocaleLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
+  const terms = words(query);
+  const exact = agents.filter((agent) =>
+    [agent.name, agent.username].some(
+      (value) => value.toLocaleLowerCase() === query.toLocaleLowerCase(),
+    ),
+  );
+  if (exact.length) return exact;
+  const roleRequested = terms.some((term) => ['koordinator', 'coordinator'].includes(term));
+  const coordinators = roleRequested
+    ? new Set(
+        (
+          await db
+            .select({ id: organizationAgentAssignment.agentId })
+            .from(organizationAgentAssignment)
+            .where(
+              and(
+                inArray(
+                  organizationAgentAssignment.agentId,
+                  agents.map((agent) => agent.id),
+                ),
+                eq(organizationAgentAssignment.role, 'coordinator'),
+              ),
+            )
+        ).map((row) => row.id),
+      )
+    : null;
+  const remaining = terms.filter((term) => !['koordinator', 'coordinator'].includes(term));
+  return agents.filter(
+    (agent) =>
+      (!coordinators || coordinators.has(agent.id)) &&
+      remaining.every((term) =>
+        words(
+          [agent.name, agent.username, ...agent.projects.map((project) => project.key)].join(' '),
+        ).includes(term),
+      ),
+  );
+}
+
 // Scoped to teamId so an id from another team resolves to null, and to visibleTo the
 // same way the list is: an agent of a project that user is not in reads as missing.
 export async function getAgentById(

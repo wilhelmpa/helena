@@ -12,6 +12,7 @@ import type { SessionViewer } from '../runtime-views/session-access';
 import { nativeCurator, nativeSkillAction } from './skills';
 
 export const NATIVE_READ_OPS = [
+  'version.read',
   'sessions.list',
   'sessions.search',
   'sessions.transcript',
@@ -116,7 +117,10 @@ export async function readNativeRuntime(
       )
     : undefined;
   let result: unknown;
-  if (request.op === 'curator.status' || request.op === 'curator.run') {
+  if (request.op === 'version.read') {
+    const { version } = await import('../../../../../../packages/agent-runtime/package.json');
+    result = { runtime: 'helena', version, detail: null };
+  } else if (request.op === 'curator.status' || request.op === 'curator.run') {
     result = await nativeCurator(agentId, request.op === 'curator.run');
   } else if (request.op === 'curator.set') {
     await nativeSkillAction(agentId, request.skill, request.action === 'pin');

@@ -1486,7 +1486,10 @@ async function resumableSession(
 async function localModelsFor(runtime: string): Promise<ChatCatalogModel[]> {
   if (runtime !== 'hermes' && runtime !== 'helena') return [];
   try {
-    return await localCatalogModelsNow();
+    const standard = await localDefaultModel();
+    const models = await localCatalogModelsNow();
+    const active = models.find((entry) => entry.id === standard);
+    return active ? [{ ...active, id: LOCAL_DEFAULT, name: 'Local default' }, ...models] : models;
   } catch (error) {
     console.error('[local-ai] listing the local models failed', error);
     return [];

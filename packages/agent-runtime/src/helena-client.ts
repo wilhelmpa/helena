@@ -75,6 +75,7 @@ export interface HelenaApi {
   ): Promise<void>;
   compact(id: string, summary: string, compactedThrough: number): Promise<void>;
   memory(): Promise<MemoryState>;
+  searchFacts?(query: string): Promise<{ id: number; content: string; project: string | null }[]>;
   note(text: string, sessionId?: string): Promise<void>;
   proposeMemory(
     file: string,
@@ -270,6 +271,13 @@ export class HelenaClient implements HelenaApi {
 
   memory(): Promise<MemoryState> {
     return this.request<MemoryState>('GET', '/agent-runtime/memory');
+  }
+
+  async searchFacts(query: string) {
+    const result = await this.request<{
+      facts?: { id: number; content: string; project: string | null }[];
+    }>('POST', '/agent-facts', { action: 'search', query, limit: 10 });
+    return result.facts ?? [];
   }
 
   async note(text: string, sessionId?: string): Promise<void> {

@@ -1101,8 +1101,8 @@ export async function finishRun(
         status: sql`CASE WHEN ${blocked} THEN 'success' ELSE ${result.status} END`,
         output: result.output ?? null,
         lastError: sql`CASE WHEN ${blocked} THEN NULL ELSE ${error}::text END`,
-        inputTokens: result.usage?.inputTokens ?? null,
-        outputTokens: result.usage?.outputTokens ?? null,
+        inputTokens: result.spend?.inputTokens ?? result.usage?.inputTokens ?? null,
+        outputTokens: result.spend?.outputTokens ?? result.usage?.outputTokens ?? null,
         // The session the run ended in (a compression moves it to a new id), which "continue
         // from here" resumes.
         ...(result.sessionId && { sessionId: result.sessionId }),
@@ -1119,6 +1119,23 @@ export async function finishRun(
         lastError: agentRun.lastError,
       });
     if (finished.length > 0) {
+      await recordUsage(
+        {
+          agentId: agent.id,
+          projectId: finished[0]!.projectId,
+          runId,
+          kind: 'run',
+          sessionId: result.sessionId,
+          spend: result.spend ?? {
+            inputTokens: result.usage?.inputTokens ?? 0,
+            outputTokens: result.usage?.outputTokens ?? 0,
+            runtime: agent.runtime,
+            model: result.runtime?.used?.model ?? own?.model ?? null,
+            provider: result.runtime?.used?.provider ?? null,
+          },
+        },
+        tx,
+      );
       await tx
         .delete(issueWorkClaim)
         .where(
@@ -1141,14 +1158,6 @@ export async function finishRun(
     status: result.status,
     failure: result.failure,
     source: { agentId: agent.id, runId },
-  });
-  await recordUsage({
-    agentId: agent.id,
-    projectId: row.projectId,
-    runId,
-    kind: 'run',
-    sessionId: result.sessionId,
-    spend: result.spend,
   });
   const completion = await completeDelegation(
     runId,

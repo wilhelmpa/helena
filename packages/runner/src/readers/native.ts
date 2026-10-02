@@ -3,6 +3,7 @@ import type { RuntimeReaders } from './types';
 export const nativeReaders: RuntimeReaders = {
   runtime: 'helena',
   ops: [
+    'version.read',
     'sessions.list',
     'sessions.search',
     'sessions.transcript',

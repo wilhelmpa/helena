@@ -823,6 +823,13 @@ export const updateAgentBody = t.Object({
 
 // The team agent list, optionally narrowed to the agents working in one project.
 export const agentListQuery = t.Object({
+  query: t.Optional(
+    t.String({
+      maxLength: 200,
+      description:
+        'Resolve an exact agent name, handle, or role plus project, such as PRIV-Koordinator. Ambiguous matches remain visible.',
+    }),
+  ),
   projectId: t.Optional(t.Numeric({ description: 'Only the agents working in this project.' })),
 });
 

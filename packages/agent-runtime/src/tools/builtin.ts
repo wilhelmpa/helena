@@ -275,7 +275,7 @@ export function memoryTool(
   let cached = initial;
   return {
     name: 'memory',
-    description: `Your long-term memory in ${displayName}. Relevant excerpts are already in the prompt; read only for missing details, not every round. action "read" searches MEMORY.md, USER.md and recent daily notes with query; "note" adds a durable fact; "propose" replaces MEMORY.md or USER.md (the owner may review it). ${MEMORY_RULE}`,
+    description: `Your long-term memory in ${displayName}. Relevant excerpts are already in the prompt; read only for missing details, not every round. action "read" searches stored facts, MEMORY.md, USER.md and recent daily notes with query; "note" adds a durable fact; "propose" replaces MEMORY.md or USER.md (the owner may review it). ${MEMORY_RULE}`,
     inputSchema: {
       type: 'object',
       properties: {
@@ -291,7 +291,10 @@ export function memoryTool(
       const action = text(input.action);
       if (action === 'read') {
         const state = cached ?? (cached = await api.memory());
-        return { text: memorySection(state, text(input.query), 6000) || '(no matching memory)' };
+        const query = text(input.query);
+        const facts = query.trim() && api.searchFacts ? await api.searchFacts(query) : [];
+        const excerpts = memorySection(state, query, 6000);
+        return { text: excerpts || (facts.length ? '' : '(no matching memory)'), facts };
       }
       const content = text(input.content).trim();
       if (!content) return error('No content.');

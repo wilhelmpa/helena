@@ -12,6 +12,7 @@ import { isHomeHandle } from './home-agent';
 import { agentContextSizeView, agentSizeLimits } from './context-limits';
 import {
   listAgents,
+  matchAgentQuery,
   createAgent,
   updateAgent,
   deleteAgent,
@@ -136,7 +137,12 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
   .get(
     '/teams/:teamId/ai-agents',
     async ({ membership, query }) => {
-      const agents = await listAgents(membership.teamId, query.projectId, agentScopeOf(membership));
+      const visible = await listAgents(
+        membership.teamId,
+        query.projectId,
+        agentScopeOf(membership),
+      );
+      const agents = query.query ? await matchAgentQuery(visible, query.query) : visible;
       return Promise.all(
         agents.map(async (agent) => ({
           ...agent,
