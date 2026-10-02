@@ -1,6 +1,7 @@
-import { aiAgent, db, user } from '@repo/db';
+import { aiAgent, apikey, db, user } from '@repo/db';
 import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
 import { iso } from '#shared/lib';
+import { transferDepartingAssignee } from '#modules/issues/responsibility';
 import { requeueProjectProvisioning } from '#modules/projects/provisioning-queue';
 import { agentVisibility, getAgentById, type AgentScope } from './service';
 
@@ -38,4 +39,30 @@ export async function setAgentTrashed(
   if (!rows.length) return false;
   await requeueProjectProvisioning(agent.projects.map((p) => p.id));
   return true;
+}
+
+export async function permanentlyDeleteTrashedAgent(
+  id: number,
+  teamId: number,
+  scope?: AgentScope,
+) {
+  const agent = await getAgentById(id, teamId, scope, true);
+  if (!agent) return false;
+  return db.transaction(async (tx) => {
+    const [trashed] = await tx
+      .select({ userId: aiAgent.userId })
+      .from(user)
+      .innerJoin(aiAgent, eq(aiAgent.userId, user.id))
+      .where(and(eq(aiAgent.id, id), eq(aiAgent.teamId, teamId), isNotNull(aiAgent.deletedAt)))
+      .for('update');
+    if (!trashed) return false;
+    await tx.delete(apikey).where(eq(apikey.referenceId, trashed.userId));
+    await transferDepartingAssignee(tx, trashed.userId);
+    await tx.delete(user).where(eq(user.id, trashed.userId));
+    await requeueProjectProvisioning(
+      agent.projects.map((p) => p.id),
+      tx,
+    );
+    return true;
+  });
 }

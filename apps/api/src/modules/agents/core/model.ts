@@ -821,6 +821,12 @@ export const updateAgentBody = t.Object({
   ...configFields,
 });
 
+export const agentDeleteQuery = t.Object({
+  permanent: t.Optional(
+    t.Boolean({ description: 'Permanently delete an agent already in the trash.' }),
+  ),
+});
+
 // The team agent list, optionally narrowed to the agents working in one project.
 export const agentListQuery = t.Object({
   projectId: t.Optional(t.Numeric({ description: 'Only the agents working in this project.' })),

@@ -23,6 +23,14 @@ test('agent trash preserves identity, key, assignments and settings, blocks work
   ).data!;
   const agent = created.agent;
   const resource = api.teams({ teamId: project.teamId })['ai-agents']({ agentId: agent.id });
+  const premature = await app.handle(
+    new Request(`http://localhost/teams/${project.teamId}/ai-agents/${agent.id}?permanent=true`, {
+      method: 'DELETE',
+      headers: { cookie: owner.cookie },
+    }),
+  );
+  expect(premature.status).toBe(404);
+  expect((await resource.get()).status).toBe(200);
   expect((await resource.delete()).status).toBe(204);
   expect(await db.query.aiAgent.findFirst({ where: eq(aiAgent.id, agent.id) })).toBeDefined();
   expect(await db.query.user.findFirst({ where: eq(user.id, agent.userId) })).toBeDefined();

@@ -1,4 +1,4 @@
-import { listAgentTrash, setAgentTrashed } from './trash';
+import { listAgentTrash, permanentlyDeleteTrashedAgent, setAgentTrashed } from './trash';
 import { Elysia, t } from 'elysia';
 import { noContent } from '#shared/http';
 import { guards } from '#shared/guards';
@@ -39,6 +39,7 @@ import {
   renameThreadBody,
   RegenerateKeyResponse,
   agentListQuery,
+  agentDeleteQuery,
   agentParams,
   copyTemplateBody,
   saveAsTemplateBody,
@@ -66,8 +67,17 @@ import {
 
 // The agent a :agentId path addresses, scoped by agentScopeOf — one of another team, and
 // one of a project the caller is not in, both read as missing.
-async function requireVisibleAgent(agentId: number, membership: TeamMembership) {
-  const agent = await getAgentById(agentId, membership.teamId, agentScopeOf(membership));
+async function requireVisibleAgent(
+  agentId: number,
+  membership: TeamMembership,
+  includeDeleted = false,
+) {
+  const agent = await getAgentById(
+    agentId,
+    membership.teamId,
+    agentScopeOf(membership),
+    includeDeleted,
+  );
   if (!agent) throw new HttpError(404, 'Agent not found');
   return agent;
 }
@@ -574,25 +584,24 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
 
   .delete(
     '/teams/:teamId/ai-agents/:agentId',
-    async ({ params, membership }) => {
-      await requireVisibleAgent(params.agentId, membership);
-      const ok = await setAgentTrashed(
-        params.agentId,
-        membership.teamId,
-        true,
-        agentScopeOf(membership),
-      );
-      if (!ok) throw new HttpError(404, 'Agent not found');
+    async ({ params, membership, query }) => {
+      await requireVisibleAgent(params.agentId, membership, query.permanent === true);
+      const scope = agentScopeOf(membership);
+      const ok = query.permanent
+        ? await permanentlyDeleteTrashedAgent(params.agentId, membership.teamId, scope)
+        : await setAgentTrashed(params.agentId, membership.teamId, true, scope);
+      if (!ok) throw new HttpError(404, 'Agent not found in trash');
       return noContent();
     },
     {
       params: agentParams,
+      query: agentDeleteQuery,
       teamPermission: ['ai_agents', 'delete'],
       response: { 204: t.Void(), ...commonErrors },
       detail: {
         summary: 'Delete an AI agent',
         description:
-          'Move an AI agent to the trash. Its identity, settings and project memberships can be restored.',
+          'Move an AI agent to the recoverable trash. With permanent, delete an agent already in the trash for good.',
         ...mcpTool('delete_ai_agent', undefined, 'delete', 'external'),
       },
     },
