@@ -103,11 +103,11 @@ function boundaries(text: string, from: number, final: boolean): number[] {
       if (!complete && !final && /^\s{0,3}[`~]{1,2}$/.test(line)) break;
       for (let index = lineStart; index < lineEnd; index += 1) {
         const char = text[index]!;
-        if (char !== '.' && char !== '!' && char !== '?' && char !== '…') continue;
+        if (!/[.!?…。！？؟]/.test(char)) continue;
         // Runs of marks ("?!", "...") end together.
         let end = index + 1;
-        while (end < lineEnd && /[.!?…"“”'’)»«\]]/.test(text[end]!)) end += 1;
-        if (end < lineEnd ? /\s/.test(text[end]!) : complete || final) {
+        while (end < lineEnd && /[.!?…。！？؟"“”'’)»«\]]/.test(text[end]!)) end += 1;
+        if (end < lineEnd ? /[。！？]/.test(char) || /\s/.test(text[end]!) : complete || final) {
           if (endsSentence(text, index)) found.push(end);
         }
         index = end - 1;
@@ -161,7 +161,7 @@ export function settledTail(markdown: string, offset: number): boolean {
   const last = trimmed.length - 1;
   if (last < 0) return false;
   const mark = trimmed[last]!;
-  if (mark !== '.' && mark !== '!' && mark !== '?' && mark !== '…') return false;
+  if (!/[.!?…。！？؟]/.test(mark)) return false;
   // "z. B." or "3." at the very end is not the end of a sentence yet.
   return endsSentence(markdown, offset + last);
 }
@@ -188,7 +188,7 @@ export function nextSpeechChunks(
       ? spoken
       : !spoken
         ? pending
-        : `${pending}${/[.!?:;,…]$/.test(pending) ? ' ' : ', '}${spoken}`;
+        : `${pending}${/[.!?:;,…。！？؟]$/.test(pending) ? ' ' : ', '}${spoken}`;
     if (!joined) {
       consumed = end;
       continue;
@@ -197,7 +197,7 @@ export function nextSpeechChunks(
     if (
       joined.length < MIN_CHARS &&
       !(last && final) &&
-      !(end < markdown.length && /[.!?…]$/.test(joined))
+      !(end < markdown.length && /[.!?…。！？؟]$/.test(joined))
     ) {
       pending = joined;
       continue;

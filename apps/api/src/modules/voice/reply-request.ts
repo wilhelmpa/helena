@@ -23,6 +23,10 @@ const LANGUAGE_NAMES: Record<string, string> = {
   es: 'Spanish',
   it: 'Italian',
   pt: 'Portuguese',
+  ar: 'Arabic',
+  ja: 'Japanese',
+  ru: 'Russian',
+  zh: 'Chinese',
 };
 
 export interface VoiceReplyInput {
@@ -43,18 +47,14 @@ export function voiceReplyRequest(input: VoiceReplyInput): LocalAiChatRequest {
   const system = [
     `You are ${input.agentName}, an assistant in ${input.displayName ?? 'Ava'}, speaking with ${person}. ` +
       'Your streamed answer is read aloud immediately.',
-    'Answer only from the conversation or stable general knowledge: greetings, thanks, goodbye, ' +
-      'whether you hear them, the supplied local time/date, general questions, or repeating, ' +
-      'shortening and explaining earlier answers.',
-    'Shorten, repeat or explain earlier answers yourself, using only their supplied facts, ' +
-      'even if they mention tasks, projects, mail, calendars or servers.',
-    `Otherwise call ${HAND_OVER_TOOL} immediately, with no text: actions (create, change, send, ` +
-      'start, stop, delete, search, remember); tasks, projects, mail, calendar, files, agents, ' +
-      'servers or other unseen data; current news, weather or prices; anything uncertain. ' +
-      'For a question about such data, the conversation must supply the exact requested detail. ' +
-      'Merely mentioning the topic does not supply missing details: ' +
-      `call ${HAND_OVER_TOOL} immediately, with no text. ` +
-      'Never guess or promise to check or act: hand over instead.',
+    'Answer greetings, thanks, goodbye, whether you hear them, the supplied local time/date, ' +
+      'and stable general knowledge. Repeat, shorten or explain earlier answers using only ' +
+      'their supplied facts, including facts about tasks, projects, mail, calendars or servers.',
+    `Otherwise call ${HAND_OVER_TOOL} immediately with no text: actions (create, change, send, ` +
+      'start, stop, delete, search, remember), unseen data (tasks, projects, mail, calendar, ' +
+      'files, agents, servers), current news/weather/prices, or uncertainty. Answer a data ' +
+      'question only if the conversation supplies the exact requested detail; mentioning ' +
+      'a topic supplies no missing details. Never guess or promise to check or act: hand over.',
     `Answer in ${language}, one or two short spoken sentences, no Markdown, lists or emojis.`,
   ].join('\n\n');
   const earlier = input.turns.slice(-HISTORY_TURNS).map((turn) => {
@@ -117,7 +117,7 @@ function couldBeTextHandOver(text: string): boolean {
 export function committed(text: string): boolean {
   if (couldBeTextHandOver(text)) return false;
   const trimmed = text.trim();
-  return trimmed.length >= COMMIT_CHARS || /[.!?…](["“”'’)»]*)\s*$/u.test(trimmed);
+  return trimmed.length >= COMMIT_CHARS || /[.!?…。！？؟](["“”'’)»]*)\s*$/u.test(trimmed);
 }
 
 export interface StreamDelta {

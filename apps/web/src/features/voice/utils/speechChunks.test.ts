@@ -121,3 +121,14 @@ describe('settledTail', () => {
     assert.equal(settledTail('Gut.', 4), false);
   });
 });
+
+it('streams CJK and Arabic sentence endings without waiting for answer completion', () => {
+  for (const [language, sentence, next] of [
+    ['ja', '一年は十二か月です。', '次の'],
+    ['zh', '一年有十二个月。', '接下来'],
+    ['ar', 'هل تسمعني؟', ' نعم'],
+  ]) {
+    assert.deepEqual(nextSpeechChunks(sentence + next, 0, false, language).chunks, [sentence]);
+    assert.equal(settledTail(sentence, 0), true);
+  }
+});

@@ -628,6 +628,10 @@ export class ConversationController {
     const marks = this.marks;
     if (!marks?.answerAt) return;
     this.marks = null;
+    if (this.immediateResponse && this.bridgeEnabled) {
+      const phrases = BRIDGES[spokenLanguage(pageLanguage() ?? 'de')];
+      this.voice?.warm?.(phrases[(this.bridgeIndex + 1) % phrases.length]!);
+    }
     this.deps.onTimings?.(turnTimings({ ...marks, audibleAt: performance.now() }));
   }
 }
