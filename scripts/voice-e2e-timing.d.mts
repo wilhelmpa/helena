@@ -8,7 +8,7 @@ export interface VoiceTurnTiming {
 }
 
 export function summarizeVoiceTimings(
-  turns: VoiceTurnTiming[],
+  turns: Array<VoiceTurnTiming & Record<string, unknown>>,
   expected: number,
   maxTotal?: number | null,
 ): VoiceTurnTiming;
