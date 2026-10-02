@@ -385,34 +385,66 @@ if [[ -e $NGINX_TUNNEL_SITE ]]; then
   grep -q "listen 127.0.0.1:$TUNNEL_PORT" "$NGINX_TUNNEL_SITE" || problems+=("not bound to 127.0.0.1:$TUNNEL_PORT")
   grep -Eq 'volition_local_owner_token|helena_owner_capability' "$NGINX_TUNNEL_SITE" && problems+=("owner token referenced")
   # Proxy locations, including internal auth, need their own header snippet. Only the
-  # exact local-capability denial and the constrained public service worker are exempt.
+  # exact local-capability denial and constrained public vendor assets are exempt.
   if ! n_loc=$(python3 -I - "$NGINX_TUNNEL_SITE" 2>/dev/null <<'PY'
 import pathlib, re, sys
 text = pathlib.Path(sys.argv[1]).read_text()
 deny = (r'(?m)^[ \t]*location[ \t]+~[ \t]+'
         + re.escape('^/(backend/|api/)?owner-terminal/local/')
         + r'[ \t]*\{\s*return[ \t]+404[ \t]*;\s*\}[ \t]*(?=\n|$)')
-worker_directives = [
-    'auth_request off',
-    'proxy_pass http://127.0.0.1:3001/sw.js',
+def public_location(selector, directives):
+    body = ''.join(
+        r'\s*' + r'[ \t]+'.join(re.escape(token) for token in directive.split()) + r'[ \t]*;'
+        for directive in directives
+    )
+    return (r'(?m)^[ \t]*location[ \t]+' + re.escape(selector)
+            + r'[ \t]*\{' + body + r'\s*\}[ \t]*(?=\n|$)')
+
+credentials = [
     'proxy_set_header Host $host',
     'proxy_set_header Cookie ""',
     'proxy_set_header Authorization ""',
     'proxy_set_header X-Helena-Entry ""',
-    'proxy_redirect off',
-    'add_header Cache-Control "no-cache" always',
-    'add_header Service-Worker-Allowed "/" always',
 ]
-worker_body = ''.join(
-    r'\s*' + r'[ \t]+'.join(re.escape(token) for token in directive.split()) + r'[ \t]*;'
-    for directive in worker_directives
-)
-worker = (r'(?m)^[ \t]*location[ \t]+=[ \t]+/sw\.js[ \t]*\{'
-          + worker_body + r'\s*\}[ \t]*(?=\n|$)')
+cache = [
+    'proxy_redirect off',
+    'proxy_hide_header Cache-Control',
+    'add_header Cache-Control "no-cache" always',
+]
+public_assets = [
+    public_location('= /sw.js', [
+        'auth_request off', 'proxy_pass http://127.0.0.1:3001/sw.js',
+        *credentials, *cache, 'proxy_hide_header Service-Worker-Allowed',
+        'add_header Service-Worker-Allowed "/" always',
+    ]),
+    public_location('= /manifest.webmanifest', [
+        'auth_request off', 'proxy_pass http://127.0.0.1:3001/manifest.webmanifest',
+        *credentials, *cache,
+    ]),
+    public_location(r'~ ^/voice/(vad\.worklet\.bundle\.min\.js|silero_vad_v5\.onnx|ort-wasm-simd-threaded\.(mjs|wasm))$', [
+        'auth_request off', 'proxy_pass http://127.0.0.1:3001', *credentials, *cache,
+    ]),
+    public_location(r'~ ^/code/stable-[0-9a-f]+/static/out/vs/code/browser/workbench/workbench\.js$', [
+        'auth_request off', 'rewrite ^/code/(.*)$ /$1 break',
+        'proxy_pass http://127.0.0.1:8443', *credentials,
+        'proxy_set_header Accept-Encoding ""',
+        'proxy_set_header If-None-Match ""', 'proxy_set_header If-Modified-Since ""',
+        *cache, 'sub_filter_types application/javascript text/javascript',
+        "sub_filter 'async vsda(){' 'async vsda(){if(!this.productService.serverLicense?.length)throw new Error(\"VSDA unavailable in Code OSS\");'",
+        'sub_filter_once on',
+    ]),
+    public_location(r'~ ^/code/(stable-[0-9a-f]+/static/|_static/)', [
+        'auth_request off', 'rewrite ^/code/(.*)$ /$1 break',
+        'proxy_pass http://127.0.0.1:8443', *credentials, *cache,
+        'proxy_hide_header Service-Worker-Allowed',
+        'add_header Service-Worker-Allowed "/code/" always',
+    ]),
+]
 # A mapped error can forward a return instead of denying the request.
 if not re.search(r'\berror_page\b', text):
     text = re.sub(deny, '', text)
-text = re.sub(worker, '', text)
+for asset in public_assets:
+    text = re.sub(asset, '', text)
 print(len(re.findall(r'(?m)^[ \t]*location[ \t]+', text)))
 PY
   ); then
@@ -424,7 +456,7 @@ PY
   grep -Eq '^[[:space:]]*auth_request[[:space:]]+/_helena_edge[[:space:]]*;' "$NGINX_TUNNEL_SITE" || problems+=("no edge auth_request")
   ((${#problems[@]})) \
     && record web.tunnel_entry web critical fail "$(IFS=';'; echo "${problems[*]}")" \
-    || record web.tunnel_entry web critical pass "loopback only, no owner token, protected entries guarded; public service worker constrained"
+    || record web.tunnel_entry web critical pass "loopback only, no owner token, protected entries guarded; public vendor assets constrained"
 else
   record web.tunnel_entry web critical skip "no tunnel site installed"
 fi

@@ -77,6 +77,7 @@ server {
         proxy_set_header Host $host;
         proxy_set_header Cookie "";
         proxy_set_header Authorization "";
+        proxy_set_header X-Helena-Entry "";
         proxy_redirect off;
         proxy_hide_header Cache-Control;
         add_header Cache-Control "no-cache" always;
@@ -88,6 +89,7 @@ server {
         proxy_set_header Host $host;
         proxy_set_header Cookie "";
         proxy_set_header Authorization "";
+        proxy_set_header X-Helena-Entry "";
         proxy_redirect off;
         proxy_hide_header Cache-Control;
         add_header Cache-Control "no-cache" always;
@@ -100,6 +102,7 @@ server {
         proxy_set_header Host $host;
         proxy_set_header Cookie "";
         proxy_set_header Authorization "";
+        proxy_set_header X-Helena-Entry "";
         proxy_set_header Accept-Encoding "";
         proxy_set_header If-None-Match "";
         proxy_set_header If-Modified-Since "";
@@ -118,6 +121,7 @@ server {
         proxy_set_header Host $host;
         proxy_set_header Cookie "";
         proxy_set_header Authorization "";
+        proxy_set_header X-Helena-Entry "";
         proxy_redirect off;
         proxy_hide_header Cache-Control;
         add_header Cache-Control "no-cache" always;
