@@ -797,6 +797,100 @@ describe('the model router', () => {
 });
 
 describe('the mail classifier', () => {
+  it('reclassifies a synthetic thread through the owner route and persists the new answers', async () => {
+    const { asOwner, project, teamId } = await setup();
+    const credentialId = await connection(asOwner, teamId);
+    await switchOn(asOwner, teamId, MAIL_CLASS, credentialId, {
+      config: { project: 'off', task: 'off', agent: 'off', receipts: 'off' },
+    });
+    const { accountId, inboxId } = await insertMailAccount(teamId, project.id);
+    const message = await insertMessage({
+      teamId,
+      accountId,
+      folderId: inboxId,
+      projectId: project.id,
+      subject: 'Volition reclassification test',
+      text: 'Synthetic mail, never send a reply.',
+    });
+    const route = asOwner.mail.threads({ threadId: message.threadId }).classification;
+    answers = {
+      category: 'notification',
+      priority: 'normal',
+      needs_reply: 'no',
+      create_task: 'no',
+    };
+    const initial = await route.post();
+    expect(initial.status).toBe(200);
+    expect(initial.data!.classification).toMatchObject({
+      category: 'notification',
+      priority: 'normal',
+      issueId: null,
+    });
+    answers = { ...answers, category: 'invoice', priority: 'high' };
+    const classified = await route.post();
+    expect(classified.status).toBe(200);
+    expect(classified.data!.classification).toMatchObject({
+      category: 'invoice',
+      priority: 'high',
+      issueId: null,
+    });
+    expect((await route.get()).data!.classification).toMatchObject({
+      category: 'invoice',
+      priority: 'high',
+      issueId: null,
+    });
+    const outsider = authedApi((await signUpTestUser()).cookie);
+    expect(
+      (await outsider.mail.threads({ threadId: message.threadId }).classification.post()).status,
+    ).toBe(404);
+    await asOwner
+      .teams({ teamId })
+      .decisions.classes({ classId: MAIL_CLASS })
+      .patch({ enabled: false });
+    expect((await route.post()).status).toBe(409);
+    expect((await route.get()).data!.classification).toMatchObject({
+      category: 'invoice',
+      priority: 'high',
+    });
+  });
+
+  it('keeps the task link when the owner reclassifies an actionable thread', async () => {
+    const { asOwner, project, teamId } = await setup();
+    const credentialId = await connection(asOwner, teamId);
+    await switchOn(asOwner, teamId, MAIL_CLASS, credentialId, {
+      config: { project: 'off', task: 'auto', agent: 'off', receipts: 'off' },
+    });
+    const { accountId, inboxId } = await insertMailAccount(teamId, project.id);
+    const message = await insertMessage({
+      teamId,
+      accountId,
+      folderId: inboxId,
+      projectId: project.id,
+      subject: 'Volition synthetic payment request',
+      text: 'Please check the synthetic payment. Do not send mail.',
+    });
+    answers = {
+      project: projectOptionId('PRIV'),
+      category: 'invoice',
+      priority: 'normal',
+      needs_reply: 'no',
+      create_task: 'yes',
+      task_eligibility: 'actionable',
+    };
+    const route = asOwner.mail.threads({ threadId: message.threadId }).classification;
+    const initial = await route.post();
+    expect(initial.status).toBe(200);
+    const issueId = initial.data!.classification!.issueId!;
+    expect(issueId).toBeGreaterThan(0);
+    answers = { ...answers, priority: 'high' };
+    const repeated = await route.post();
+    expect(repeated.status).toBe(200);
+    expect(repeated.data!.classification).toMatchObject({ priority: 'high', issueId });
+    expect((await route.get()).data!.classification).toMatchObject({ priority: 'high', issueId });
+    expect((await asOwner.issues({ issueId }).get()).status).toBe(200);
+    expect((await asOwner.projects({ projectKey: 'PRIV' }).issues.get()).data).toHaveLength(1);
+  });
+
   it('runs a native schedule only in its project and excludes disconnected or disabled accounts', async () => {
     const { asOwner, project, teamId } = await setup();
     const other = (await asOwner.projects.post({ key: 'FAM', name: 'Family' })).data!;

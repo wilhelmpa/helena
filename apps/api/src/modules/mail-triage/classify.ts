@@ -345,6 +345,7 @@ async function act(
       .from(mailThreadIssue)
       .where(eq(mailThreadIssue.threadId, thread.id))
       .limit(1);
+    issueId = linked?.issueId ?? null;
     const target = threadProject ?? row.projectId;
     if (row.createTask && !linked && target) {
       const agentUser =

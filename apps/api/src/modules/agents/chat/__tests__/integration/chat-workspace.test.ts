@@ -58,6 +58,35 @@ async function answer(asRunner: Api, text: string, extra: { sessionId?: string }
 }
 
 describe('chat list', () => {
+  it('delivers the Home page context to the claimed answer and validates its project', async () => {
+    const { asOwner, mia, asMia } = await setup();
+    const teamId = await teamOf(asOwner, 'MKT');
+    const home = asOwner.teams({ teamId })['ai-agents']({ agentId: mia.id }).chat;
+    const context = { projectKey: 'MKT', path: '/project/MKT/issues?layout=calendar' };
+    const sent = await home.post({ prompt: 'Explain the current page.', context });
+    expect(sent.status).toBe(200);
+    const claimed = (await asMia['agent-chats'].claim.post()).data!.message!;
+    expect(claimed.prompt).toContain('Explain the current page.');
+    expect(claimed.prompt).toContain(`Current Ava page: ${context.path}`);
+    expect(claimed.prompt).toContain('Current project: MKT');
+    expect(
+      (
+        await home.post({
+          prompt: 'Mismatched context',
+          context: { projectKey: 'MKT', path: '/project/OPS/issues' },
+        })
+      ).status,
+    ).toBe(400);
+    expect(
+      (
+        await home.post({
+          prompt: 'Missing project',
+          context: { projectKey: null, path: '/project/MKT/issues' },
+        })
+      ).status,
+    ).toBe(400);
+  });
+
   it('passes a canonical knowledge ref to the agent and refuses foreign project refs', async () => {
     const { asOwner, mia, asMia } = await setup();
     const mkt = (await asOwner.projects({ projectKey: 'MKT' }).get()).data!;

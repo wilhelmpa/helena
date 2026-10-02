@@ -69,6 +69,19 @@ function chatWith(transport: PlanChatTransport, messages: PlanUIMessage[] = []) 
 }
 
 describe('PlanChatTransport', () => {
+  it('sends the selected page context with the original question', async () => {
+    const calls = fakeApi(answer);
+    const { chat } = chatWith(new PlanChatTransport('team:1', 4));
+    const context = { projectKey: 'WEB', path: '/project/WEB/issues?layout=calendar' };
+    await chat.sendMessage({ text: 'Explain this page.' }, { body: { context } });
+    assert.deepEqual(calls[0], {
+      method: 'POST',
+      path: '/teams/1/ai-agents/4/chat',
+      body: { prompt: 'Explain this page.', context },
+    });
+    assert.equal(chat.status, 'ready');
+  });
+
   it("streams Plan's answer into an AI SDK message with reasoning, tools and text", async () => {
     const calls = fakeApi(answer);
     const transport = new PlanChatTransport('WEB', 4);
