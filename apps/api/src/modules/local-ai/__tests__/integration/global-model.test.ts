@@ -4,6 +4,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   aiAgent,
+  agentRun,
+  issueWorkClaim,
   appSetting,
   db,
   helenaModelServer,
@@ -16,7 +18,7 @@ import { api, authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
-import { getRunnerAgent } from '#modules/agents/runner/service';
+import { claimRunnerRun, getRunnerAgent } from '#modules/agents/runner/service';
 import { runtimePolicySnapshot } from '#modules/agents/runtime-policy/service';
 import {
   publishChatCatalog,
@@ -669,4 +671,39 @@ describe('the schema follows the local profile', () => {
       (await readUncachedSetting<{ schemaFollow?: unknown }>(MAINTENANCE_KEY))?.schemaFollow,
     ).toBeUndefined();
   });
+});
+
+it('keeps native local routine runs pending while their model is switched off', async () => {
+  const previous = process.env.HELENA_NATIVE_RUNTIME;
+  process.env.HELENA_NATIVE_RUNTIME = 'on';
+  try {
+    const { agent, projectId } = await fixture();
+    await db
+      .update(aiAgent)
+      .set({ model: LOCAL_DEFAULT, runtimePolicy: { ...agent.runtimePolicy, runtime: 'helena' } })
+      .where(eq(aiAgent.id, agent.id));
+    await setSetting('localAi.policy', { enabled: false });
+    const [run] = await db
+      .insert(agentRun)
+      .values({
+        agentId: agent.id,
+        projectId,
+        trigger: 'workspace',
+        prompt: 'Synthetic mail-triage routine',
+        workClass: 'routines',
+      })
+      .returning();
+    const runner = await getRunnerAgent(agent.userId);
+    expect(await claimRunnerRun(runner!)).toBeNull();
+    const [stored] = await db.select().from(agentRun).where(eq(agentRun.id, run!.id));
+    expect(stored!.status).toBe('pending');
+    expect(stored!.attempts).toBe(0);
+    expect(stored!.claims).toBe(0);
+    expect(stored!.startedAt).toBeNull();
+    expect(stored!.nextAttemptAt.getTime()).toBeGreaterThan(Date.now());
+    expect(await db.select().from(issueWorkClaim)).toHaveLength(0);
+  } finally {
+    if (previous === undefined) delete process.env.HELENA_NATIVE_RUNTIME;
+    else process.env.HELENA_NATIVE_RUNTIME = previous;
+  }
 });

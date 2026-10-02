@@ -228,7 +228,7 @@ export function skillTool(
         return error('offset must be a nonnegative line index and limit must be 1–500 lines');
       const page = (content: string, extra: string[] = []) => {
         const lines = content.split('\n');
-        if (offset > lines.length) return error('Offset is beyond the file.');
+        if (offset >= lines.length) return { text: 'Ende der Datei' };
         let end = offset;
         let chars = 0;
         while (end < Math.min(offset + limit, lines.length)) {

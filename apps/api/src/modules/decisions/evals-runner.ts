@@ -4,7 +4,7 @@ import { and, desc, eq, isNull, lt } from 'drizzle-orm';
 import { HttpError, iso } from '#shared/lib';
 import { loadConnection, type DecisionConnection } from '#modules/browser-task/connection';
 import { costOfUsage } from '#modules/model-prices/service';
-import { decisionClass } from './classes';
+import { decisionClass, localAiClassForDecision } from './classes';
 import { askConnection, classSetting, effectiveThreshold } from './service';
 import { jevDecisionPolicy } from './jev-policy';
 
@@ -21,10 +21,16 @@ const STALE_MS = 45 * 60_000;
 const running = new Map<number, AbortController>();
 
 // Evals may wait behind interactive work; the realtime admission deadline is for live decisions.
-export function evaluationConnection(connection: DecisionConnection): DecisionConnection {
+export function evaluationConnection(
+  connection: DecisionConnection,
+  classId?: string,
+): DecisionConnection {
   return {
     ...connection,
     priority: 'background',
+    ...(classId && connection.keySource === 'local-ai'
+      ? { localAiClassId: localAiClassForDecision(classId) }
+      : {}),
     mailBudget: { queueMs: 60_000, generationMs: 60_000 },
   };
 }
@@ -216,7 +222,7 @@ export async function startEval(
         threshold,
         async (context, questions) => {
           const result = await askConnection(
-            evaluationConnection(connection),
+            evaluationConnection(connection, classId),
             context,
             questions,
             EVAL_TIMEOUT_MS,

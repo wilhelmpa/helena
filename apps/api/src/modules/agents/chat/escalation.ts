@@ -62,12 +62,14 @@ export async function queueChatEscalation(
       break;
     }
     if (!target) {
+      const notice = `Zeitgrenze/Eskalation nicht möglich: Kein verfügbarer Agent für ${report.target}.`;
+      if (source.content.endsWith(notice)) return;
       await tx
         .update(agentChatMessage)
         .set({
-          status: 'failed',
-          lastError: `No eligible agent for ${report.target}`,
-          content: `${source.content}\n\nHandover failed: no eligible agent for ${report.target}.`,
+          status: 'success',
+          lastError: null,
+          content: `${source.content}\n\n${notice}`,
         })
         .where(eq(agentChatMessage.id, messageId));
       return;
