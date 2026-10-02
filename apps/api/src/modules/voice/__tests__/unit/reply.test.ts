@@ -125,7 +125,7 @@ test('voice prefix and hand-over schema stay identical between turns', () => {
   expect(long.prompt.length).toBeLessThan(3000);
 });
 
-it('keeps the spoken decision prompt small without removing the hand-over tool', () => {
+it('preserves the accepted decision prefix and hand-over tool for cache reuse', () => {
   const request = voiceReplyRequest({
     agentName: 'Volition',
     personName: null,
@@ -134,7 +134,10 @@ it('keeps the spoken decision prompt small without removing the hand-over tool',
     turns: [],
     question: 'Wie viele Monate hat ein Jahr?',
   });
-  expect(request.system!.length).toBeLessThan(1600);
+  expect(request.system).toContain(
+    'Answer only from the conversation or stable general knowledge:',
+  );
+  expect(request.system).toContain('Merely mentioning the topic does not supply missing details:');
   expect(request.tools?.map((tool) => tool.name)).toEqual([HAND_OVER_TOOL]);
   expect(request.system).toContain('Never guess');
 });
