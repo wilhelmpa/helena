@@ -85,6 +85,7 @@ describe('voice settings', () => {
       bridgeEnabled: true,
       progressEnabled: true,
       readFullAnswers: true,
+      fastTranscription: false,
       fallbackTimeoutMs: 800,
       speed: 1.4,
       vocabulary: ['Verve', 'x'.repeat(60)],
@@ -96,6 +97,8 @@ describe('voice settings', () => {
       replyThinkingLevel: null,
     });
     expect(normalizeVoiceSettings(null).pauseMs).toBe(300);
+    expect(normalizeVoiceSettings({ fastTranscription: true }).fastTranscription).toBe(true);
+    expect(normalizeVoiceSettings({ fastTranscription: "yes" }).fastTranscription).toBe(false);
     expect(normalizeVoiceSettings({ fallbackTimeoutMs: 50 }).fallbackTimeoutMs).toBe(300);
     expect(normalizeVoiceSettings({ fallbackTimeoutMs: 9000 }).fallbackTimeoutMs).toBe(5000);
     expect(
