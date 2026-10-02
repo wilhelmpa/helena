@@ -301,7 +301,7 @@ export function memoryTool(
           .join('\n');
         return {
           text:
-            [excerpts, factText].filter(Boolean).join('\n').slice(0, 6000) ||
+            [factText, excerpts].filter(Boolean).join('\n').slice(0, 6000) ||
             '(no matching memory)',
         };
       }
