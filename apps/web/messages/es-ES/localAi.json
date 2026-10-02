@@ -805,5 +805,59 @@
         }
       }
     }
+  },
+  "profileSwitch": {
+    "title": "Perfil local",
+    "description": "Qué modelos locales se ejecutan: Flash solo en la GPU, o el modelo grande de 27B con un modelo pequeño en la NPU.",
+    "profile": "Perfil",
+    "names": {
+      "local-halogen": "Local Halogen",
+      "local-27b-npu": "Local 27B + NPU"
+    },
+    "profiles": {
+      "local-halogen": "Flash en la GPU, la NPU permanece apagada.",
+      "local-27b-npu": "Qwen3.8-27B en la GPU y un modelo pequeño en la NPU para tareas sencillas."
+    },
+    "npu": {
+      "label": "Modelo de NPU",
+      "off": "Con «Local Halogen» la NPU está apagada.",
+      "none": "Sin NPU",
+      "hint": "La NPU solo se encarga de tareas pequeñas en segundo plano, como clasificar, rutinas y ayudantes, no de ejecuciones de agentes.",
+      "models": {
+        "gemmaE2b": "rápido, recomendado para ayudantes",
+        "gemmaE4b": "más preciso, pero más lento",
+        "qwen2b": "muy pequeño",
+        "qwen4b": "algo más grande, más lento"
+      }
+    },
+    "switch": {
+      "label": "Cambiar",
+      "unchanged": "Este perfil ya está en marcha.",
+      "checking": "Comprobando qué afecta el cambio …",
+      "button": "Cambiar …"
+    },
+    "impact": "Afecta a {agents, plural, one {# agente} other {# agentes}} con el modelo local predeterminado y a {classes, plural, one {# clase de tarea} other {# clases de tareas}}.",
+    "started": "Cambio iniciado.",
+    "pending": {
+      "title": "Un cambio no ha terminado",
+      "resume": "Continuar",
+      "rollback": "Deshacer",
+      "running": "El cambio está en curso o espera su siguiente paso.",
+      "failed": "El último cambio se detuvo con un error."
+    },
+    "confirm": {
+      "title": "Cambiar a {profile}",
+      "text": "Los modelos locales se detienen y se reinician juntos. Tarda unos minutos y, mientras tanto, las solicitudes locales no aceptan nuevas ejecuciones. Si un paso falla, se vuelve al modelo anterior.",
+      "more": "y {count} más",
+      "npu": "Modelo de NPU: {model}",
+      "cancel": "Cancelar",
+      "apply": "Cambiar ahora"
+    },
+    "errors": {
+      "notDownloaded": "El modelo aún no se ha descargado.",
+      "noHalogen": "Halogen no está configurado.",
+      "otherServer": "La entrada del servidor pertenece a otro servidor.",
+      "general": "Este cambio no es posible ahora mismo."
+    }
   }
 }

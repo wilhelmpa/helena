@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  type ModelSwitchRequest,
   applyGlobalModel,
   bulkLocalDefault,
   getModelPicker,
@@ -16,6 +17,17 @@ import { useLocalAiStatus } from './localAi.service';
 export function useGlobalLocalModel(enabled = true) {
   const status = useLocalAiStatus(enabled);
   return { ...status, data: status.data?.globalModel };
+}
+// What a switch would touch, asked of the server without changing anything. It also says which
+// NPU models the paired profile offers, and why it cannot be had (model not downloaded).
+export function useSwitchPreview(request: ModelSwitchRequest | null) {
+  return useQuery({
+    queryKey: ['localAi', 'switchPreview', request],
+    queryFn: () => previewGlobalModel(request!),
+    enabled: request !== null,
+    retry: false,
+    staleTime: 30_000,
+  });
 }
 export function useModelPicker(scope: string, agentId: number | null) {
   return useQuery({
@@ -33,7 +45,6 @@ export function useGlobalModelActions() {
     ]);
   };
   return {
-    preview: useMutation({ mutationFn: previewGlobalModel }),
     apply: useMutation({ mutationFn: applyGlobalModel, onSuccess: refresh }),
     resume: useMutation({ mutationFn: resumeGlobalModel, onSuccess: refresh }),
     bulk: useMutation({

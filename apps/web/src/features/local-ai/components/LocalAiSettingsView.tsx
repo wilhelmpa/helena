@@ -71,6 +71,7 @@ import {
 import LocalAiCard from './LocalAiCard';
 import LocalAiJudgeSection from './LocalAiJudgeSection';
 import LocalModelRow from './LocalModelRow';
+import LocalProfileSwitch from './LocalProfileSwitch';
 import VoiceSettingsSection from '@/features/voice/components/VoiceSettingsSection';
 
 const MODES: LocalAiMode[] = ['off', 'prefer', 'only'];
@@ -95,6 +96,7 @@ export default function LocalAiSettingsView() {
         <ListSkeleton rows={3} rowClassName="h-12" />
       ) : (
         <>
+          <LocalProfileSwitch />
           <ServersSection settings={data} />
           <ClassesSection settings={data} />
           <LocalAiJudgeSection />

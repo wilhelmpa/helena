@@ -805,5 +805,59 @@
         }
       }
     }
+  },
+  "profileSwitch": {
+    "title": "Profil lokal",
+    "description": "Model lokal mana yang berjalan: Flash saja di GPU, atau model 27B besar dengan model kecil di NPU.",
+    "profile": "Profil",
+    "names": {
+      "local-halogen": "Lokal Halogen",
+      "local-27b-npu": "Lokal 27B + NPU"
+    },
+    "profiles": {
+      "local-halogen": "Flash di GPU, NPU tetap mati.",
+      "local-27b-npu": "Qwen3.8-27B di GPU dan model kecil di NPU untuk tugas sederhana."
+    },
+    "npu": {
+      "label": "Model NPU",
+      "off": "Pada “Lokal Halogen” NPU mati.",
+      "none": "Tanpa NPU",
+      "hint": "NPU hanya mengerjakan tugas latar kecil seperti penyortiran, rutinitas, dan pembantu, bukan proses agen.",
+      "models": {
+        "gemmaE2b": "cepat, direkomendasikan untuk pembantu",
+        "gemmaE4b": "lebih akurat, tetapi lebih lambat",
+        "qwen2b": "sangat kecil",
+        "qwen4b": "sedikit lebih besar, lebih lambat"
+      }
+    },
+    "switch": {
+      "label": "Alihkan",
+      "unchanged": "Profil ini sudah berjalan.",
+      "checking": "Memeriksa apa saja yang terpengaruh …",
+      "button": "Alihkan …"
+    },
+    "impact": "Memengaruhi {agents, plural, other {# agen}} dengan model lokal bawaan dan {classes, plural, other {# kelas tugas}}.",
+    "started": "Pengalihan dimulai.",
+    "pending": {
+      "title": "Ada pengalihan yang belum selesai",
+      "resume": "Lanjutkan",
+      "rollback": "Batalkan",
+      "running": "Pengalihan sedang berjalan atau menunggu langkah berikutnya.",
+      "failed": "Pengalihan terakhir berhenti karena kesalahan."
+    },
+    "confirm": {
+      "title": "Alihkan ke {profile}",
+      "text": "Model lokal dihentikan dan dimulai ulang bersama-sama. Ini memakan waktu beberapa menit, dan selama itu permintaan lokal tidak menerima proses baru. Jika satu langkah gagal, sistem kembali ke model sebelumnya.",
+      "more": "dan {count} lainnya",
+      "npu": "Model NPU: {model}",
+      "cancel": "Batal",
+      "apply": "Alihkan sekarang"
+    },
+    "errors": {
+      "notDownloaded": "Model belum diunduh.",
+      "noHalogen": "Halogen belum disiapkan.",
+      "otherServer": "Entri server ini milik server lain.",
+      "general": "Pengalihan ini sedang tidak bisa dilakukan."
+    }
   }
 }
