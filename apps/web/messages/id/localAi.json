@@ -251,6 +251,10 @@
       "title": "Bacakan jawaban lengkap",
       "hint": "Ava membacakan seluruh jawaban dan merangkum kode serta tabel."
     },
+    "fastTranscription": {
+      "title": "Pengenalan suara cepat",
+      "hint": "Rekaman pendek dikenali lebih cepat, tetapi sedikit kurang akurat. Mati = akurasi penuh."
+    },
     "wake": {
       "title": "Listen for “Ava”",
       "hint": "The microphone stays open while a chat page is open. Before “Ava”, only on-device recognition processes your voice; nothing is saved.",

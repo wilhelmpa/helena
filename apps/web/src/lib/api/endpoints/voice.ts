@@ -97,6 +97,7 @@ export interface VoiceSettings {
   bridgeEnabled: boolean;
   progressEnabled: boolean;
   readFullAnswers: boolean;
+  fastTranscription: boolean;
   fallbackTimeoutMs: number;
   // Words the transcription should know, beyond Helena's own names.
   vocabulary: string[];
@@ -130,6 +131,7 @@ export type VoiceSettingsPatch = Partial<
     | 'bridgeEnabled'
     | 'progressEnabled'
     | 'readFullAnswers'
+    | 'fastTranscription'
     | 'fallbackTimeoutMs'
     | 'vocabulary'
     | 'vocabularyAliases'

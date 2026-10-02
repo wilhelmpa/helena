@@ -84,6 +84,17 @@ function Editor({ settings }: { settings: VoiceSettings }) {
             onCheckedChange={(readFullAnswers) => update.mutate({ readFullAnswers })}
           />
         </SettingsRow>
+        <SettingsRow
+          label={t('fastTranscription.title')}
+          description={t('fastTranscription.hint')}
+          htmlFor="voice-fast-transcription"
+        >
+          <Switch
+            id="voice-fast-transcription"
+            checked={settings.fastTranscription}
+            onCheckedChange={(fastTranscription) => update.mutate({ fastTranscription })}
+          />
+        </SettingsRow>
       </SettingsGroup>
       <SettingsCard className="divide-y">
         <div className="space-y-2 p-4">

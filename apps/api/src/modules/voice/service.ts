@@ -166,13 +166,18 @@ export interface Transcription {
 
 // The words of one transcription's context: the owner's own and Helena's names, read once a
 // minute (a new agent or project is known a minute later).
-let vocabularyCache: { at: number; prompt: string | null; aliases: VocabularyAlias[] } | null =
-  null;
+let vocabularyCache: {
+  at: number;
+  prompt: string | null;
+  aliases: VocabularyAlias[];
+  fast: boolean;
+} | null = null;
 const VOCABULARY_TTL_MS = 60_000;
 
 async function transcriptionContext(): Promise<{
   prompt: string | null;
   aliases: VocabularyAlias[];
+  fast: boolean;
 }> {
   const now = Date.now();
   if (!vocabularyCache || now - vocabularyCache.at > VOCABULARY_TTL_MS) {
@@ -188,9 +193,14 @@ async function transcriptionContext(): Promise<{
         ...(settings.vocabularyAliases ?? suggestedAliases(words)),
         ...suggestedAliases([displayName]),
       ],
+      fast: settings.fastTranscription,
     };
   }
-  return { prompt: vocabularyCache.prompt, aliases: vocabularyCache.aliases };
+  return {
+    prompt: vocabularyCache.prompt,
+    aliases: vocabularyCache.aliases,
+    fast: vocabularyCache.fast,
+  };
 }
 
 export function forgetVoiceVocabulary(): void {
@@ -265,7 +275,10 @@ export async function transcribe(input: {
   }
   if (input.language) form.append('language', input.language);
   const short =
-    !input.fullContext && route.server.kind === 'whisper-cpp' && info.durationMs <= 8_000;
+    context.fast &&
+    !input.fullContext &&
+    route.server.kind === 'whisper-cpp' &&
+    info.durationMs <= 8_000;
   if (short) {
     // Whisper encodes 50 frames/s; CPU flash attention pads to blocks of 256 frames.
     form.append('audio_ctx', String(Math.ceil((info.durationMs + 500) / 5120) * 256));

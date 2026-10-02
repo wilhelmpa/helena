@@ -294,7 +294,10 @@ describe('the ear on the GPU (whisper.cpp)', () => {
   it('sends the words to know, and drops what Whisper was not sure is speech', async () => {
     const { owner, asOwner } = await setup();
     expect((await asOwner.account.preferences.patch({ locale: 'de' })).status).toBe(200);
-    await asOwner.god.voice.settings.patch({ vocabulary: ['Steuerberater Müller'] });
+    await asOwner.god.voice.settings.patch({
+      vocabulary: ['Steuerberater Müller'],
+      fastTranscription: true,
+    });
     await asOwner.god['local-ai'].policy.patch({
       classes: { transcription: { mode: 'prefer', model: 'helena-ear/whisper' } },
     });
@@ -343,8 +346,20 @@ describe('the ear on the GPU (whisper.cpp)', () => {
     });
   });
 
+  it('uses the full context for short recordings while fast transcription is off', async () => {
+    const { owner, asOwner } = await setup();
+    await asOwner.god['local-ai'].policy.patch({
+      classes: { transcription: { mode: 'prefer', model: 'helena-ear/whisper' } },
+    });
+    expect((await upload(owner.cookie, wav(2))).status).toBe(200);
+    const forms = received.filter((entry) => entry.form);
+    expect(forms).toHaveLength(1);
+    expect(forms[0]!.form!.audio_ctx).toBeUndefined();
+  });
+
   it('keeps short context only when every segment has high confidence', async () => {
     const { owner, asOwner } = await setup();
+    await asOwner.god.voice.settings.patch({ fastTranscription: true });
     await asOwner.god['local-ai'].policy.patch({
       classes: { transcription: { mode: 'prefer', model: 'helena-ear/whisper' } },
     });
@@ -381,6 +396,7 @@ describe('the ear on the GPU (whisper.cpp)', () => {
 
   it('retries uncertain short speech with the full context and leaves long recordings alone', async () => {
     const { owner, asOwner } = await setup();
+    await asOwner.god.voice.settings.patch({ fastTranscription: true });
     await asOwner.account.preferences.patch({ locale: 'de' });
     await asOwner.god['local-ai'].policy.patch({
       classes: { transcription: { mode: 'prefer', model: 'helena-ear/whisper' } },

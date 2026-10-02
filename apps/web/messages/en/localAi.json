@@ -258,6 +258,10 @@
       "title": "Read full answers",
       "hint": "Ava reads the entire answer and briefly describes code and tables."
     },
+    "fastTranscription": {
+      "title": "Fast speech recognition",
+      "hint": "Short recordings are recognized faster but slightly less accurately. Off = full accuracy."
+    },
     "loading": "Loading …",
     "failed": "The voice settings could not be loaded.",
     "aliases": {

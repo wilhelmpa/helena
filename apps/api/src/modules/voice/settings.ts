@@ -38,6 +38,8 @@ export interface VoiceSettings {
   bridgeEnabled: boolean;
   progressEnabled: boolean;
   readFullAnswers: boolean;
+  // Short Whisper context for short recordings: faster, but measurably less accurate (195b).
+  fastTranscription: boolean;
   fallbackTimeoutMs: number;
   vocabulary: string[];
   vocabularyAliases: VocabularyAlias[] | null;
@@ -65,6 +67,7 @@ export const DEFAULT_VOICE_SETTINGS: VoiceSettings = {
   bridgeEnabled: true,
   progressEnabled: true,
   readFullAnswers: true,
+  fastTranscription: false,
   fallbackTimeoutMs: 800,
   vocabulary: [],
   vocabularyAliases: null,
@@ -160,6 +163,10 @@ export function normalizeVoiceSettings(raw: unknown): VoiceSettings {
       typeof value.progressEnabled === 'boolean' ? value.progressEnabled : defaults.progressEnabled,
     readFullAnswers:
       typeof value.readFullAnswers === 'boolean' ? value.readFullAnswers : defaults.readFullAnswers,
+    fastTranscription:
+      typeof value.fastTranscription === 'boolean'
+        ? value.fastTranscription
+        : defaults.fastTranscription,
     fallbackTimeoutMs: Math.round(
       clamp(
         value.fallbackTimeoutMs,

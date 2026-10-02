@@ -251,6 +251,10 @@
       "title": "完整朗读回答",
       "hint": "Ava 朗读完整回答，并简要介绍代码和表格。"
     },
+    "fastTranscription": {
+      "title": "快速语音识别",
+      "hint": "短录音识别更快，但准确度略低。关闭 = 完整准确度。"
+    },
     "wake": {
       "title": "Listen for “Ava”",
       "hint": "The microphone stays open while a chat page is open. Before “Ava”, only on-device recognition processes your voice; nothing is saved.",

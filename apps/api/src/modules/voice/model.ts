@@ -84,6 +84,9 @@ const settingsFields = {
   bridgeEnabled: t.Boolean(),
   progressEnabled: t.Boolean(),
   readFullAnswers: t.Boolean(),
+  fastTranscription: t.Boolean({
+    description: 'Short context for short recordings: faster, slightly less accurate',
+  }),
   fallbackTimeoutMs: t.Number({ minimum: 300, maximum: 5000 }),
   vocabulary: t.Array(t.String({ minLength: 1, maxLength: 60 }), {
     maxItems: 60,

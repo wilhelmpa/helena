@@ -251,6 +251,10 @@
       "title": "Читать ответы полностью",
       "hint": "Ава читает весь ответ и кратко описывает код и таблицы."
     },
+    "fastTranscription": {
+      "title": "Быстрое распознавание речи",
+      "hint": "Короткие записи распознаются быстрее, но чуть менее точно. Выкл. = полная точность."
+    },
     "wake": {
       "title": "Listen for “Ava”",
       "hint": "The microphone stays open while a chat page is open. Before “Ava”, only on-device recognition processes your voice; nothing is saved.",

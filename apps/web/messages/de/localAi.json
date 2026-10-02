@@ -258,6 +258,10 @@
       "title": "Antworten ganz vorlesen",
       "hint": "Ava liest die gesamte Antwort vor und fasst Code und Tabellen kurz zusammen."
     },
+    "fastTranscription": {
+      "title": "Schnelle Spracherkennung",
+      "hint": "Kurze Aufnahmen werden schneller erkannt, aber etwas ungenauer. Aus = volle Genauigkeit."
+    },
     "loading": "Lädt …",
     "failed": "Die Spracheinstellungen konnten nicht geladen werden.",
     "aliases": {

@@ -251,6 +251,10 @@
       "title": "Leer las respuestas completas",
       "hint": "Ava lee toda la respuesta y resume el código y las tablas."
     },
+    "fastTranscription": {
+      "title": "Reconocimiento de voz rápido",
+      "hint": "Las grabaciones cortas se reconocen más rápido, pero con algo menos de precisión. Desactivado = precisión completa."
+    },
     "wake": {
       "title": "Listen for “Ava”",
       "hint": "The microphone stays open while a chat page is open. Before “Ava”, only on-device recognition processes your voice; nothing is saved.",

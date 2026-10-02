@@ -251,6 +251,10 @@
       "title": "قراءة الإجابات كاملة",
       "hint": "تقرأ آفا الإجابة كاملة وتصف الشيفرة والجداول باختصار."
     },
+    "fastTranscription": {
+      "title": "التعرف السريع على الكلام",
+      "hint": "يتم التعرف على التسجيلات القصيرة بشكل أسرع ولكن بدقة أقل قليلاً. إيقاف = دقة كاملة."
+    },
     "wake": {
       "title": "Listen for “Ava”",
       "hint": "The microphone stays open while a chat page is open. Before “Ava”, only on-device recognition processes your voice; nothing is saved.",
