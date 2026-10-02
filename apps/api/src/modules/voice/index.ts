@@ -23,6 +23,7 @@ import {
   voiceStatus,
 } from './service';
 import { DEFAULT_PRONUNCIATIONS } from './tts-text';
+import { releaseAfterStream } from './stream';
 import {
   helenaWords,
   readVoiceSettings,
@@ -93,13 +94,22 @@ export const voiceRoutes = new Elysia({ name: 'voice', detail: { tags: ['Voice']
 
   .post(
     '/voice/speech',
-    async ({ user, body }) => {
+    async ({ user, body, request }) => {
       const current = requireUser(user);
       await requireHuman(current.id);
       const release = acquireVoice('speak', current.id);
+      let streaming = false;
       try {
-        const speech = await synthesize({ text: body.text, language: body.language ?? null });
-        return new Response(speech.audio, {
+        const speech = await synthesize({
+          text: body.text,
+          language: body.language ?? null,
+          signal: request.signal,
+        });
+        const audio =
+          speech.audio instanceof ReadableStream
+            ? releaseAfterStream(speech.audio, release)
+            : speech.audio;
+        const response = new Response(audio, {
           headers: {
             'content-type': speech.contentType,
             'cache-control': 'private, no-store',
@@ -109,8 +119,10 @@ export const voiceRoutes = new Elysia({ name: 'voice', detail: { tags: ['Voice']
             ...(speech.sampleRate && { 'x-accel-buffering': 'no' }),
           },
         });
+        streaming = speech.audio instanceof ReadableStream;
+        return response;
       } finally {
-        release();
+        if (!streaming) release();
       }
     },
     {

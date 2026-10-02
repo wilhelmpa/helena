@@ -253,6 +253,8 @@ export function createLocalSpeaker(
   let turn = 0;
   let wasBusy = false;
   const outputId = Symbol('local-voice');
+  let loading = 0;
+  let destroyed = false;
 
   const audioContext = () => {
     if (!context) {
@@ -282,8 +284,9 @@ export function createLocalSpeaker(
   };
 
   const load = (piece: Piece) => {
-    if (piece.loading) return;
+    if (piece.loading || piece.abort.signal.aborted) return;
     piece.loading = true;
+    loading += 1;
     void fetchAudio(piece.text, piece.abort.signal)
       .then((response) =>
         readPiece(response, audioContext(), (buffer) => {
@@ -296,12 +299,24 @@ export function createLocalSpeaker(
       })
       .finally(() => {
         piece.done = true;
+        loading -= 1;
         wake(piece);
+        prefetch();
       });
   };
 
   const prefetch = () => {
-    for (const piece of queue.slice(0, PREFETCH + 1)) load(piece);
+    if (destroyed) return;
+    for (const piece of queue.slice(0, PREFETCH + 1)) {
+      if (loading >= PREFETCH + 1) break;
+      load(piece);
+    }
+    // Warm only the default preface. Other variants load when used, so idle generation
+    // cannot keep the model server busy while the person asks the first question.
+    if (queue.length === 0 && loading === 0) {
+      const piece = preloaded.values().next().value;
+      if (piece && !piece.loading) load(piece);
+    }
   };
 
   const stopSources = () => {
@@ -411,8 +426,8 @@ export function createLocalSpeaker(
           changed: null,
         };
         preloaded.set(text, piece);
-        load(piece);
       }
+      prefetch();
     },
     pause() {
       paused = true;
@@ -447,6 +462,7 @@ export function createLocalSpeaker(
       void audioContext().resume();
     },
     destroy() {
+      destroyed = true;
       stopSources();
       forget(queue.splice(0));
       for (const piece of preloaded.values()) piece.abort.abort();

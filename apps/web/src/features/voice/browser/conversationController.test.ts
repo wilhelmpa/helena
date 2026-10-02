@@ -147,7 +147,7 @@ describe('conversation controller with fake ear and speaker', () => {
     h.controller.stop();
   });
 
-  it('bridges once, streams the first sentence, then listens after the final audio', async () => {
+  it('replaces the bridge with the first answer sentence, then listens after the final audio', async () => {
     const h = harness();
     await h.ready();
     h.utter('Hallo');
@@ -160,7 +160,7 @@ describe('conversation controller with fake ear and speaker', () => {
       0,
     );
     assert.deepEqual(h.spoken, ['Ich schau kurz nach.', 'Hallo.']);
-    assert.equal(h.clears, 0);
+    assert.equal(h.clears, 1);
     assert.deepEqual(h.engines, ['local']);
     assert.ok(h.preloaded[0]?.includes('Ich schau kurz nach.'));
     assert.equal(h.timings[0]?.firstSoundKind, 'bridge');
@@ -378,13 +378,33 @@ describe('dictated reply', () => {
     await new Promise((resolve) => setTimeout(resolve, 12));
     assert.equal(h.sent.length, 0);
     assert.ok(h.spoken.some((text) => /prüfe|schau|Frage/.test(text)));
+    h.controller.update([], true, 0);
     h.controller.update(
       [{ id: 'reply', role: 'assistant', text: 'Die Hauptstadt ist Paris.' }],
-      true,
+      false,
       0,
     );
     await new Promise((resolve) => setTimeout(resolve, 8));
     assert.ok(h.spoken.includes('Die Hauptstadt ist Paris.'));
+    assert.equal(h.controller.snapshot.active, 'on');
+    h.speaker?.clear();
+    assert.equal(h.controller.snapshot.active, 'off');
     h.controller.stop();
   });
+});
+
+it('does not mistake the previous reply for the first text of a new voice turn', async () => {
+  const h = harness();
+  await h.ready();
+  h.utter('Erste Frage');
+  await new Promise((resolve) => setTimeout(resolve, 12));
+  const old = { id: 'old', role: 'assistant' as const, text: 'Erste Antwort.' };
+  h.controller.update([old], false, 0);
+  h.speaker?.clear();
+  h.utter('Zweite Frage');
+  h.controller.update([old], true, 0);
+  await new Promise((resolve) => setTimeout(resolve, 12));
+  assert.equal(h.spoken.at(-1), 'Einen Augenblick, ich prüfe das.');
+  assert.equal(h.timings.length, 1);
+  h.controller.stop();
 });

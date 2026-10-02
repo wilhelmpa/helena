@@ -287,6 +287,9 @@ export class ConversationController {
         void this.writeDown(this.utterances.shift());
         return;
       case 'send':
+        // Until the new message arrives, the chat still contains the previous reply.
+        // It must neither stop this turn's bridge nor mark its first answer text.
+        this.baseline = new Set(this.messages.map((message) => message.id));
         if (this.marks && !this.marks.sentAt) this.marks.sentAt = performance.now();
         window.clearTimeout(this.chimeTimer);
         if (!this.immediateResponse || !this.bridgeEnabled)
@@ -416,10 +419,11 @@ export class ConversationController {
         this.dispatch({ type: 'speakerStarted' });
       },
       onIdle: () => {
+        const wasBridge = this.bridgeActive;
         this.bridgeActive = false;
         this.ear?.setGuarded(false);
         this.dispatch({ type: 'speakerIdle' });
-        if (this.replyOnly && !this.state.awaitingAnswer && !this.busy) this.stop();
+        if (this.replyOnly && !wasBridge && !this.state.awaitingAnswer && !this.busy) this.stop();
       },
       onAudible: (text) => {
         this.recordFirstTone();
@@ -536,6 +540,8 @@ export class ConversationController {
     if (next.chunks.length) {
       this.answerReading = true;
       window.clearTimeout(this.progressTimer);
+      // A preface must never hold the real answer behind the rest of its audio.
+      if (this.bridgeActive) this.voice.clear();
     }
     for (const chunk of next.chunks) {
       if (!this.readFullAnswers && this.reading.chunks >= 3) {

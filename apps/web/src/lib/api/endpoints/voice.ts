@@ -37,6 +37,15 @@ export interface Transcription {
   model: string;
   durationMs: number;
   latencyMs: number;
+  timings?: {
+    decodeMs: number;
+    setupMs: number;
+    admissionMs: number;
+    inferenceMs: number;
+    fallbackMs: number;
+    totalMs: number;
+    attempts: number;
+  };
 }
 
 export const getVoiceStatus = () => request<VoiceStatus>('/voice');
