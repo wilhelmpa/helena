@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from 'bun:test';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import catalog from '../../../../scripts/tool-regression/catalog.json';
@@ -69,9 +69,13 @@ test('every native registration has an explicit executable fixture', () => {
 
 for (const tool of tools) {
   test(`${tool.name}: real runtime execution and invalid arguments`, async () => {
-    const workdir = await mkdtemp(join(tmpdir(), 'volition-ABSCHLUSSTEST-'));
-    directories.push(workdir);
+    const root = await mkdtemp(join(tmpdir(), 'volition-ABSCHLUSSTEST-'));
+    directories.push(root);
+    const workdir = join(root, 'project');
+    const other = join(root, 'FOREIGN');
+    await Promise.all([mkdir(workdir), mkdir(other)]);
     await writeFile(join(workdir, 'ABSCHLUSSTEST.txt'), 'ABSCHLUSSTEST');
+    await writeFile(join(other, 'ABSCHLUSSTEST.txt'), 'ABSCHLUSSTEST');
     const context = { workdir, env: {}, signal: new AbortController().signal };
     const result = await executeTool(tool, inputs[tool.name]!, context);
     expect(result.isError).not.toBe(true);
@@ -82,10 +86,16 @@ for (const tool of tools) {
     if (FILE_TOOLS.includes(tool)) {
       const foreign = await executeTool(
         tool,
-        { ...inputs[tool.name], path: '../FOREIGN/ABSCHLUSSTEST' },
+        {
+          ...inputs[tool.name],
+          path: ['list_files', 'search_files'].includes(tool.name)
+            ? '../FOREIGN'
+            : '../FOREIGN/ABSCHLUSSTEST.txt',
+        },
         context,
       );
       expect(foreign.isError).toBe(true);
+      expect(foreign.text).toContain('outside');
     }
   });
 }

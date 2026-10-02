@@ -63,6 +63,7 @@ export async function seedToolStack() {
     fromName: 'ABSCHLUSSTEST',
   });
   const path = `Projects/${key}/Docs/ABSCHLUSSTEST.md`;
+  const restrictedPath = `Projects/${restricted.key}/Docs/ABSCHLUSSTEST.md`;
   const note = await app.handle(
     new Request('http://localhost/knowledge/notes', {
       method: 'PUT',
@@ -71,6 +72,14 @@ export async function seedToolStack() {
     }),
   );
   expect(note.status).toBeLessThan(400);
+  const foreignNote = await app.handle(
+    new Request('http://localhost/knowledge/notes', {
+      method: 'PUT',
+      headers: { cookie: owner.cookie, 'content-type': 'application/json' },
+      body: JSON.stringify({ path: restrictedPath, content: '# ABSCHLUSSTEST Foreign' }),
+    }),
+  );
+  expect(foreignNote.status).toBeLessThan(400);
   // Receipts normally enter through the worker's intake, which has no JSON create route.
   const [receipt] = await db
     .insert(helenaReceipt)
@@ -114,7 +123,7 @@ export async function seedToolStack() {
       projectId: restricted.id,
       issueId: restrictedIssue.id,
       columnId: restrictedDetail.columns[0]!.id,
-      path: `Projects/${restricted.key}/Docs/ABSCHLUSSTEST.md`,
+      path: restrictedPath,
       root: `Projects/${restricted.key}`,
     },
     fields: {
