@@ -1,6 +1,5 @@
-ALTER TABLE agent_usage ADD COLUMN provisional boolean NOT NULL DEFAULT false;
---> statement-breakpoint
-CREATE UNIQUE INDEX agent_usage_provisional_run_uq ON agent_usage (run_id) WHERE kind = 'run' AND run_id IS NOT NULL AND provisional;
+ALTER TABLE "agent_usage" ADD COLUMN "provisional" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX "agent_usage_provisional_run_uq" ON "agent_usage" USING btree ("run_id") WHERE "agent_usage"."kind" = 'run' AND "agent_usage"."run_id" IS NOT NULL AND "agent_usage"."provisional";
 --> statement-breakpoint
 CREATE FUNCTION volition_record_terminal_run_usage() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
