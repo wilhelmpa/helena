@@ -1901,6 +1901,7 @@ export const agentUsage = pgTable(
     kind: text('kind').notNull(),
     // The runner preset that ran it ('hermes', 'claude', 'codex', ...), null for a custom one.
     runtime: text('runtime'),
+    provisional: boolean('provisional').notNull().default(false),
     // gen_ai.response.model and gen_ai.provider.name, as the runtime reported them.
     model: text('model'),
     provider: text('provider'),
@@ -1921,9 +1922,9 @@ export const agentUsage = pgTable(
     index('agent_usage_project_time_idx').on(t.projectId, t.occurredAt),
     index('agent_usage_time_idx').on(t.occurredAt),
     index('agent_usage_run_idx').on(t.runId),
-    uniqueIndex('agent_usage_run_kind_uq')
+    uniqueIndex('agent_usage_provisional_run_uq')
       .on(t.runId)
-      .where(sql`${t.kind} = 'run' AND ${t.runId} IS NOT NULL`),
+      .where(sql`${t.kind} = 'run' AND ${t.runId} IS NOT NULL AND ${t.provisional}`),
   ],
 );
 

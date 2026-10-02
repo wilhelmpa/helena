@@ -43,6 +43,7 @@ import {
   modelCheckOf,
   withStoredFallback,
   type RunModelReport,
+  type ModelCheck,
 } from '../runtime-sync/model-check';
 import { routeRequest } from '#modules/model-router/service';
 import { DIGEST_SYSTEM_PROMPT } from '#modules/updates/digest-prompt';
@@ -1082,12 +1083,11 @@ export async function finishRun(
   await touchRunner(agent.id);
   const error = result.status === 'failed' ? (result.error?.slice(0, 500) ?? 'Run failed') : null;
   // A run that names a model of its own (a workflow step's) was configured with that one.
-  const [own] = result.runtime
-    ? await db
-        .select({ model: agentRun.model, modelCheck: agentRun.modelCheck })
-        .from(agentRun)
-        .where(eq(agentRun.id, runId))
-    : [];
+  const [own] = await db
+    .select({ model: agentRun.model, modelCheck: agentRun.modelCheck })
+    .from(agentRun)
+    .where(eq(agentRun.id, runId));
+  const stored = own?.modelCheck as ModelCheck | null | undefined;
   const check = withStoredFallback(
     modelCheckOf(result.runtime, own?.model ?? null),
     own?.modelCheck ?? null,
@@ -1130,7 +1130,12 @@ export async function finishRun(
             inputTokens: result.usage?.inputTokens ?? 0,
             outputTokens: result.usage?.outputTokens ?? 0,
             runtime: agent.runtime,
-            model: result.runtime?.used?.model ?? own?.model ?? null,
+            model:
+              result.runtime?.used?.model ??
+              stored?.used?.model ??
+              own?.model ??
+              stored?.configured?.model ??
+              agent.model,
             provider: result.runtime?.used?.provider ?? null,
           },
         },

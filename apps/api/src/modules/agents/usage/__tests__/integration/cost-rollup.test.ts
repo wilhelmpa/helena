@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
 import {
   agentRun,
+  agentUsage,
   approvalRequest,
   db,
   helenaGoalTask,
@@ -147,17 +148,21 @@ describe('agent cost rollup and department throttle', () => {
         spend: { runtime, model: 'unknown-test-model', inputTokens: 30, outputTokens: 10 },
       });
     }
-    await db.insert(agentRun).values({
-      agentId: agent.id,
-      projectId,
-      issueId: issue.id,
-      prompt: 'older run without ledger',
-      status: 'success',
-      model: 'unknown-test-model',
-      inputTokens: 5,
-      outputTokens: 5,
-      finishedAt: new Date(),
-    });
+    const [historical] = await db
+      .insert(agentRun)
+      .values({
+        agentId: agent.id,
+        projectId,
+        issueId: issue.id,
+        prompt: 'older run without ledger',
+        status: 'success',
+        model: 'unknown-test-model',
+        inputTokens: 5,
+        outputTokens: 5,
+        finishedAt: new Date(),
+      })
+      .returning();
+    await db.delete(agentUsage).where(eq(agentUsage.runId, historical!.id));
     const usage = await asOwner.teams({ teamId })['agent-usage'].get({
       query: { by: 'issue,agent,project,goal,department' },
     });

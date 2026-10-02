@@ -549,3 +549,30 @@ test('historical run backfill is dry by default and repeatable', async () => {
   expect(await backfillRunUsage([run!.id], true)).toHaveLength(1);
   expect(await backfillRunUsage([run!.id], true)).toHaveLength(0);
 });
+
+test('expired run ledger retains the model recorded at claim time', async () => {
+  const { api, teamId, agentId, projectId } = await setup();
+  const { agentRun } = await import('@repo/db');
+  const [run] = await db
+    .insert(agentRun)
+    .values({
+      agentId,
+      projectId,
+      prompt: 'Expired fixture',
+      inputTokens: 1000000,
+      outputTokens: 100000,
+      modelCheck: { configured: { model: 'claude-opus-5' } },
+    })
+    .returning();
+  await db
+    .update(agentRun)
+    .set({ status: 'failed', finishedAt: new Date() })
+    .where(eq(agentRun.id, run!.id));
+  const usage = await api
+    .teams({ teamId })
+    ['agent-usage'].get({ query: { by: 'agent,model,kind' } });
+  const row = usage.data!.rows.find((row) => row.agentId === agentId && row.kind === 'run')!;
+  expect(row.model).toBe('claude-opus-5');
+  expect(row.costEur).toBeCloseTo(6.45, 6);
+  expect(row.unledgeredRuns).toBe(0);
+});

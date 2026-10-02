@@ -80,21 +80,28 @@ export async function recordUsage(
         ? Math.max(0, Math.min(Math.round(spend.durationMs), 2_000_000_000))
         : null,
   };
-  const insert = executor.insert(agentUsage).values(values);
   if (entry.kind === 'run' && entry.runId) {
-    await insert.onConflictDoUpdate({
-      target: agentUsage.runId,
-      targetWhere: sql`${agentUsage.kind} = 'run' AND ${agentUsage.runId} IS NOT NULL`,
-      set: {
-        ...values,
-        model: sql`coalesce(excluded.model, ${agentUsage.model})`,
-        provider: sql`coalesce(excluded.provider, ${agentUsage.provider})`,
-        runtime: sql`coalesce(excluded.runtime, ${agentUsage.runtime})`,
-        sessionId: sql`coalesce(excluded.session_id, ${agentUsage.sessionId})`,
-        durationMs: sql`coalesce(excluded.duration_ms, ${agentUsage.durationMs})`,
-      },
-    });
-  } else await insert;
+    const [provisional] = await executor
+      .delete(agentUsage)
+      .where(
+        and(
+          eq(agentUsage.runId, entry.runId),
+          eq(agentUsage.kind, 'run'),
+          eq(agentUsage.provisional, true),
+        ),
+      )
+      .returning({
+        durationMs: agentUsage.durationMs,
+        model: agentUsage.model,
+        provider: agentUsage.provider,
+        sessionId: agentUsage.sessionId,
+      });
+    values.durationMs ??= provisional?.durationMs ?? null;
+    values.model ??= provisional?.model ?? null;
+    values.provider ??= provisional?.provider ?? null;
+    values.sessionId ??= provisional?.sessionId ?? null;
+  }
+  await executor.insert(agentUsage).values(values);
 }
 
 // ---------------------------------------------------------------- prices
