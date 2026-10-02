@@ -156,7 +156,7 @@ export function shellTool(options: { timeoutMs: number; delivered?: string[] }):
       }
       return {
         text: `${head}\n${hint}\n${result.output.trim() || '(no output)'}`,
-        isError: outcome !== 'ok',
+        isError: outcome === 'error',
         outcome,
         changed: true,
         exitCode: result.timedOut ? null : result.code,

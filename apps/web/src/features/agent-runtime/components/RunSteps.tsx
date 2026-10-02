@@ -1,30 +1,39 @@
-import { Check, Circle, X } from 'lucide-react';
+import { Check, Circle, Minus, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { toolResultFailed } from '@/components/agent-message/toolOutcome';
+import {
+  exitedNonzero,
+  toolResultFailed,
+  type ToolOutcome,
+} from '@/components/agent-message/toolOutcome';
 import type { AgUiEvent } from '@/lib/api/endpoints/agentChat';
 
-// A run's steps as a checklist: each tool it called, done, failed or still running.
+type StepState = 'running' | 'done' | 'exited' | 'failed';
+
+// A run's steps as a checklist: each tool it called, done, ended with a code, failed or
+// still running.
 export default function RunSteps({ events }: { events: AgUiEvent[] }) {
   const t = useTranslations('agentRuntime.runs');
-  const steps = new Map<
-    string,
-    { name: string; state: 'running' | 'done' | 'failed'; exitCode?: number | null }
-  >();
+  const steps = new Map<string, { name: string; state: StepState; exitCode: number | null }>();
   for (const event of events) {
     if (event.type === 'TOOL_CALL_START' && event.toolCallId && event.toolCallName) {
-      steps.set(event.toolCallId, { name: event.toolCallName, state: 'running' });
+      steps.set(event.toolCallId, { name: event.toolCallName, state: 'running', exitCode: null });
     }
     if (event.type === 'TOOL_CALL_RESULT' && event.toolCallId) {
       const step = steps.get(event.toolCallId);
       if (step) {
-        step.state = toolResultFailed({
-          ...event.metadata,
-          isError: event.metadata?.isError === true || event.isError === true,
-        })
-          ? 'failed'
-          : 'done';
-        step.exitCode =
+        const exitCode =
           typeof event.metadata?.exitCode === 'number' ? event.metadata.exitCode : null;
+        const result = {
+          isError: event.metadata?.isError === true || event.isError === true,
+          outcome: event.metadata?.outcome as ToolOutcome | undefined,
+          exitCode,
+        };
+        step.exitCode = exitCode;
+        step.state = toolResultFailed(result)
+          ? 'failed'
+          : exitedNonzero(result)
+            ? 'exited'
+            : 'done';
       }
     }
   }
@@ -32,17 +41,23 @@ export default function RunSteps({ events }: { events: AgUiEvent[] }) {
   return (
     <ol className="ds-run-steps">
       {[...steps.entries()].map(([id, step]) => {
-        const Icon = step.state === 'done' ? Check : step.state === 'failed' ? X : Circle;
+        const Icon =
+          step.state === 'done'
+            ? Check
+            : step.state === 'failed'
+              ? X
+              : step.state === 'exited'
+                ? Minus
+                : Circle;
+        const code = step.state === 'exited' || step.state === 'failed' ? step.exitCode : null;
         return (
           <li key={id} data-state={step.state}>
             <Icon aria-hidden="true" size={14} />
             <span dir="ltr">{step.name}</span>
-            <span
-              className={step.state === 'failed' && step.exitCode != null ? undefined : 'sr-only'}
-            >
-              {step.state === 'failed' && step.exitCode != null
-                ? t('stepFailedExit', { code: step.exitCode })
-                : t(`stepState.${step.state}`)}
+            <span className={code != null ? undefined : 'sr-only'}>
+              {code != null
+                ? t(step.state === 'failed' ? 'stepFailedExit' : 'stepExited', { code })
+                : t(`stepState.${step.state === 'exited' ? 'done' : step.state}`)}
             </span>
           </li>
         );

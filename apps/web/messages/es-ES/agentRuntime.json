@@ -11,6 +11,7 @@
     "skills": "Skills"
   },
   "runs": {
+    "stepExited": "Terminó con código {code}",
     "stepFailedExit": "Error con código {code}",
     "empty": "Todavía no hay ejecuciones.",
     "loadMore": "Cargar más",

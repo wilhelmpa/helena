@@ -5,7 +5,7 @@ import type { DynamicToolUIPart } from 'ai';
 import { LoaderCircle, TriangleAlert, Wrench } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Task, TaskContent, TaskTrigger } from '@/components/ai-elements/task';
-import { toolOutcome, toolResultFailed } from './toolOutcome';
+import { exitedNonzero, toolOutcome } from './toolOutcome';
 import {
   Tool,
   ToolContent,
@@ -23,14 +23,17 @@ export type RenderTool = (tool: DynamicToolUIPart) => ReactNode | undefined;
 export function AgentToolCall({ tool }: { tool: DynamicToolUIPart }) {
   const t = useTranslations('common.agentChat');
   const outcome = toolOutcome(tool);
-  const failed =
-    tool.state === 'output-error' ||
-    tool.state === 'output-denied' ||
-    (outcome !== null && toolResultFailed(outcome));
+  const failed = tool.state === 'output-error' || tool.state === 'output-denied';
+  const neutral = tool.state === 'output-available' && outcome !== null && exitedNonzero(outcome);
   let stateLabel = t('toolRunning');
   if (failed) {
     stateLabel =
       outcome?.exitCode != null ? t('toolFailedExit', { code: outcome.exitCode }) : t('toolFailed');
+  } else if (neutral) {
+    stateLabel =
+      outcome.exitCode != null
+        ? t('toolExited', { code: outcome.exitCode })
+        : t('toolExitedNonzero');
   } else if (tool.state === 'output-available') {
     stateLabel = t('toolDone');
   }
@@ -38,8 +41,9 @@ export function AgentToolCall({ tool }: { tool: DynamicToolUIPart }) {
     <Tool>
       <ToolHeader
         name={tool.toolName}
-        state={failed ? 'output-error' : tool.state}
+        state={tool.state}
         stateLabel={stateLabel}
+        neutral={neutral}
       />
       <ToolContent>
         <ToolInput input={tool.input} label={t('toolInput')} />
@@ -74,10 +78,7 @@ export function AgentToolGroup({
   }
   const running = rest.find((tool) => isToolRunning(tool.state));
   const failed = rest.some(
-    (tool) =>
-      tool.state === 'output-error' ||
-      tool.state === 'output-denied' ||
-      toolResultFailed(toolOutcome(tool) ?? {}),
+    (tool) => tool.state === 'output-error' || tool.state === 'output-denied',
   );
 
   return (

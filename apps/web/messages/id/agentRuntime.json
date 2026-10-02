@@ -11,6 +11,7 @@
     "skills": "Skills"
   },
   "runs": {
+    "stepExited": "Selesai dengan kode {code}",
     "stepFailedExit": "Gagal dengan kode {code}",
     "empty": "Belum ada run.",
     "loadMore": "Muat lebih banyak",
