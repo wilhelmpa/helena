@@ -95,6 +95,11 @@ beforeEach(async () => {
 
 afterEach(async () => {
   await act(async () => root.unmount());
+  // Radix restores focus in a timer after unmount. Keep this DOM's event
+  // constructors installed until it has dispatched its unmount event.
+  await act(async () => {
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+  });
   dom.window.close();
   for (const [name, descriptor] of saved) {
     if (descriptor) Object.defineProperty(globalThis, name, descriptor);
