@@ -52,9 +52,17 @@ export class ToolFixtureResolver {
         fields[param] = this.created.get(prefix);
         continue;
       }
-      const create = this.tools.find(
-        (candidate) => candidate.method === 'POST' && candidate.path === prefix,
-      );
+      const segment = prefix.split('/').at(-1)!;
+      // Several resources are created under a project and addressed globally by
+      // id afterwards (e.g. /projects/:projectKey/cycles -> /cycles/:cycleId).
+      const create =
+        this.tools.find((candidate) => candidate.method === 'POST' && candidate.path === prefix) ??
+        this.tools.find(
+          (candidate) =>
+            candidate.method === 'POST' &&
+            candidate.path.endsWith(`/${segment}`) &&
+            candidate.pathParams.every((key) => key in fields),
+        );
       if (!create || operatorTools.has(create.name) || create.access === 'person-only') continue;
       const args = await this.argumentsFor(create, depth + 1);
       const result = await dispatchTool(
@@ -85,6 +93,27 @@ export class ToolFixtureResolver {
       });
     if (['preview_project_blueprint', 'apply_project_blueprint'].includes(tool.name))
       args.sections = ['project'];
+    if (tool.name === 'get_issue_timeline_items') args.from = '2026-10-01T00:00:00.000Z';
+    if (tool.name === 'list_what_mentions_task_note_or_another_item')
+      args.target = `issue:${this.stack.issue.id}`;
+    if (tool.name === 'backlinks') args.path = this.stack.path;
+    if (tool.name === 'rename_team') args.name = 'ABSCHLUSSTEST Team';
+    if (tool.name === 'create_agent_skill')
+      Object.assign(args, {
+        source: 'inline',
+        name: 'abschlusstest',
+        description: 'ABSCHLUSSTEST',
+        markdown: '---\nname: abschlusstest\ndescription: ABSCHLUSSTEST\n---\n# ABSCHLUSSTEST',
+      });
+    if (tool.name === 'add_mcp_server') Object.assign(args, { command: 'printf', enabled: false });
+    if (tool.name === 'add_attachment')
+      Object.assign(args, {
+        contentBase64: Buffer.from('ABSCHLUSSTEST').toString('base64'),
+        contentType: 'text/plain',
+      });
+    if (tool.name === 'fact_store') args.content = 'ABSCHLUSSTEST is synthetic fixture evidence.';
+    if (['upsert_agent_runtime_file', 'delete_agent_runtime_file'].includes(tool.name))
+      args.path = 'SOUL.md';
     return args;
   }
 }

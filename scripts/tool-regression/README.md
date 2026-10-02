@@ -12,6 +12,9 @@ dispatch, and supplemented with fixture identities. Results must fit the declare
 output schema and never contain a 5xx. Declared domain refusals (for example an absent
 run or a missing provider configuration) remain 4xx and are recorded separately
 from successful 2xx responses; they do not prove a successful business operation.
+`api-status.json` pins each executable fixture's expected status, so a previously
+successful 2xx operation changing to a 4xx also fails the gate. Its keys must cover
+every executable API registration.
 
 Connectors use real credential binding, agent authorization and `callConfiguredTool`.
 Synthetic provider replies block unknown hosts before network access. Paper trading

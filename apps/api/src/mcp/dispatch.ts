@@ -19,8 +19,8 @@ const inputValidator = new AjvJsonSchemaValidator();
 const validators = new WeakMap<McpRouteTool, ReturnType<typeof inputValidator.getValidator>>();
 
 // Runs a tool call as an in-process request against the real route and returns the
-// response body as text. Path params fill the URL; the remaining arguments become
-// the JSON body (POST/PUT/PATCH) or the query string (GET/DELETE). The caller's API
+// response body as text. Path params fill the URL; declared query fields remain in
+// the query string, and body fields go in JSON. The caller's API
 // credential is forwarded to the route session guard so permission checks run
 // exactly as they do over HTTP.
 //
@@ -70,17 +70,16 @@ export async function dispatchTool(
   const hasBody = tool.hasBody;
   let url = `${BASE}${path}`;
   let body: string | undefined;
-  if (hasBody) {
-    body = JSON.stringify(rest);
-  } else {
-    const qs = new URLSearchParams();
-    for (const [key, value] of Object.entries(rest)) {
-      if (value != null)
-        qs.set(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
-    }
-    const query = qs.toString();
-    if (query) url += `?${query}`;
+  const qs = new URLSearchParams();
+  for (const [key, value] of Object.entries(rest)) {
+    if (hasBody && !tool.queryParams?.includes(key)) continue;
+    if (value != null)
+      qs.set(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
+    if (hasBody && !tool.bodyParams?.includes(key)) delete rest[key];
   }
+  const query = qs.toString();
+  if (query) url += `?${query}`;
+  if (hasBody) body = JSON.stringify(rest);
 
   const request = new Request(url, {
     method: tool.method,

@@ -48,6 +48,9 @@ export interface McpRouteTool {
   // Whether the route declares a body schema. The method alone does not say: a
   // DELETE carries one where the deletion needs an argument.
   hasBody: boolean;
+  // Query fields stay in the URL even on routes that also declare a JSON body.
+  queryParams?: string[];
+  bodyParams?: string[];
   inputSchema: McpInputSchema;
   outputSchema: McpOutputSchema;
   annotations: McpToolAnnotations;
@@ -164,6 +167,20 @@ interface SchemaShape {
   required?: unknown;
   anyOf?: SchemaShape[];
   oneOf?: SchemaShape[];
+  allOf?: SchemaShape[];
+}
+
+function schemaFields(value: unknown): string[] {
+  if (!value || typeof value !== 'object') return [];
+  const schema = value as SchemaShape;
+  return [
+    ...new Set([
+      ...Object.keys(schema.properties ?? {}),
+      ...[...(schema.anyOf ?? []), ...(schema.oneOf ?? []), ...(schema.allOf ?? [])].flatMap(
+        schemaFields,
+      ),
+    ]),
+  ];
 }
 
 function jsonSchema(value: unknown): unknown {
@@ -304,6 +321,8 @@ function generateRouteTools(app: McpApp): McpRouteTool[] {
       path: route.path,
       pathParams,
       hasBody: hooks.body != null,
+      queryParams: schemaFields(hooks.query),
+      bodyParams: schemaFields(hooks.body),
       inputSchema: mergeInputSchema(hooks, pathParams),
       outputSchema: outputSchema(
         tool === 'list_mail_threads_newest_first' ? { 200: CompactThreadPage } : hooks.response,

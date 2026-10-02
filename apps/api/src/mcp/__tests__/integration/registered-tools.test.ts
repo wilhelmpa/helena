@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, expect, test } from 'bun:test';
 import { AjvJsonSchemaValidator } from '@modelcontextprotocol/sdk/validation/ajv-provider.js';
 import catalog from '../../../../../../scripts/tool-regression/catalog.json';
+import expectedStatus from '../../../../../../scripts/tool-regression/api-status.json';
 import { sample, invalidInput } from '../../../../../../scripts/tool-regression/sample';
 import { app } from '#tests/helpers/app';
 import { routeTools } from '../../generate';
@@ -34,6 +35,12 @@ afterAll(async () => {
 
 test('every API registration has a named regression fixture', () => {
   expect(tools.map((tool) => tool.name).sort()).toEqual(catalog.api);
+  expect(Object.keys(expectedStatus).sort()).toEqual(
+    tools
+      .filter((tool) => tool.access !== 'person-only' && !operatorTools.has(tool.name))
+      .map((tool) => tool.name)
+      .sort(),
+  );
 });
 
 test('person-only tools are invisible to agents', async () => {
@@ -133,13 +140,17 @@ for (const tool of [...tools].sort(
       tool.pathParams.some((param) => ['projectKey', 'projectId', 'issueId'].includes(param)) ||
       (tool.path.startsWith('/knowledge') && ('path' in valid || 'root' in valid))
     ) {
-      const scoped = sample(tool.inputSchema, {
-        ...resolver.fields,
-        ...stack.restrictedFields,
-      }) as Record<string, unknown>;
       const foreignArgs = { ...valid };
       for (const key of Object.keys(stack.restrictedFields))
-        if (key in foreignArgs) foreignArgs[key] = scoped[key];
+        if (key in foreignArgs)
+          foreignArgs[key] = sample(
+            tool.inputSchema.properties[key],
+            {
+              ...resolver.fields,
+              ...stack.restrictedFields,
+            },
+            key,
+          );
       const foreign = await dispatchTool(
         app,
         tool,
@@ -171,6 +182,9 @@ for (const tool of [...tools].sort(
     // The transport contract includes domain refusals (no configured provider,
     // no queued run). Preserve their 4xx envelope; never accept a server failure.
     expect(response.structuredContent.status).toBeLessThan(500);
+    expect(response.structuredContent.status).toBe(
+      (expectedStatus as Record<string, number>)[tool.name],
+    );
     expect(validateOutput(response.structuredContent).valid).toBe(true);
   }, 30_000);
 }
