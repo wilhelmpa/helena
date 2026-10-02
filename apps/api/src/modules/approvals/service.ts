@@ -263,7 +263,13 @@ export async function createApprovalRequest(input: {
     .select({ role: aiAgent.agentRole })
     .from(aiAgent)
     .where(eq(aiAgent.id, input.agent.id));
-  const homeApproved = requestingAgent?.role === 'home' && view.outcome === 'allow';
+  // Paper strategies always need the human's frozen-snapshot decision, including
+  // Home requests. An audit-only auto approval has no human decider and cannot
+  // authorize trading or be decided later.
+  const homeApproved =
+    requestingAgent?.role === 'home' &&
+    view.outcome === 'allow' &&
+    input.payload?.type !== 'trading-strategy';
   let id: number;
   try {
     const [created] = await db

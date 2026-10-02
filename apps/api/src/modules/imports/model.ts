@@ -1,11 +1,12 @@
 import { t } from 'elysia';
 
-export const importIdParams = t.Object({ importId: t.String() });
+export const importIdParams = t.Object({ importId: t.String({ format: 'uuid' }) });
 
 export const projectKeyParams = t.Object({ projectKey: t.String() });
 
 export const prepareImportBody = t.Object({
   attachmentId: t.String({
+    format: 'uuid',
     description: 'The attachment id from the [file: "name" (attachment id: …)] marker.',
   }),
   mapping: t.Record(t.String(), t.String(), {

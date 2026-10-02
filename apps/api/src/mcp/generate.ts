@@ -22,6 +22,7 @@ export interface McpInputSchema {
   type: 'object';
   properties: Record<string, unknown>;
   required: string[];
+  allOf?: Record<string, unknown>[];
 }
 
 // Behaviour hints an MCP client reads to decide what a tool may do — chiefly
@@ -142,6 +143,7 @@ export function withoutFields(schema: McpInputSchema, names: string[]): McpInput
   const properties = { ...schema.properties };
   for (const name of names) delete properties[name];
   return {
+    ...schema,
     type: 'object',
     properties,
     required: schema.required.filter((name) => !names.includes(name)),
@@ -187,6 +189,7 @@ function jsonSchema(value: unknown): unknown {
 function mergeInputSchema(hooks: Record<string, unknown>, pathParams: string[]): McpInputSchema {
   const properties: Record<string, unknown> = {};
   const required: string[] = [];
+  const allOf: Record<string, unknown>[] = [];
   for (const key of ['params', 'query', 'body'] as const) {
     const schema = hooks[key] as SchemaShape | undefined;
     if (!schema) continue;
@@ -194,12 +197,30 @@ function mergeInputSchema(hooks: Record<string, unknown>, pathParams: string[]):
     // own. Offer every branch's properties and require only what all of them do, so
     // the caller sees the discriminator; the route still validates the combination.
     const branches = schema.anyOf ?? schema.oneOf;
+    if (!schema.properties && branches) {
+      allOf.push({
+        anyOf: branches.map((part) => {
+          const clean = jsonSchema(part) as Record<string, unknown>;
+          // Path and query arguments share this object with the body fields.
+          delete clean.additionalProperties;
+          return clean;
+        }),
+      });
+    }
     const parts = schema.properties ? [schema] : (branches ?? []);
     let common: string[] | null = null;
     for (const part of parts) {
       if (!part.properties) continue;
-      for (const [name, value] of Object.entries(part.properties))
-        properties[name] = jsonSchema(value);
+      for (const [name, value] of Object.entries(part.properties)) {
+        const field = jsonSchema(value);
+        if (
+          !schema.properties &&
+          name in properties &&
+          JSON.stringify(properties[name]) !== JSON.stringify(field)
+        ) {
+          properties[name] = { anyOf: [properties[name], field] };
+        } else properties[name] = field;
+      }
       const names = Array.isArray(part.required) ? (part.required as string[]) : [];
       common = common === null ? names : common.filter((n) => names.includes(n));
     }
@@ -211,7 +232,12 @@ function mergeInputSchema(hooks: Record<string, unknown>, pathParams: string[]):
     }
     required.push(name);
   }
-  return { type: 'object', properties, required: [...new Set(required)] };
+  return {
+    type: 'object',
+    properties,
+    required: [...new Set(required)],
+    ...(allOf.length ? { allOf } : {}),
+  };
 }
 
 // "create_issue" → "Create issue", for a tool whose route has no summary.

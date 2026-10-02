@@ -6,6 +6,8 @@ import { MCP_LOOPBACK_HEADER, setMcpOAuthToken } from '../shared/mcp-request';
 import type { McpCredential } from './credential';
 import { structuredResult, type StructuredResult } from './result';
 import { OWNER_TOOLS_HEADER } from '#modules/owner-terminal/ava-tools';
+import { AjvJsonSchemaValidator } from '@modelcontextprotocol/sdk/validation/ajv-provider.js';
+import { toolError } from './result';
 
 // Methods that carry a request body; the rest put their arguments in the query.
 
@@ -13,6 +15,8 @@ import { OWNER_TOOLS_HEADER } from '#modules/owner-terminal/ava-tools';
 // like "http://x" fails to route. localhost is never resolved (app.handle runs in
 // process), so it is only a syntactically valid base for the URL.
 const BASE = 'http://localhost';
+const inputValidator = new AjvJsonSchemaValidator();
+const validators = new WeakMap<McpRouteTool, ReturnType<typeof inputValidator.getValidator>>();
 
 // Runs a tool call as an in-process request against the real route and returns the
 // response body as text. Path params fill the URL; the remaining arguments become
@@ -39,6 +43,22 @@ export async function dispatchTool(
     agentProject?: string | null;
   },
 ): Promise<{ text: string; isError: boolean; structuredContent: StructuredResult }> {
+  let validate = validators.get(tool);
+  if (!validate) {
+    validate = inputValidator.getValidator(
+      tool.inputSchema as Parameters<typeof inputValidator.getValidator>[0],
+    );
+    validators.set(tool, validate);
+  }
+  const validation = validate(args);
+  if (!validation.valid) {
+    const message = `Invalid ${tool.name} arguments: ${validation.errorMessage}`;
+    return {
+      text: JSON.stringify({ error: message }),
+      isError: true,
+      structuredContent: toolError(400, message),
+    };
+  }
   const rest: Record<string, unknown> = { ...args };
 
   let path = tool.path;
@@ -55,7 +75,8 @@ export async function dispatchTool(
   } else {
     const qs = new URLSearchParams();
     for (const [key, value] of Object.entries(rest)) {
-      if (value != null) qs.set(key, String(value));
+      if (value != null)
+        qs.set(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
     }
     const query = qs.toString();
     if (query) url += `?${query}`;
