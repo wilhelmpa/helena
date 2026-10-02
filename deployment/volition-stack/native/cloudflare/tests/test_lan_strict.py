@@ -293,6 +293,10 @@ http {{
                     self.end_headers()
                     return
                 if self.path.endswith('/workbench.js'):
+                    if self.headers.get('If-None-Match') == '"original-workbench"':
+                        self.send_response(304)
+                        self.end_headers()
+                        return
                     data = b'class SignService { async vsda(){return fetch("/vsda_bg.wasm");} }'
                     self.send_response(200)
                     self.send_header('Content-Type', 'application/javascript')
@@ -429,6 +433,11 @@ http {{
                 status, body, _ = get('/code/stable-123abc/static/out/vs/code/browser/workbench/workbench.js', '')
                 self.assertEqual(status, 200)
                 self.assertIn(b'if(!this.productService.serverLicense?.length)', body)
+                self.assertIn(b'VSDA unavailable in Code OSS', body)
+                status, body, _ = get('/code/stable-123abc/static/out/vs/code/browser/workbench/workbench.js', '',
+                                      {'If-None-Match': '"original-workbench"',
+                                       'If-Modified-Since': 'Thu, 01 Oct 2026 00:00:00 GMT'})
+                self.assertEqual(status, 200)
                 self.assertIn(b'VSDA unavailable in Code OSS', body)
                 for path, cookie in (('/', ''), ('/', 'CF_Authorization=expired'),
                                      ('/backend/anything', ''),

@@ -25,7 +25,10 @@ vendor files are excluded from ESLint, not edited.
 Code OSS does not ship the proprietary VSDA browser binaries. The narrowly matched
 workbench response skips loading VSDA when no server license exists, using the signing
 service's existing unsigned fallback. A licensed server keeps its signing path. No dummy
-WASM or signing validator is supplied. This is separate from Access blocking editor and
+WASM or signing validator is supplied. Conditional cache headers are stripped from the
+workbench request so an upstream 304 cannot reuse the old, uncorrected body. Hard-reload
+an already-open editor once at rollout: the unchanged upstream commit may still have
+immutable assets in the browser cache. This is separate from Access blocking editor and
 extension-worker imports; see [code-server's upstream issue](https://github.com/coder/code-server/issues/7090).
 
 ## Cloudflare configuration required from the owner
