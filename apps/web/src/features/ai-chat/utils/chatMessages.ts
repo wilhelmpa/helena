@@ -2,7 +2,7 @@ import type { ModelRoute } from '@/lib/api/endpoints/decisions';
 import type { LocalFallback, ModelCheck } from '@/lib/api/endpoints/agentRuntimeSync';
 import type { DynamicToolUIPart, UIMessage } from 'ai';
 import type { AiChatAttachment, AiChatMessage } from '@/lib/api/endpoints/agentChat';
-import { outcomeMetadata } from '@/components/agent-message/toolOutcome';
+import { toolResultFailed, outcomeMetadata } from '@/components/agent-message/toolOutcome';
 
 // Mirrors the API's CHAT_PROMPT_LIMIT (apps/api/.../chat/model.ts): the composer caps
 // input at the same length the server accepts, so a member hits a visible limit on the
@@ -68,8 +68,7 @@ function toolPart(part: Extract<AiChatMessage['parts'][number], { type: 'tool' }
   if (part.result == null) return { ...base, state: 'input-available' } as DynamicToolUIPart;
   const resultProviderMetadata = outcomeMetadata(part.outcome, part.exitCode);
   const meta = resultProviderMetadata ? { resultProviderMetadata } : {};
-  // A command that ended non-zero with output is a result, not a failure (`outcome`).
-  if (part.isError && part.outcome !== 'nonzero_with_output') {
+  if (toolResultFailed(part)) {
     return { ...base, state: 'output-error', errorText: part.result, ...meta } as DynamicToolUIPart;
   }
   return { ...base, state: 'output-available', output: part.result, ...meta } as DynamicToolUIPart;

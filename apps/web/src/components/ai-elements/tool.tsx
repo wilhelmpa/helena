@@ -91,12 +91,19 @@ export function ToolHeader({
     >
       <ChevronRight className="size-3.5 shrink-0 text-muted-foreground transition-transform duration-150 group-data-[state=open]:rotate-90 rtl:group-data-[state=closed]:rotate-180" />
       <ToolStatusIcon state={state} neutral={neutral} />
-      <span className={neutral ? 'hidden' : 'sr-only'}>{stateLabel}</span>
+      <span
+        className={
+          neutral || state === 'output-error' || state === 'output-denied' ? 'hidden' : 'sr-only'
+        }
+      >
+        {stateLabel}
+      </span>
       <span dir="ltr" className="truncate font-mono text-xs">
         {name}
       </span>
-      {/* A command that ended with a code says so in the row: a result, not a failure. */}
-      {neutral && <span className="shrink-0 ps-1 text-xs text-muted-foreground">{stateLabel}</span>}
+      {(neutral || state === 'output-error' || state === 'output-denied') && (
+        <span className="shrink-0 ps-1 text-xs text-muted-foreground">{stateLabel}</span>
+      )}
     </CollapsibleTrigger>
   );
 }

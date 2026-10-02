@@ -104,7 +104,12 @@ export function UpdateSummary({
   if (item.summaryError) {
     return (
       <p className="text-xs text-status-waiting" dir="auto">
-        {t('summary.failed', { error: item.summaryError })}
+        {t('summary.failed', {
+          error:
+            item.summaryError === 'digest_runtime_unavailable'
+              ? t('settings.noAgent')
+              : item.summaryError,
+        })}
       </p>
     );
   }

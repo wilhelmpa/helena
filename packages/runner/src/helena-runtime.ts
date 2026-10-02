@@ -299,6 +299,7 @@ export class HelenaRuntimeAdapter implements RuntimeAdapter {
       detail: this.problem,
       appliedRevision: applied?.revision ?? null,
       capabilities: [
+        'digest-runs',
         'model',
         'reasoning',
         'managed-skills',

@@ -1,15 +1,10 @@
+import type { AgentRuntimeConfig } from '@helena/agent-runtime';
 import type { RunSettings } from '@helena/sdk';
 import { presetOf, type RunnerConfig } from './config';
 
-// A digest run (trigger 'digest'): Helena's update center has a small model summarize
-// release notes (docs/helena-decisions/update-center.md §4.3). The notes are untrusted text
-// from the internet, so the run is text only:
-//   - Hermes starts with --ignore-rules: no SOUL, AGENTS, memory or preloaded skills;
-//   - its toolsets are limited to `todo`, Hermes' one toolset that reaches nothing outside
-//     the turn, so no terminal, file, browser or web tool exists and no MCP server starts;
-//   - the agent's standing instructions, skills arguments and vault logins are left out,
-//     and the MCP secrets of the agent's servers are not handed to the command.
-// The model and reasoning come with the run (Helena's settings for summaries).
+// Digest runs handle untrusted release notes without tools, agent instructions,
+// memory, skills or MCP secrets. Hermes uses command switches; the native loop
+// receives a text-only configuration.
 
 export const DIGEST_TOOLSETS = ['todo'];
 export const DIGEST_ARGS = ['--ignore-rules'];
@@ -18,17 +13,43 @@ export function isDigestRun(run: { trigger: string }): boolean {
   return run.trigger === 'digest';
 }
 
-// Only Hermes has the switches that make a run text only.
+// Only runtimes with a dedicated text-only mode can receive untrusted release notes.
 export function digestRuntimeError(config: Pick<RunnerConfig, 'agent' | 'command'>): string | null {
-  return presetOf(config)?.bin === 'hermes' ? null : 'A digest run needs a Hermes agent';
+  return ['hermes', 'helena-agent'].includes(presetOf(config)?.bin ?? '')
+    ? null
+    : 'A digest run needs a native or Hermes agent';
 }
 
-export function digestSettings(settings: RunSettings | null): RunSettings {
+export function digestSettings(
+  settings: RunSettings | null,
+  runner: Pick<RunnerConfig, 'agent' | 'command'> = { agent: 'hermes' },
+): RunSettings {
   const env = Object.fromEntries(
     Object.entries(settings?.env ?? {}).filter(
       ([name]) => !name.startsWith('ITSAPLAN_MCP_SECRET_'),
     ),
   );
+  if (presetOf(runner)?.bin === 'helena-agent') {
+    const config = settings?.input?.config as AgentRuntimeConfig | undefined;
+    if (!config) throw new Error('The native digest configuration is missing');
+    return {
+      toolsets: [],
+      env,
+      input: {
+        config: {
+          ...config,
+          instructions: undefined,
+          contextWarnings: [],
+          tools: { textOnly: true },
+          skills: [],
+          mcpServers: [],
+          memory: { enabled: false },
+          escalation: { mode: 'never' },
+          runtimeFallback: undefined,
+        },
+      },
+    };
+  }
   return {
     toolsets: DIGEST_TOOLSETS,
     env,

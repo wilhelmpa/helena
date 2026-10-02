@@ -45,7 +45,7 @@ describe('toUIMessage / messageText', () => {
     assert.equal(part.state === 'output-error' ? part.errorText : undefined, 'permission denied');
   });
 
-  it('restores a command that exited non-zero with output as a result with its exit code', () => {
+  it('restores a command that exited non-zero with output as an error with its exit code', () => {
     const ui = toUIMessage({
       id: '2',
       role: 'assistant',
@@ -64,7 +64,7 @@ describe('toUIMessage / messageText', () => {
       ],
     });
     const [part] = ui.parts;
-    assert.equal(part.type === 'dynamic-tool' && part.state, 'output-available');
+    assert.equal(part.type === 'dynamic-tool' && part.state, 'output-error');
     assert.deepEqual(part.type === 'dynamic-tool' && toolOutcome(part), {
       outcome: 'nonzero_with_output',
       exitCode: 1,

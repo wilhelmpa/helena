@@ -1116,13 +1116,46 @@ describe('update center: summaries', () => {
     expect(await db.select().from(agentRun)).toEqual([]);
   });
 
-  it('names why nothing was summarized when no Hermes agent is there', async () => {
+  it('queues and stores native summaries without a Hermes runner', async () => {
+    const { api } = await owner();
+    const { agent, runner } = await hermesAgent(api);
+    await db
+      .update(aiAgent)
+      .set({ runtimeState: { adapter: 'helena', capabilities: ['digest-runs'] } })
+      .where(eq(aiAgent.id, agent.id));
+    await setUpdateSettings({ model: 'helena-test-mini' });
+    startFakeHelper(helperAnswers);
+    await runUpdateCheck();
+    expect(await queueDigests()).toBe(5);
+    let completed = 0;
+    for (;;) {
+      const claimed = (await runner['agent-runs'].claim.post()).data!.run;
+      if (!claimed) break;
+      expect(claimed.trigger).toBe('digest');
+      expect(claimed.systemPrompt).toBe(DIGEST_SYSTEM_PROMPT);
+      const result = await runner['agent-runs']({ runId: claimed.id }).result.post({
+        status: 'success',
+        output: '{"summary":"Native security summary","risk":"low","breaking":false}',
+      });
+      expect(result.status).toBe(200);
+      completed++;
+    }
+    expect(completed).toBe(5);
+    expect(await collectDigests()).toBe(0);
+    const view = (await api.god['update-center'].get()).data!;
+    expect(
+      view.items.filter((item) => item.updateAvailable).every((item) => item.summaryCurrent),
+    ).toBe(true);
+    expect(view.digest.agents.some((item) => item.id === agent.id)).toBe(true);
+  });
+
+  it('names why nothing was summarized when no text-only runtime is there', async () => {
     await owner();
     startFakeHelper(helperAnswers);
     await runUpdateCheck();
     expect(await queueDigests()).toBe(0);
     expect((await rows()).find((row) => row.component === 'claude')!.summaryError).toBe(
-      'No Hermes agent can write the summary',
+      'digest_runtime_unavailable',
     );
   });
 

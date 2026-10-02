@@ -21,17 +21,8 @@ import { bumpControlPlaneRevision } from '#modules/sync/service';
 import { getUpdateSettings, refusedModels } from './settings';
 import type { UpdateSettings } from './settings';
 
-// The summary of what a new version changes, written by a small model (owner, 2026-09-24:
-// "ein ganz kleines Modell regelmäßig laufen lassen"). While Lokale KI takes summaries
-// (class `summaries`, docs/helena-decisions/local-ai-platform.md §7.1) the run starts on the
-// local model and the model chosen here is its fallback; otherwise it runs on that model, as
-// without local AI. It is a digest run: an ordinary
-// queued run of a Hermes agent (its run history, its budgets, the usage ledger and the
-// model check apply), but text only: the runner starts Hermes without its rules, memory,
-// skills or MCP servers and with no tool that reaches outside the turn, and the API sends
-// the prompt as it is. The release notes are untrusted input; the prompt says so and the
-// model has nothing to act with. The model never decides a version: the facts are in the
-// prompt, it only reads the notes.
+// Summaries use a capability-gated, text-only run: no tools, agent instructions,
+// memory or skills. Release notes are untrusted model input.
 
 export { DIGEST_SYSTEM_PROMPT } from './digest-prompt';
 
@@ -158,9 +149,16 @@ export interface DigestAgent {
   projectId: number;
 }
 
-// The agent a digest run is queued on: the one the settings name, else the Home master,
-// else the first Hermes agent seen lately. It must be a Hermes agent that works in a project
-// (a run needs one; its first project carries the cost).
+function canDigest(runtimeState: unknown): boolean {
+  const state = runtimeState as { adapter?: string; capabilities?: unknown } | null;
+  return (
+    !!state &&
+    ['helena', 'hermes'].includes(state.adapter ?? '') &&
+    Array.isArray(state.capabilities) &&
+    state.capabilities.includes(DIGEST_CAPABILITY)
+  );
+}
+
 export async function pickDigestAgent(settings: UpdateSettings): Promise<DigestAgent | null> {
   const rows = await db
     .select({
@@ -178,21 +176,15 @@ export async function pickDigestAgent(settings: UpdateSettings): Promise<DigestA
       desc(aiAgent.lastSeenAt),
       asc(aiAgent.id),
     );
-  // Only Hermes has the switches that make a run text only, and only a runner that reports
-  // `digest-runs` uses them (packages/runner/src/digest.ts): an older runner would run the
-  // untrusted release notes with the agent's tools.
-  const hermes = rows.filter((row) => {
-    const state = row.runtimeState as { adapter?: unknown; capabilities?: unknown } | null;
-    return (
-      state?.adapter === 'hermes' &&
-      Array.isArray(state.capabilities) &&
-      state.capabilities.includes(DIGEST_CAPABILITY)
-    );
-  });
+  const capable = rows.filter((row) => canDigest(row.runtimeState));
+  const native = capable.filter(
+    (row) => (row.runtimeState as { adapter?: string })?.adapter === 'helena',
+  );
+  const candidates = native.length ? native : capable;
   const chosen =
-    hermes.find((row) => row.id === settings.agentId) ??
-    hermes.find((row) => isHomeAgent(row.agentRole)) ??
-    hermes[0];
+    candidates.find((row) => row.id === settings.agentId) ??
+    candidates.find((row) => isHomeAgent(row.agentRole)) ??
+    candidates[0];
   if (!chosen) return null;
   const [membership] = await db
     .select({ projectId: projectMember.projectId })
@@ -204,8 +196,8 @@ export async function pickDigestAgent(settings: UpdateSettings): Promise<DigestA
   return { id: chosen.id, username: chosen.username, projectId: membership.projectId };
 }
 
-// The Hermes agents a summary can run on, for the settings' picker.
-export async function hermesAgents(): Promise<{ id: number; username: string; name: string }[]> {
+// Agents with a text-only digest runtime.
+export async function digestAgents(): Promise<{ id: number; username: string; name: string }[]> {
   const rows = await db
     .select({
       id: aiAgent.id,
@@ -218,14 +210,7 @@ export async function hermesAgents(): Promise<{ id: number; username: string; na
     .where(and(eq(aiAgent.kind, 'external'), eq(aiAgent.template, false)))
     .orderBy(asc(aiAgent.id));
   return rows
-    .filter((row) => {
-      const state = row.runtimeState as { adapter?: unknown; capabilities?: unknown } | null;
-      return (
-        state?.adapter === 'hermes' &&
-        Array.isArray(state.capabilities) &&
-        state.capabilities.includes(DIGEST_CAPABILITY)
-      );
-    })
+    .filter((row) => canDigest(row.runtimeState))
     .map(({ id, username, name }) => ({ id, username, name: name || username }));
 }
 

@@ -178,6 +178,22 @@ export async function runAgent(input: AgentRunInput): Promise<LoopResult> {
     );
     for (const entry of skipped)
       process.stderr.write(`helena-agent: model ${entry.id} left out: ${entry.reason}\n`);
+    if (config.tools?.textOnly) {
+      return await runLoop({
+        config: { ...config, escalation: { mode: 'never' }, runtimeFallback: undefined },
+        prompt: input.prompt,
+        system: input.runContext ?? '',
+        sessionId: null,
+        models: chain,
+        tools: [],
+        direct: new Set(),
+        policy: async () => ({ allowed: false, message: 'Text-only runs have no tools.' }),
+        sessions: new MemorySessionStore(),
+        sink: input.sink,
+        env: input.env,
+        signal: input.signal,
+      });
+    }
     let escalationModel: ResolvedModel | null = null;
     const target = config.escalation?.target;
     if (target && !target.startsWith('runtime:')) {

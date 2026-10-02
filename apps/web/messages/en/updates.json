@@ -93,7 +93,7 @@
     "automaticAgent": "Automatic ({name})",
     "automaticModel": "Automatic ({model})",
     "agentModel": "The agent’s model",
-    "noAgent": "No Hermes agent",
+    "noAgent": "No agent available for summaries",
     "claudeChannel": "Claude Code channel",
     "channels": {
       "latest": "Latest",

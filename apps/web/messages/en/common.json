@@ -86,6 +86,7 @@
     "conflict": "Already used by {command}"
   },
   "agentChat": {
+    "toolFailedExit": "Failed with code {code}",
     "readAloud": "Read response aloud",
     "stopReading": "Stop reading",
     "toolInput": "Input",

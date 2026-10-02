@@ -11,6 +11,7 @@
     "skills": "Skills"
   },
   "runs": {
+    "stepFailedExit": "失败，代码 {code}",
     "empty": "暂无运行。",
     "loadMore": "加载更多",
     "running": "运行中",

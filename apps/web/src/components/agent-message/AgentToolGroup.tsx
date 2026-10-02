@@ -5,7 +5,7 @@ import type { DynamicToolUIPart } from 'ai';
 import { LoaderCircle, TriangleAlert, Wrench } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Task, TaskContent, TaskTrigger } from '@/components/ai-elements/task';
-import { toolOutcome } from './toolOutcome';
+import { toolOutcome, toolResultFailed } from './toolOutcome';
 import {
   Tool,
   ToolContent,
@@ -23,24 +23,23 @@ export type RenderTool = (tool: DynamicToolUIPart) => ReactNode | undefined;
 export function AgentToolCall({ tool }: { tool: DynamicToolUIPart }) {
   const t = useTranslations('common.agentChat');
   const outcome = toolOutcome(tool);
-  const neutral = tool.state === 'output-available' && outcome?.outcome === 'nonzero_with_output';
-  const stateLabel =
-    tool.state === 'output-error' || tool.state === 'output-denied'
-      ? t('toolFailed')
-      : neutral
-        ? outcome?.exitCode != null
-          ? t('toolExited', { code: outcome.exitCode })
-          : t('toolExitedNonzero')
-        : tool.state === 'output-available'
-          ? t('toolDone')
-          : t('toolRunning');
+  const failed =
+    tool.state === 'output-error' ||
+    tool.state === 'output-denied' ||
+    (outcome !== null && toolResultFailed(outcome));
+  let stateLabel = t('toolRunning');
+  if (failed) {
+    stateLabel =
+      outcome?.exitCode != null ? t('toolFailedExit', { code: outcome.exitCode }) : t('toolFailed');
+  } else if (tool.state === 'output-available') {
+    stateLabel = t('toolDone');
+  }
   return (
     <Tool>
       <ToolHeader
         name={tool.toolName}
-        state={tool.state}
+        state={failed ? 'output-error' : tool.state}
         stateLabel={stateLabel}
-        neutral={neutral}
       />
       <ToolContent>
         <ToolInput input={tool.input} label={t('toolInput')} />
@@ -74,7 +73,12 @@ export function AgentToolGroup({
     else own.push(<Fragment key={tool.toolCallId}>{custom}</Fragment>);
   }
   const running = rest.find((tool) => isToolRunning(tool.state));
-  const failed = rest.some((tool) => tool.state === 'output-error');
+  const failed = rest.some(
+    (tool) =>
+      tool.state === 'output-error' ||
+      tool.state === 'output-denied' ||
+      toolResultFailed(toolOutcome(tool) ?? {}),
+  );
 
   return (
     <div className="space-y-2">

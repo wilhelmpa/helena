@@ -86,6 +86,7 @@
     "conflict": "已被“{command}”使用"
   },
   "agentChat": {
+    "toolFailedExit": "失败，代码 {code}",
     "readAloud": "朗读回复",
     "stopReading": "停止朗读",
     "toolInput": "输入",

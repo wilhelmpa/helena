@@ -47,6 +47,23 @@ const nextConfig: NextConfig = {
   ...(process.env.NEXT_DEPLOYMENT_ID ? { deploymentId: process.env.NEXT_DEPLOYMENT_ID } : {}),
   headers: async () => [
     { source: '/(.*)', headers: SECURITY_HEADERS },
+    {
+      source: '/sw.js',
+      headers: [
+        { key: 'Content-Type', value: 'application/javascript; charset=utf-8' },
+        { key: 'Cache-Control', value: 'no-cache' },
+        { key: 'Service-Worker-Allowed', value: '/' },
+      ],
+    },
+    { source: '/voice/:path*', headers: [{ key: 'Cache-Control', value: 'no-cache' }] },
+    {
+      source: '/voice/:file(.*\\.m?js)',
+      headers: [{ key: 'Content-Type', value: 'application/javascript; charset=utf-8' }],
+    },
+    {
+      source: '/voice/:file(.*\\.wasm)',
+      headers: [{ key: 'Content-Type', value: 'application/wasm' }],
+    },
     // Files open in Helena's own viewer, an iframe on the same origin (PDFs): these may be
     // framed by Helena itself, never by another site. A later match overrides the header.
     {

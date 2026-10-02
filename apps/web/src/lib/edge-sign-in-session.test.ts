@@ -61,6 +61,7 @@ describe('the Cloudflare sign-in in the web app', () => {
       'https://helena.example.com/project/VOL?view=board',
     );
     assert.match(response!.headers.getSetCookie()[0]!, /__Secure-better-auth\.session_token/);
+    assert.match(response!.headers.getSetCookie()[0]!, /(?:^|;\s*)Path=\/(?:;|$)/);
     assert.equal(calls.length, 1);
     assert.equal(calls[0]!.url, 'http://127.0.0.1:3000/api/auth/sign-in/edge');
     assert.deepEqual(calls[0]!.headers, {

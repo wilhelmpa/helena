@@ -243,7 +243,7 @@ async function handle(
     const hermes = stop.signal.aborted
       ? null
       : digest
-        ? digestSettings((await policy?.runSettings({ runId: run.id })) ?? null)
+        ? digestSettings((await policy?.runSettings({ runId: run.id })) ?? null, config)
         : withEnv(
             (await policy?.runSettings({ runId: run.id })) ?? null,
             await sshEnv(config, client, log, { runId: run.id }),
