@@ -65,6 +65,7 @@ export function Segmented<T extends string>({
           key={option.value}
           type="button"
           role="tab"
+          aria-label={typeof option.label === 'string' ? option.label : undefined}
           aria-selected={option.value === value}
           title={option.title}
           onClick={() => onChange(option.value)}
