@@ -16,7 +16,7 @@ function audio() {
     currentTime = 0;
     destination = {};
     createBuffer(_n: number, length: number, rate: number) {
-      let data = new Float32Array(length);
+      let data: Float32Array = new Float32Array(length);
       return {
         duration: length / rate,
         sampleRate: rate,

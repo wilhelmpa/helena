@@ -17,7 +17,7 @@ function installAudioContext() {
     destination = {};
     currentTime = 0;
     createBuffer(_channels: number, length: number, rate: number) {
-      let samples = new Float32Array(length);
+      let samples: Float32Array = new Float32Array(length);
       return {
         duration: length / rate,
         sampleRate: rate,
